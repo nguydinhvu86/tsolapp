@@ -214,6 +214,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 users={users}
                 isAdminOrManager={isAdminOrManager}
                 currentEmployeeId={employeeIdFromUrl || ''}
+                currentUserId={session.user.id}
             />
         </div>
     );

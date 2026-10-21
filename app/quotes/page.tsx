@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { buildViewFilter } from '@/lib/permissions';
 
+export const dynamic = 'force-dynamic';
+
 export default async function QuotesPage({
     searchParams,
 }: {
@@ -29,15 +31,15 @@ export default async function QuotesPage({
         include: {
             customer: true,
             template: true,
+            creator: {
+                select: {
+                    id: true,
+                    name: true,
+                    avatar: true,
+                }
+            }
         },
     });
 
-    return (
-        <div>
-            <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                <h1>Quản lý Báo giá</h1>
-            </div>
-            <QuoteDashboardClient initialData={quotes as any} />
-        </div>
-    );
+    return <QuoteDashboardClient initialData={quotes as any} />;
 }

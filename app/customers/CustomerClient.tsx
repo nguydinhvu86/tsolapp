@@ -10,7 +10,7 @@ import {
     Search, Users, TrendingUp, RefreshCcw, Activity, Sparkles, 
     Loader2, Building2, CreditCard, FileText, CheckCircle2, AlertCircle, 
     Mail, Phone, MapPin, X, Copy, Check, 
-    LayoutGrid, List, ShieldCheck, ArrowRight, UserCheck
+    LayoutGrid, List, ShieldCheck, ArrowRight, UserCheck, BarChart3, ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -19,6 +19,8 @@ import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { useToast } from '@/app/components/providers/ToastProvider';
 import { useConfirm } from '@/app/components/providers/ConfirmProvider';
+import { CustomerAnalyticsBar } from './CustomerAnalyticsBar';
+import { CustomerQuickViewDrawer } from './CustomerQuickViewDrawer';
 
 export type CustomerWithStats = Customer & { revenue?: number; lastActivityAt?: Date | string };
 
@@ -101,6 +103,8 @@ export function CustomerClient({
     const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'financial' | 'notes'>('general');
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
+    const [showAnalytics, setShowAnalytics] = useState(true);
+    const [quickViewCustomer, setQuickViewCustomer] = useState<CustomerWithStats | null>(null);
 
     // Tax Lookup State
     const [isLookingUpTax, setIsLookingUpTax] = useState(false);
@@ -405,6 +409,21 @@ export function CustomerClient({
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => setShowAnalytics(prev => !prev)}
+                        className={`inline-flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                            showAnalytics
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-2xs'
+                                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                        }`}
+                        title="Bật/Tắt Biểu đồ phân tích"
+                    >
+                        <BarChart3 size={15} />
+                        <span>Biểu đồ phân tích</span>
+                        <span className={`w-2 h-2 rounded-full ${showAnalytics ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                    </button>
+
                     {canCreate && (
                         <button
                             onClick={() => openModal()}
@@ -417,6 +436,9 @@ export function CustomerClient({
                     )}
                 </div>
             </div>
+
+            {/* BIỂU ĐỒ & PHÂN TÍCH CRM */}
+            {showAnalytics && <CustomerAnalyticsBar customers={customers} />}
 
             {/* 4 THẺ KPI ĐA SẮC MÀU CÔNG NGHỆ RỰC RỠ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -781,14 +803,24 @@ export function CustomerClient({
                                                 {/* CỤM THAO TÁC (XANH - VÀNG - ĐỎ) */}
                                                 <td className="py-2.5 px-3.5 align-middle text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        {/* XEM: XANH LÁ */}
-                                                        <Link
-                                                            href={`/customers/${customer.id}`}
+                                                        {/* XEM NHANH: DRAWER */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setQuickViewCustomer(customer)}
                                                             style={{ color: '#05A613' }}
-                                                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors"
-                                                            title={t('customers.viewDetails')}
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors cursor-pointer"
+                                                            title="Xem nhanh (không rời trang)"
                                                         >
                                                             <Eye size={15} />
+                                                        </button>
+
+                                                        {/* XEM CHI TIẾT: HỒ SƠ ĐẦY ĐỦ */}
+                                                        <Link
+                                                            href={`/customers/${customer.id}`}
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                                                            title="Xem chi tiết hồ sơ 360°"
+                                                        >
+                                                            <ExternalLink size={14} />
                                                         </Link>
 
                                                         {/* SỬA: VÀNG CAM */}
@@ -864,10 +896,22 @@ export function CustomerClient({
                                         </div>
 
                                         <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                            <Link href={`/customers/${customer.id}`} style={{ color: '#05A613' }} className="text-xs font-bold flex items-center gap-1 hover:underline">
-                                                <span>Chi tiết</span>
-                                                <ArrowRight size={12} />
-                                            </Link>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setQuickViewCustomer(customer)} 
+                                                    style={{ color: '#05A613' }} 
+                                                    className="text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                                                >
+                                                    <Eye size={13} />
+                                                    <span>Xem nhanh</span>
+                                                </button>
+                                                <span className="text-slate-300">•</span>
+                                                <Link href={`/customers/${customer.id}`} className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                                                    <span>Chi tiết</span>
+                                                    <ArrowRight size={12} />
+                                                </Link>
+                                            </div>
                                             <div className="flex items-center gap-1">
                                                 {customer.phone && <ClickToCallButton phoneNumber={customer.phone} />}
                                                 {canEdit && (
@@ -894,6 +938,17 @@ export function CustomerClient({
                     <Pagination {...paginationProps} />
                 </div>
             </div>
+
+            {/* XEM NHANH KHÁCH HÀNG (DRAWER) */}
+            <CustomerQuickViewDrawer
+                isOpen={!!quickViewCustomer}
+                onClose={() => setQuickViewCustomer(null)}
+                customer={quickViewCustomer}
+                onEdit={openModal}
+                canEdit={canEdit}
+                getAvatarStyle={getAvatarStyle}
+                getInitials={getInitials}
+            />
 
             {/* MODAL THÊM / SỬA KHÁCH HÀNG */}
             {isModalOpen && (

@@ -11,19 +11,23 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
+import { SalesInvoiceAnalyticsBar } from './SalesInvoiceAnalyticsBar';
+import { SalesInvoiceQuickViewDrawer } from './SalesInvoiceQuickViewDrawer';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const { t } = useTranslation();
     const router = useRouter();
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
+    const [showAnalytics, setShowAnalytics] = useState(true);
+    const [quickViewInvoice, setQuickViewInvoice] = useState<any | null>(null);
 
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{
@@ -698,6 +702,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await approveSalesInvoice(id, 'system');
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? res.data : inv));
+                    setQuickViewInvoice((prev: any) => prev && prev.id === id ? res.data : prev);
                     toast.success(t('invoices.alertSuccessApprove'));
                     router.refresh();
                 } else toast.error(res.error);
@@ -721,6 +726,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 const res = await updateSalesInvoiceStatus(id, newStatus);
                 if (res.success) {
                     setInvoices(invoices.map((inv: any) => inv.id === id ? { ...inv, status: newStatus } : inv));
+                    setQuickViewInvoice((prev: any) => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
                 } else toast.error(res.error);
             }
         });
@@ -1025,6 +1031,19 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                             </select>
                         </div>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => setShowAnalytics(!showAnalytics)}
+                        className={`inline-flex items-center gap-1.5 h-[34px] px-3 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                            showAnalytics
+                                ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                        }`}
+                        title="Bật/tắt biểu đồ phân tích doanh thu & công nợ"
+                    >
+                        <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
+                        <span>Biểu đồ phân tích</span>
+                    </button>
                     <Button
                         onClick={handleOpenCreate}
                         className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
@@ -1034,6 +1053,13 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </Button>
                 </div>
             </div>
+
+            {/* Visual Analytics Bar */}
+            {showAnalytics && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <SalesInvoiceAnalyticsBar invoices={invoices} />
+                </div>
+            )}
 
             <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
 
@@ -1670,9 +1696,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <td className="py-3 px-3 whitespace-nowrap">
                                         <div className="flex items-center gap-1.5">
                                             <FileText size={14} className="text-slate-400 shrink-0" />
-                                            <Link href={`/sales/invoices/${inv.id}`} className="font-mono font-bold hover:text-emerald-700 hover:underline transition-colors block text-xs text-slate-900 tracking-tight">
+                                            <button
+                                                type="button"
+                                                onClick={() => setQuickViewInvoice(inv)}
+                                                className="font-mono font-bold hover:text-emerald-700 hover:underline transition-colors block text-xs text-slate-900 tracking-tight text-left cursor-pointer"
+                                                title="Xem nhanh hóa đơn (Slide-over)"
+                                            >
                                                 {inv.code}
-                                            </Link>
+                                            </button>
                                             {inv.orderId && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200/80 px-1 py-0.2 rounded font-medium shrink-0">{t('invoices.inherited') || 'SO'}</span>}
                                         </div>
                                     </td>
@@ -1792,8 +1823,22 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                             <button onClick={() => handleCopy(inv)} title={t('invoices.copy')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors">
                                                 <Copy size={14} />
                                             </button>
-                                            <Link href={`/sales/invoices/${inv.id}`} title={t('invoices.viewDetails')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
-                                                <Eye size={14} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setQuickViewInvoice(inv)}
+                                                title="Xem nhanh hóa đơn (Slide-over không rời trang)"
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors cursor-pointer shadow-2xs"
+                                            >
+                                                <Eye size={12} />
+                                                <span>Xem nhanh</span>
+                                            </button>
+                                            <Link
+                                                href={`/sales/invoices/${inv.id}`}
+                                                title="Xem chi tiết đầy đủ"
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+                                            >
+                                                <ExternalLink size={12} />
+                                                <span>Chi tiết</span>
                                             </Link>
                                             <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title={t('invoices.printPdf')} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
                                                 <Printer size={14} />
@@ -1835,6 +1880,23 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 </Table>
             </div>
             <Pagination {...paginationProps} />
+
+            {/* Quick View Slide-out Drawer */}
+            <SalesInvoiceQuickViewDrawer
+                isOpen={!!quickViewInvoice}
+                onClose={() => setQuickViewInvoice(null)}
+                invoice={quickViewInvoice}
+                onStatusChange={(id, newStatus) => handleStatusChange(id, newStatus)}
+                onApprove={(id) => handleApprove(id)}
+                onEdit={(inv) => {
+                    setQuickViewInvoice(null);
+                    handleEdit(inv);
+                }}
+                onCopy={(inv) => {
+                    setQuickViewInvoice(null);
+                    handleCopy(inv);
+                }}
+            />
 
             {/* Generic Action Modal */}
             <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || t('invoices.confirm') || 'Xác nhận'}>

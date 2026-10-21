@@ -9,13 +9,15 @@ import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { UserMultiSelect } from '@/app/components/ui/UserMultiSelect';
-import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter, X, Check, ArrowUpDown, Eye, Building2, FileText, UserCheck } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter, X, Check, ArrowUpDown, Eye, ExternalLink, Building2, FileText, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createTask, updateTaskStatus, deleteTask, searchEntities, updateTask, startTaskTimer, stopTaskTimer } from './actions';
 import Link from 'next/link';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import GanttChart from '@/app/components/GanttChart';
+import { TaskAnalyticsBar } from './TaskAnalyticsBar';
+import { TaskQuickViewDrawer } from './TaskQuickViewDrawer';
 
 function formatTimer(seconds: number) {
     const h = Math.floor(seconds / 3600);
@@ -174,6 +176,10 @@ export function TaskDashboardClient({
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
     const [selectedObservers, setSelectedObservers] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Quick View Drawer State
+    const [quickViewTask, setQuickViewTask] = useState<any | null>(null);
+    const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
     // Edit State
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -816,6 +822,9 @@ export function TaskDashboardClient({
                 })}
             </div>
 
+            {/* Task BI Analytics & Charts Bar */}
+            <TaskAnalyticsBar tasks={initialTasks} />
+
             {/* Main Data Container */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
                 {/* Search & Actions Toolbar */}
@@ -1061,14 +1070,16 @@ export function TaskDashboardClient({
                                             <td className="py-2.5 px-3.5 align-middle">
                                                 <div className="flex items-start gap-2">
                                                     <div className="min-w-0">
-                                                        <Link
-                                                            href={`/tasks/${task.id}`}
-                                                            className={`font-semibold text-xs hover:text-primary transition-colors block truncate max-w-[280px] sm:max-w-[340px] ${
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setQuickViewTask(task); setIsQuickViewOpen(true); }}
+                                                            className={`font-semibold text-xs hover:text-primary text-left transition-colors block truncate max-w-[280px] sm:max-w-[340px] cursor-pointer ${
                                                                 overdue ? 'text-rose-950 font-bold' : 'text-slate-900'
                                                             }`}
+                                                            title="Xem nhanh công việc (Quick View)"
                                                         >
                                                             {task.title}
-                                                        </Link>
+                                                        </button>
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             {overdue && (
                                                                 <span className="animate-overdue-badge inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border border-rose-300">
@@ -1288,12 +1299,23 @@ export function TaskDashboardClient({
                                             {/* Actions */}
                                             <td className="py-2.5 px-3.5 align-middle text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <Link
-                                                        href={`/tasks/${task.id}`}
-                                                        className="p-1 text-slate-400 hover:text-primary hover:bg-emerald-50 rounded transition-colors"
-                                                        title="Xem chi tiết"
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setQuickViewTask(task);
+                                                            setIsQuickViewOpen(true);
+                                                        }}
+                                                        className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                                                        title="Xem nhanh (Quick View)"
                                                     >
                                                         <Eye size={14} />
+                                                    </button>
+                                                    <Link
+                                                        href={`/tasks/${task.id}`}
+                                                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                        title="Chi tiết công việc đầy đủ"
+                                                    >
+                                                        <ExternalLink size={14} />
                                                     </Link>
                                                     {canEdit && (
                                                         <button
@@ -1838,6 +1860,20 @@ export function TaskDashboardClient({
                     </div>
                 </div>
             </Modal>
+
+            {/* Task Quick View Drawer */}
+            <TaskQuickViewDrawer
+                isOpen={isQuickViewOpen}
+                onClose={() => setIsQuickViewOpen(false)}
+                task={quickViewTask}
+                onStatusChange={async (taskId, newStatus) => {
+                    await updateStatus(taskId, newStatus);
+                    setQuickViewTask((prev: any) => prev ? { ...prev, status: newStatus } : null);
+                }}
+                onEdit={(t) => {
+                    openEditModal(t);
+                }}
+            />
         </div>
     );
 }

@@ -55,7 +55,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             leads
         ] = await Promise.all([
             estFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesEstimate.findMany({
-                select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { name: true } }, code: true, totalAmount: true },
+                select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { id: true, name: true } }, code: true, totalAmount: true, creatorId: true, salespersonId: true, creator: { select: { id: true, name: true, avatar: true } }, salesperson: { select: { id: true, name: true, avatar: true } } },
                 where: { AND: [estFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 500
@@ -69,13 +69,13 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             userId ? prisma.task.findMany({ where: { OR: [{ assignees: { some: { userId: userId } } }, { creatorId: userId }, { observers: { some: { userId: userId } } }], status: { not: 'COMPLETED' } }, orderBy: { dueDate: 'asc' }, take: 10, select: { id: true, title: true, dueDate: true, priority: true } }) : Promise.resolve([]),
             poFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, where: poFilter as any, orderBy: { createdAt: 'desc' }, take: 500 }),
             invFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesInvoice.findMany({
-                select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customer: { select: { name: true } } },
+                select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customerId: true, customer: { select: { id: true, name: true } }, creatorId: true, salespersonId: true, creator: { select: { id: true, name: true, avatar: true } }, salesperson: { select: { id: true, name: true, avatar: true } } },
                 where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
                 take: 1000
             }),
             prisma.lead.findMany({
-                select: { id: true, code: true, name: true, company: true, contactName: true, status: true, estimatedValue: true, createdAt: true },
+                select: { id: true, code: true, name: true, company: true, contactName: true, status: true, estimatedValue: true, createdAt: true, assignedToId: true, assignedTo: { select: { id: true, name: true, avatar: true } }, creatorId: true, creator: { select: { id: true, name: true, avatar: true } } },
                 where: employeeId ? {
                     OR: [
                         { creatorId: employeeId },

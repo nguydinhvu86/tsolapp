@@ -82,6 +82,14 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
                     orderBy: { createdAt: 'desc' },
                     take: 1,
                     select: { createdAt: true }
+                },
+                _count: {
+                    select: {
+                        quotes: true,
+                        contracts: true,
+                        salesOrders: true,
+                        salesInvoices: true
+                    }
                 }
             }
         }),
@@ -115,7 +123,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: { 
             createdAt: rest.createdAt ? rest.createdAt.toISOString() : null,
             updatedAt: rest.updatedAt ? rest.updatedAt.toISOString() : null,
             revenue,
-            lastActivityAt: lastActivityAt ? new Date(lastActivityAt).toISOString() : null
+            lastActivityAt: lastActivityAt ? new Date(lastActivityAt).toISOString() : null,
+            _count: c._count || { quotes: 0, contracts: 0, salesOrders: 0, salesInvoices: 0 }
         };
     });
 

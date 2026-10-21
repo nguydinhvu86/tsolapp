@@ -10,7 +10,8 @@ import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { deleteContract, updateContractStatus, updateContract } from './actions';
-import { Plus, Trash2, Search, Edit2, Eye, ChevronUp, ChevronDown, ArrowUpDown, X, Copy, FileText, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Search, Edit2, Eye, ChevronUp, ChevronDown, ArrowUpDown, X, Copy, FileText, CheckCircle, ExternalLink } from 'lucide-react';
+import { ContractQuickViewDrawer } from './ContractQuickViewDrawer';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -34,6 +35,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [editingContract, setEditingContract] = useState<ContractWithRelations | null>(null);
+    const [quickViewContract, setQuickViewContract] = useState<ContractWithRelations | null>(null);
     const [editContent, setEditContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [sortField, setSortField] = useState('createdAt');
@@ -105,8 +107,11 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
 
     const handleStatusChange = async (id: string, newStatus: string) => {
         await updateContractStatus(id, newStatus);
+        if (quickViewContract && quickViewContract.id === id) {
+            setQuickViewContract(prev => prev ? { ...prev, status: newStatus } : null);
+        }
         router.refresh();
-    }
+    };
 
     const handleEditClick = (contract: ContractWithRelations) => {
         setEditingContract(contract);
@@ -236,7 +241,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                             <th onClick={() => handleSort('createdAt')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                                 <div className="flex items-center gap-1">{t('contractDashboard.createdAt')} {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
                             </th>
-                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600 w-[150px]">{t('contractDashboard.actions')}</th>
+                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600 w-[160px]">{t('contractDashboard.actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -249,9 +254,14 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                         ) : paginatedItems.map(c => (
                             <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                                 <td className="p-3 text-[13px]">
-                                    <Link href={`/contracts/${c.id}`} className="font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuickViewContract(c)}
+                                        className="text-left font-semibold text-slate-900 hover:text-emerald-600 transition-colors cursor-pointer"
+                                        title="Nhấn để xem nhanh"
+                                    >
                                         {c.title}
-                                    </Link>
+                                    </button>
                                 </td>
                                 <td className="p-3 text-[13px] text-slate-600 dark:text-slate-300">{c.template.name}</td>
                                 <td className="p-3 text-[13px]">
@@ -281,25 +291,42 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                 <td className="p-3 text-slate-500 text-xs" suppressHydrationWarning>{formatDate(new Date(c.createdAt))}</td>
                                 <td className="p-3">
                                     <div className="flex items-center justify-center gap-1">
+                                        {/* XEM NHANH: DRAWER */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuickViewContract(c)}
+                                            className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                            title="Xem nhanh (Drawer)"
+                                        >
+                                            <Eye size={16} />
+                                        </button>
+
+                                        {/* XEM CHI TIẾT: FULL PAGE */}
+                                        <Link href={`/contracts/${c.id}`}>
+                                            <button
+                                                type="button"
+                                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Mở chi tiết & in hợp đồng"
+                                            >
+                                                <ExternalLink size={15} />
+                                            </button>
+                                        </Link>
+
+                                        {/* SỬA */}
                                         {canEdit && (
                                             <button
+                                                type="button"
                                                 onClick={() => handleEditClick(c)}
-                                                className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                                                 title={t('contractDashboard.editContent')}
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                         )}
-                                        <Link href={`/contracts/${c.id}`}>
-                                            <button
-                                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title={t('contractDashboard.viewContract')}
-                                            >
-                                                <Eye size={16} />
-                                            </button>
-                                        </Link>
-                                        {/* Copy Public Link Button */}
+
+                                        {/* COPY LINK */}
                                         <button
+                                            type="button"
                                             onClick={() => {
                                                 const url = `${window.location.origin}/public/contracts/${c.id}`;
                                                 navigator.clipboard.writeText(url);
@@ -310,8 +337,11 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                         >
                                             <Copy size={16} />
                                         </button>
+
+                                        {/* XÓA */}
                                         {canDelete && (
                                             <button
+                                                type="button"
                                                 onClick={() => handleDelete(c.id)}
                                                 className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                                                 title={t('contractDashboard.delete')}
@@ -328,6 +358,17 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                 <Pagination {...paginationProps} />
             </div>
 
+            {/* Quick View Drawer */}
+            <ContractQuickViewDrawer
+                isOpen={!!quickViewContract}
+                onClose={() => setQuickViewContract(null)}
+                contract={quickViewContract}
+                onStatusChange={handleStatusChange}
+                onEdit={handleEditClick}
+                canEdit={canEdit}
+            />
+
+            {/* Modal chỉnh sửa hợp đồng */}
             <Modal
                 isOpen={!!editingContract}
                 onClose={() => setEditingContract(null)}

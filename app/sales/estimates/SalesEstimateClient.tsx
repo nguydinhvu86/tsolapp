@@ -12,7 +12,9 @@ import { Button } from '@/app/components/ui/Button';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, FileSearch, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, FileSearch, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
+import { SalesEstimateAnalyticsBar } from './SalesEstimateAnalyticsBar';
+import { SalesEstimateQuickViewDrawer } from './SalesEstimateQuickViewDrawer';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -24,6 +26,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
+    const [showAnalytics, setShowAnalytics] = useState(true);
+    const [quickViewEstimate, setQuickViewEstimate] = useState<any | null>(null);
 
     // Convert to Invoice state
     const [convertModalId, setConvertModalId] = useState<string | null>(null);
@@ -486,6 +490,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 const res = await updateSalesEstimateStatus(id, newStatus);
                 if (res.success) {
                     setEstimates(estimates.map((e: any) => e.id === id ? { ...e, status: newStatus } : e));
+                    setQuickViewEstimate((prev: any) => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
                 } else toast.error(res.error);
             }
         });
@@ -727,6 +732,19 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                 </select>
                             </div>
                         )}
+                        <button
+                            type="button"
+                            onClick={() => setShowAnalytics(!showAnalytics)}
+                            className={`inline-flex items-center gap-1.5 h-[34px] px-3 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                                showAnalytics
+                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                            title="Bật/tắt biểu đồ phân tích báo giá"
+                        >
+                            <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
+                            <span>Biểu đồ phân tích</span>
+                        </button>
                         <Button
                             onClick={handleOpenCreate}
                             className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
@@ -736,6 +754,13 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                         </Button>
                     </div>
                 </div>
+
+                {/* Visual Analytics Bar */}
+                {showAnalytics && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <SalesEstimateAnalyticsBar estimates={estimates} />
+                    </div>
+                )}
 
                 <style dangerouslySetInnerHTML={{ __html: premiumCSS }} />
                 {/* Filter Cards */}
@@ -848,9 +873,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                         <td className="py-3 px-3">
                                             <div className="flex items-center gap-1.5">
                                                 <FileText size={15} className={`text-emerald-600 ${isExpired ? 'text-slate-400' : ''}`} />
-                                                <Link href={`/sales/estimates/${est.id}`} className={`font-semibold hover:text-emerald-700 hover:underline transition-colors block text-xs ${isExpired ? 'text-slate-500' : 'text-slate-900'}`}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setQuickViewEstimate(est)}
+                                                    className={`font-semibold hover:text-emerald-700 hover:underline transition-colors block text-xs text-left cursor-pointer ${isExpired ? 'text-slate-500' : 'text-slate-900'}`}
+                                                    title="Xem nhanh Báo giá (trượt từ bên phải)"
+                                                >
                                                     {est.code}
-                                                </Link>
+                                                </button>
                                             </div>
                                         </td>
                                         <td className="py-3 px-3">
@@ -926,8 +956,22 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                     <button onClick={() => handleCopy(est)} title={t('estimates.copy')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer">
                                                         <Copy size={14} />
                                                     </button>
-                                                    <Link href={`/sales/estimates/${est.id}`} title={t('estimates.viewDetails')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
-                                                        <Eye size={14} />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setQuickViewEstimate(est)}
+                                                        title="Xem nhanh Báo giá (trượt từ bên phải)"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs shrink-0"
+                                                    >
+                                                        <Eye size={13} />
+                                                        <span>Xem nhanh</span>
+                                                    </button>
+                                                    <Link
+                                                        href={`/sales/estimates/${est.id}`}
+                                                        title="Xem chi tiết đầy đủ"
+                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all shrink-0"
+                                                    >
+                                                        <ExternalLink size={13} />
+                                                        <span>Chi tiết</span>
                                                     </Link>
                                                     <Link href={`/print/sales/estimate/${est.id}`} target="_blank" title={t('estimates.printPdf')} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
                                                         <Download size={14} />
@@ -1391,6 +1435,24 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                     </div>
                 </div>
             </Modal>
+            {/* Quick View Drawer */}
+            <SalesEstimateQuickViewDrawer
+                isOpen={!!quickViewEstimate}
+                onClose={() => setQuickViewEstimate(null)}
+                estimate={quickViewEstimate}
+                onStatusChange={(id: string, newStatus: string) => handleStatusChange(id, newStatus)}
+                onEdit={(est: any) => {
+                    setQuickViewEstimate(null);
+                    handleEdit(est);
+                }}
+                onCopy={(est: any) => {
+                    setQuickViewEstimate(null);
+                    handleCopy(est);
+                }}
+                onConvertToOrder={(id: string) => setConvertOrderModalId(id)}
+                onConvertToInvoice={(id: string) => setConvertModalId(id)}
+            />
+
             {/* Convert Modal */}
             <Modal isOpen={!!convertModalId} onClose={() => !isConverting && setConvertModalId(null)} title="Xác nhận Lên Hóa Đơn">
                 <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
