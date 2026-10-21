@@ -775,6 +775,9 @@ async function main() {
     await addColumnIfNotExists('Lead', 'score', 'INT NOT NULL DEFAULT 0');
     await addColumnIfNotExists('Lead', 'temperature', "VARCHAR(191) NOT NULL DEFAULT 'COLD'");
 
+    // 4e. User customizable dashboard configuration
+    await addColumnIfNotExists('User', 'dashboardConfig', 'TEXT NULL');
+
     // 9b. Seed enterprise business email templates (12 templates)
     try {
         const { seedBusinessEmailTemplates } = require('./seed-business-email-templates');
