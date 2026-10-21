@@ -508,8 +508,14 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
 
                             {sortedTransactions.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
-                                        Không tìm thấy chứng từ thu / chi nào phù hợp với bộ lọc.
+                                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <Wallet size={18} />
+                                            </div>
+                                            <p className="text-xs font-semibold text-slate-700">Chưa có chứng từ thu / chi nào phù hợp</p>
+                                            <p className="text-[11px] text-slate-400">Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh khoảng thời gian lọc sổ quỹ</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

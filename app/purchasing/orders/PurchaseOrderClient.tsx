@@ -580,8 +580,14 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {paginatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="p-8 text-center text-slate-500 font-medium text-[13px]">
-                                    {t('purchaseOrders.noOrdersFound')}
+                                <td colSpan={6} className="py-12 text-center text-slate-400">
+                                    <div className="flex flex-col items-center justify-center gap-2">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <ShoppingCart size={18} />
+                                        </div>
+                                        <p className="text-xs font-semibold text-slate-700">{t('purchaseOrders.noOrdersFound') || 'Không tìm thấy đơn đặt mua phù hợp'}</p>
+                                        <p className="text-[11px] text-slate-400">Thử thay đổi từ khóa hoặc điều chỉnh bộ lọc tìm kiếm</p>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
