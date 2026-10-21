@@ -14,6 +14,7 @@ import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
+import { PurchaseBillAnalyticsBar } from './PurchaseBillAnalyticsBar';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products, projects }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[], projects?: any[] }) {
     const { t } = useTranslation();
@@ -718,6 +719,9 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                     <div className="text-[11px] font-medium text-emerald-600 mt-0.5">{t('purchaseBills.completed')}</div>
                 </div>
             </div>
+
+            {/* Purchase Bill Analytics & Charts Bar */}
+            <PurchaseBillAnalyticsBar bills={bills} />
 
             {/* Main Data Table Container */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">

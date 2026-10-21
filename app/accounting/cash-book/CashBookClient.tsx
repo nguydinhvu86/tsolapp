@@ -14,6 +14,7 @@ import {
 import { getCashTransactions, deleteCashTransaction } from '../actions';
 import CreateTransactionModal from './CreateTransactionModal';
 import PrintTransactionModal from './PrintTransactionModal';
+import { CashBookAnalyticsBar } from './CashBookAnalyticsBar';
 
 type CashBookSortField = 'code' | 'date' | 'type' | 'payerReceiver' | 'reason' | 'account' | 'partner' | 'amount';
 type SortOrder = 'asc' | 'desc';
@@ -303,6 +304,12 @@ export default function CashBookClient({ initialData, companyInfo }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Cash Book Analytics & Charts Bar */}
+            <CashBookAnalyticsBar 
+                transactions={data.transactions} 
+                accounts={data.accounts} 
+            />
 
             {/* Filter Bar */}
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">

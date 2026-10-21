@@ -9,6 +9,7 @@ import {
     Calendar, X
 } from 'lucide-react';
 import PrintDebtStatementModal from './PrintDebtStatementModal';
+import { DebtAnalyticsBar } from './DebtAnalyticsBar';
 import { getDebtOverviewData } from '../actions';
 
 type SortOption = 
@@ -448,6 +449,9 @@ export default function DebtClient({
                     </div>
                 </div>
             </div>
+
+            {/* Debt Aging & Top Debtor Analytics Chart Bar */}
+            <DebtAnalyticsBar partnerDebts={currentList} tab={tab} />
 
             {/* Reconciliation Period & Filter Toolbar */}
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
