@@ -4,6 +4,7 @@ import React from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, Menu } from 'lucide-react';
 import Link from 'next/link';
+import { confirmModal } from '../providers/ConfirmProvider';
 import { NotificationBell } from '../ui/NotificationBell';
 import { GlobalSearch } from './GlobalSearch';
 import { QuickCreateMenu } from './QuickCreateMenu';
@@ -78,6 +79,15 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
                 <div
                     onClick={async () => {
+                        const confirmed = await confirmModal({
+                            title: 'Xác nhận đăng xuất',
+                            message: 'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống T-SOLUTION không?',
+                            confirmText: 'Đăng xuất',
+                            cancelText: 'Ở lại',
+                            variant: 'danger'
+                        });
+                        if (!confirmed) return;
+
                         try {
                             const { logUserLogout } = await import('@/app/actions/auth');
                             await logUserLogout();
