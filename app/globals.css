@@ -41,10 +41,26 @@ html {
     letter-spacing: -0.012em;
 }
 
-* {
+*,
+::before,
+::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-ring-inset: ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgb(5 150 105 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
 }
 
 body {
@@ -98,6 +114,12 @@ button {
     background: none;
     border: none;
     cursor: pointer;
+    font-family: inherit;
+}
+
+input,
+select,
+textarea {
     font-family: inherit;
 }
 

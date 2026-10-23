@@ -1,16 +1,15 @@
 'use client'
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect } from 'react';
 import { ContractTemplate, Customer } from '@prisma/client';
-import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { DynamicTableBuilder } from '@/app/components/ui/DynamicTableBuilder';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { createContract } from '../actions';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, FileText } from 'lucide-react';
 
 export function NewContractClient({ templates, customers, projects, preselectedCustomerId, preselectedProjectId }: { templates: ContractTemplate[], customers: Customer[], projects: any[], preselectedCustomerId?: string, preselectedProjectId?: string }) {
     const router = useRouter();
@@ -147,19 +146,21 @@ export function NewContractClient({ templates, customers, projects, preselectedC
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 font-sans text-slate-800">
             {/* Header / Breadcrumb */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-                <div className="flex items-center gap-3">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
                     <button
+                        type="button"
                         onClick={() => router.back()}
-                        className="w-9 h-9 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-xs"
+                        className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                        title="Quay lại"
                     >
-                        ←
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tạo Hợp Đồng Mới</h1>
-                        <p className="text-xs text-slate-500 mt-0.5">Lựa chọn mẫu, khách hàng và tự động tạo nội dung hợp đồng chuẩn hóa.</p>
+                        <h1 className="text-[20px] font-bold text-slate-900 tracking-tight m-0">Tạo Hợp Đồng Mới</h1>
+                        <p className="text-[13px] text-slate-500 mt-0.5">Lựa chọn mẫu, khách hàng và tự động tạo nội dung hợp đồng chuẩn hóa</p>
                     </div>
                 </div>
             </div>
@@ -167,17 +168,17 @@ export function NewContractClient({ templates, customers, projects, preselectedC
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 {/* Left Form: Basic Info + Variables */}
                 <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5">
                         <div className="flex items-center gap-2.5 pb-4 mb-4 border-b border-slate-100">
-                            <span className="w-6 h-6 rounded-md bg-emerald-50 text-[var(--primary)] font-bold text-xs flex items-center justify-center border border-emerald-200/60">
+                            <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-[13px] flex items-center justify-center border border-emerald-200/80">
                                 1
                             </span>
-                            <h3 className="text-sm font-semibold text-slate-900">Thông tin cơ bản</h3>
+                            <h3 className="text-[15px] font-bold text-slate-900 m-0">Thông tin cơ bản</h3>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                                     Tiêu Đề Hợp Đồng
                                 </label>
                                 <Input
@@ -189,12 +190,12 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                                     Chọn Mẫu Hợp Đồng <span className="text-rose-500">*</span>
                                 </label>
-                                <select 
-                                    className="w-full h-[34px] text-xs font-medium px-2.5 py-1 bg-slate-50/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-slate-800 transition-all cursor-pointer"
-                                    value={templateId} 
+                                <select
+                                    className="w-full h-[38px] text-[13px] font-medium px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-800 transition-all cursor-pointer"
+                                    value={templateId}
                                     onChange={e => setTemplateId(e.target.value)}
                                 >
                                     <option value="">-- Chọn một mẫu hợp đồng --</option>
@@ -203,7 +204,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                                     Chọn Khách Hàng <span className="text-rose-500">*</span>
                                 </label>
                                 <SearchableSelect
@@ -215,7 +216,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
                                     Dự Án Liên Kết <span className="text-slate-400 font-normal">(Tùy chọn)</span>
                                 </label>
                                 <SearchableSelect
@@ -229,15 +230,15 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                     </div>
 
                     {selectedTemplate && (
-                        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
+                        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5">
                             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
                                 <div className="flex items-center gap-2.5">
-                                    <span className="w-6 h-6 rounded-md bg-emerald-50 text-[var(--primary)] font-bold text-xs flex items-center justify-center border border-emerald-200/60">
+                                    <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-[13px] flex items-center justify-center border border-emerald-200/80">
                                         2
                                     </span>
-                                    <h3 className="text-sm font-semibold text-slate-900">Điền thông tin biến động</h3>
+                                    <h3 className="text-[15px] font-bold text-slate-900 m-0">Điền thông tin biến động</h3>
                                 </div>
-                                <span className="text-[11px] font-medium text-slate-400">
+                                <span className="text-[12px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
                                     {Object.keys(variables).length} trường dữ liệu
                                 </span>
                             </div>
@@ -248,7 +249,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
 
                                     return (
                                         <div key={key} className="space-y-1.5">
-                                            <label className={`block text-xs font-semibold ${isTableType ? 'text-[var(--primary)] flex items-center gap-1.5' : 'text-slate-700'}`}>
+                                            <label className={`block text-[13px] font-semibold ${isTableType ? 'text-emerald-700 flex items-center gap-1.5' : 'text-slate-700'}`}>
                                                 {isTableType ? (
                                                     <>
                                                         <span className="text-sm">📊</span> Bảng tính: <span className="font-mono">{key}</span>
@@ -258,7 +259,7 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                                                 )}
                                             </label>
                                             {isTableType ? (
-                                                <div className="p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                                                <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-200">
                                                     <DynamicTableBuilder
                                                         value={variables[key]}
                                                         onChange={(html) => setVariables({ ...variables, [key]: html })}
@@ -278,12 +279,12 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                                 })}
 
                                 {Object.keys(variables).length === 0 && (
-                                    <p className="text-xs text-slate-400 italic text-center py-4">Mẫu này không có biến động nào cần điền.</p>
+                                    <p className="text-[13px] text-slate-400 italic text-center py-4">Mẫu này không có biến động nào cần điền.</p>
                                 )}
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-slate-100">
-                                <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-2.5 shadow-sm">
+                                <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-2.5 text-[13.5px] shadow-sm">
                                     {isSubmitting ? 'Đang khởi tạo hợp đồng...' : 'Tạo Hợp Đồng'}
                                 </Button>
                             </div>
@@ -293,19 +294,19 @@ export function NewContractClient({ templates, customers, projects, preselectedC
 
                 {/* Right: Realistic A4 Preview */}
                 <div className="lg:col-span-7 sticky top-20">
-                    <div className="bg-slate-100/70 border border-slate-200 rounded-xl p-4 sm:p-6 shadow-xs">
-                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/80">
+                    <div className="bg-slate-100/80 border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-xs">
+                        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80">
                             <div className="flex items-center gap-2">
                                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Xem trước Hợp đồng (A4)</h3>
+                                <h3 className="text-[12.5px] font-bold text-slate-700 uppercase tracking-wider m-0">Xem trước Hợp đồng (A4)</h3>
                             </div>
-                            <span className="text-[11px] font-medium text-slate-500 bg-white px-2.5 py-0.5 rounded-full border border-slate-200 shadow-2xs">
+                            <span className="text-[12px] font-medium text-slate-600 bg-white px-3 py-0.5 rounded-full border border-slate-200 shadow-2xs">
                                 Bản xem trước thời gian thực
                             </span>
                         </div>
 
                         {previewContent ? (
-                            <div className="overflow-y-auto max-h-[calc(100vh-220px)] rounded-lg shadow-sm border border-slate-200 bg-white p-6 sm:p-10">
+                            <div className="overflow-y-auto max-h-[calc(100vh-220px)] rounded-xl shadow-sm border border-slate-200 bg-white p-6 sm:p-10">
                                 <div
                                     className="ql-editor"
                                     style={{ fontFamily: '"Times New Roman", Times, serif', lineHeight: 1.7, fontSize: '14px', color: '#1e293b' }}
@@ -313,12 +314,12 @@ export function NewContractClient({ templates, customers, projects, preselectedC
                                 />
                             </div>
                         ) : (
-                            <div className="bg-white/80 border border-dashed border-slate-300 rounded-lg p-16 text-center">
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-3 text-xl">
-                                    📄
+                            <div className="bg-white/90 border border-dashed border-slate-300 rounded-xl p-16 text-center">
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-3">
+                                    <FileText size={22} />
                                 </div>
-                                <p className="text-xs font-semibold text-slate-600">Chưa chọn mẫu hợp đồng</p>
-                                <p className="text-[11px] text-slate-400 mt-1">Vui lòng chọn mẫu hợp đồng ở khung bên trái để hiển thị xem trước.</p>
+                                <p className="text-[14px] font-semibold text-slate-700">Chưa chọn mẫu hợp đồng</p>
+                                <p className="text-[13px] text-slate-400 mt-1">Vui lòng chọn mẫu hợp đồng ở khung bên trái để hiển thị xem trước.</p>
                             </div>
                         )}
                     </div>

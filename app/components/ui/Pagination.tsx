@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export interface PaginationProps {
@@ -22,11 +22,11 @@ export function Pagination({
     if (totalItems === 0) return null;
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200/80 px-4 py-3 sm:px-6 bg-slate-50/40 rounded-b-xl gap-3">
-            <div className="flex items-center text-xs text-slate-500 mb-2 sm:mb-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200/80 px-4 py-3.5 sm:px-6 bg-slate-50/50 rounded-b-xl gap-3">
+            <div className="flex items-center text-[13px] text-slate-600 mb-2 sm:mb-0">
                 <span className="mr-2 hidden sm:inline font-medium">Hiển thị</span>
                 <select
-                    className="border border-slate-300 rounded-md text-xs py-1 px-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-slate-700 bg-white cursor-pointer font-medium shadow-xs"
+                    className="border border-slate-200 rounded-lg text-[13px] py-1 px-2.5 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-slate-700 bg-white cursor-pointer font-medium shadow-xs transition-all"
                     value={itemsPerPage}
                     onChange={(e) => {
                         const val = parseInt(e.target.value);
@@ -34,12 +34,13 @@ export function Pagination({
                     }}
                 >
                     <option value={15}>15 dòng</option>
+                    <option value={20}>20 dòng</option>
                     <option value={25}>25 dòng</option>
                     <option value={50}>50 dòng</option>
                     <option value={100}>100 dòng</option>
                     <option value={999999}>Tất cả</option>
                 </select>
-                <span className="ml-3 font-normal">
+                <span className="ml-3 font-normal text-slate-500">
                     Đang xem <span className="font-semibold text-slate-800">{Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}</span> - <span className="font-semibold text-slate-800">{Math.min(currentPage * itemsPerPage, totalItems)}</span> / <span className="font-semibold text-slate-800">{totalItems}</span>
                 </span>
             </div>
@@ -48,7 +49,7 @@ export function Pagination({
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1}
-                    className="p-1.5 rounded-md border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
                     title="Trang đầu"
                 >
                     <ChevronsLeft size={15} />
@@ -56,20 +57,20 @@ export function Pagination({
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="p-1.5 rounded-md border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
                     title="Trang trước"
                 >
                     <ChevronLeft size={15} />
                 </button>
 
-                <div className="px-3 text-xs font-semibold text-slate-700 select-none bg-white py-1 rounded-md border border-slate-200 shadow-xs">
+                <div className="px-3 text-[13px] font-semibold text-slate-700 select-none bg-white py-1 rounded-lg border border-slate-200 shadow-xs tabular-nums">
                     {currentPage} / {totalPages > 0 ? totalPages : 1}
                 </div>
 
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="p-1.5 rounded-md border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
                     title="Trang sau"
                 >
                     <ChevronRight size={15} />
@@ -77,7 +78,7 @@ export function Pagination({
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="p-1.5 rounded-md border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs"
                     title="Trang cuối"
                 >
                     <ChevronsRight size={15} />
@@ -88,8 +89,6 @@ export function Pagination({
 }
 
 // Hook hỗ trợ chia trang
-import { useState, useMemo } from 'react';
-
 export function usePagination<T>(items: T[], defaultItemsPerPage: number = 25) {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);

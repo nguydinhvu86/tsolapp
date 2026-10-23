@@ -3,21 +3,41 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import { Contract, Customer, ContractTemplate } from '@prisma/client';
-import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
-import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { deleteContract, updateContractStatus, updateContract } from './actions';
-import { Plus, Trash2, Search, Edit2, Eye, ChevronUp, ChevronDown, ArrowUpDown, X, Copy, FileText, CheckCircle, ExternalLink } from 'lucide-react';
+import {
+    Plus,
+    Trash2,
+    Search,
+    Edit2,
+    Eye,
+    ChevronUp,
+    ChevronDown,
+    ArrowUpDown,
+    X,
+    Copy,
+    Check,
+    FileText,
+    CheckCircle2,
+    ExternalLink,
+    Building2,
+    Calendar,
+    FileCode,
+    Send,
+    Clock,
+    Layers,
+    FileSpreadsheet
+} from 'lucide-react';
 import { ContractQuickViewDrawer } from './ContractQuickViewDrawer';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from '@/app/i18n/LanguageContext';
-import { useToast, toast } from '@/app/components/providers/ToastProvider';
-import { useConfirm, confirmModal } from '@/app/components/providers/ConfirmProvider';
+import { toast } from '@/app/components/providers/ToastProvider';
+import { confirmModal } from '@/app/components/providers/ConfirmProvider';
 
 type ContractWithRelations = Contract & { customer: Customer, template: ContractTemplate };
 
@@ -34,33 +54,53 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [templateFilter, setTemplateFilter] = useState('');
     const [editingContract, setEditingContract] = useState<ContractWithRelations | null>(null);
     const [quickViewContract, setQuickViewContract] = useState<ContractWithRelations | null>(null);
     const [editContent, setEditContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [sortField, setSortField] = useState('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const stats = useMemo(() => {
-        let total = initialData.length;
+        const total = initialData.length;
         let draft = 0;
         let sent = 0;
         let signed = 0;
+        let cancelled = 0;
         initialData.forEach(c => {
             if (c.status === 'DRAFT') draft++;
-            if (c.status === 'SENT') sent++;
-            if (c.status === 'SIGNED') signed++;
+            else if (c.status === 'SENT') sent++;
+            else if (c.status === 'SIGNED') signed++;
+            else if (c.status === 'CANCELLED') cancelled++;
         });
-        return { total, draft, sent, signed };
+        return { total, draft, sent, signed, cancelled };
+    }, [initialData]);
+
+    const templateOptions = useMemo(() => {
+        const map = new Map<string, string>();
+        initialData.forEach(c => {
+            if (c.template?.id && c.template?.name) {
+                map.set(c.template.id, c.template.name);
+            }
+        });
+        return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
     }, [initialData]);
 
     const filteredData = useMemo(() => {
+        const kw = searchTerm.trim().toLowerCase();
         return initialData.filter(c => {
-            const matchSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchSearch =
+                !kw ||
+                c.title.toLowerCase().includes(kw) ||
+                (c.customer?.name && c.customer.name.toLowerCase().includes(kw)) ||
+                (c.template?.name && c.template.name.toLowerCase().includes(kw));
             const matchStatus = statusFilter ? c.status === statusFilter : true;
-            return matchSearch && matchStatus;
+            const matchTemplate = templateFilter ? c.templateId === templateFilter : true;
+            return matchSearch && matchStatus && matchTemplate;
         });
-    }, [initialData, searchTerm, statusFilter]);
+    }, [initialData, searchTerm, statusFilter, templateFilter]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -85,7 +125,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
             }
 
             if (typeof aVal === 'string' && typeof bVal === 'string') {
-                return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                return sortOrder === 'asc' ? aVal.localeCompare(bVal, 'vi') : bVal.localeCompare(aVal, 'vi');
             }
             if (aVal instanceof Date || bVal instanceof Date || sortField === 'createdAt') {
                 const dateA = new Date(aVal).getTime() || 0;
@@ -96,7 +136,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
         });
     }, [filteredData, sortField, sortOrder]);
 
-    const { paginatedItems, paginationProps } = usePagination(sortedData, 20);
+    const { paginatedItems, paginationProps } = usePagination(sortedData, 15);
 
     const handleDelete = async (id: string) => {
         if (await confirmModal(t('contractDashboard.confirmDelete'))) {
@@ -130,231 +170,547 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
         }
     };
 
+    const handleCopyLink = (id: string) => {
+        const url = `${window.location.origin}/public/contracts/${id}`;
+        navigator.clipboard.writeText(url);
+        setCopiedId(id);
+        toast.success('Đã sao chép liên kết xem trước', url);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
+
+    const getStatusStyle = (status: string) => {
+        switch (status) {
+            case 'SIGNED':
+                return {
+                    bg: '#ecfdf5',
+                    color: '#047857',
+                    border: '#a7f3d0',
+                    iconBg: '#d1fae5',
+                    iconColor: '#059669'
+                };
+            case 'SENT':
+                return {
+                    bg: '#f0f9ff',
+                    color: '#0369a1',
+                    border: '#bae6fd',
+                    iconBg: '#e0f2fe',
+                    iconColor: '#0284c7'
+                };
+            case 'CANCELLED':
+                return {
+                    bg: '#fff1f2',
+                    color: '#be123c',
+                    border: '#fecdd3',
+                    iconBg: '#ffe4e6',
+                    iconColor: '#e11d48'
+                };
+            default:
+                return {
+                    bg: '#fffbeb',
+                    color: '#b45309',
+                    border: '#fde68a',
+                    iconBg: '#fef3c7',
+                    iconColor: '#d97706'
+                };
+        }
+    };
+
+    const pageHeading =
+        t('contractDashboard.pageTitle') !== 'contractDashboard.pageTitle'
+            ? t('contractDashboard.pageTitle')
+            : 'Quản lý Hợp đồng';
+
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('contractDashboard.title')}</h1>
-                    <p className="text-sm text-slate-500 mt-1">Quản lý các hợp đồng mẫu, hợp đồng khách hàng và trạng thái ký kết</p>
+        <div className="space-y-5 font-sans text-slate-800">
+            {/* 1. Executive Header Card */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                    <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                        style={{
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            color: '#ffffff'
+                        }}
+                    >
+                        <FileText size={22} strokeWidth={2} />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-[20px] font-bold text-slate-900 tracking-tight leading-snug m-0">
+                                {pageHeading}
+                            </h1>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 tabular-nums">
+                                {stats.total} hợp đồng
+                            </span>
+                        </div>
+                        <p className="text-[13px] text-slate-500 mt-0.5 font-normal">
+                            Quản lý các hợp đồng mẫu, hợp đồng khách hàng và trạng thái ký kết
+                        </p>
+                    </div>
                 </div>
-                {canCreate && (
-                    <Link href="/contracts/new">
-                        <Button className="gap-2 shadow-sm">
-                            <Plus size={18} /> {t('contractDashboard.createContract')}
-                        </Button>
+
+                <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                    <Link
+                        href="/templates"
+                        className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl text-[13px] font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 transition-all"
+                    >
+                        <FileCode size={15} className="text-slate-500" />
+                        <span>Mẫu hợp đồng</span>
                     </Link>
-                )}
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                    onClick={() => setStatusFilter('')}
-                    className={`stat-card stat-card-purple cursor-pointer transition-all ${statusFilter === '' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
-                >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tất cả hợp đồng</div>
-                    <div className="stat-value text-2xl font-black text-slate-900">{stats.total}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Tổng số hợp đồng</div>
-                </div>
-
-                <div
-                    onClick={() => setStatusFilter(statusFilter === 'DRAFT' ? '' : 'DRAFT')}
-                    className={`stat-card stat-card-amber cursor-pointer transition-all ${statusFilter === 'DRAFT' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
-                >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{t('contractDashboard.statusDraft')}</div>
-                    <div className="stat-value text-2xl font-black text-amber-600">{stats.draft}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Bản thảo chưa gửi</div>
-                </div>
-
-                <div
-                    onClick={() => setStatusFilter(statusFilter === 'SENT' ? '' : 'SENT')}
-                    className={`stat-card stat-card-blue cursor-pointer transition-all ${statusFilter === 'SENT' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
-                >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{t('contractDashboard.statusSent')}</div>
-                    <div className="stat-value text-2xl font-black text-blue-600">{stats.sent}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Chờ khách hàng ký</div>
-                </div>
-
-                <div
-                    onClick={() => setStatusFilter(statusFilter === 'SIGNED' ? '' : 'SIGNED')}
-                    className={`stat-card stat-card-green cursor-pointer transition-all ${statusFilter === 'SIGNED' ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md' : 'hover:-translate-y-0.5'}`}
-                >
-                    <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{t('contractDashboard.statusSigned')}</div>
-                    <div className="stat-value text-2xl font-black text-emerald-600">{stats.signed}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">Đã hoàn tất ký</div>
-                </div>
-            </div>
-
-            {/* Filter Ribbon */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-sm flex gap-3 items-center flex-wrap">
-                <div className="flex-1 min-w-[240px] relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                        type="text"
-                        placeholder={t('contractDashboard.searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full h-9 pl-9 pr-8 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-800 placeholder:text-slate-400 transition-all font-medium"
-                    />
-                    {searchTerm && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/60"
+                    <Link
+                        href="/contract-appendices"
+                        className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl text-[13px] font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 transition-all"
+                    >
+                        <FileSpreadsheet size={15} className="text-slate-500" />
+                        <span>Phụ lục HĐ</span>
+                    </Link>
+                    {canCreate && (
+                        <Link
+                            href="/contracts/new"
+                            className="inline-flex items-center gap-2 h-[38px] px-4 rounded-xl text-[13px] font-semibold text-white shadow-xs transition-all hover:opacity-95 active:scale-[0.99]"
+                            style={{ backgroundColor: '#059669' }}
                         >
-                            <X size={14} />
-                        </button>
+                            <Plus size={17} strokeWidth={2.5} />
+                            <span>{t('contractDashboard.createContract')}</span>
+                        </Link>
                     )}
                 </div>
-
-                <select
-                    className="h-9 px-3 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500 text-slate-700 font-medium cursor-pointer"
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                >
-                    <option value="">{t('contractDashboard.statusAll')}</option>
-                    <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
-                    <option value="SENT">{t('contractDashboard.statusSent')}</option>
-                    <option value="SIGNED">{t('contractDashboard.statusSigned')}</option>
-                    <option value="CANCELLED">{t('contractDashboard.statusCancelled')}</option>
-                </select>
             </div>
 
-            {/* Table */}
-            <div className="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th onClick={() => handleSort('title')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                <div className="flex items-center gap-1">{t('contractDashboard.title')} {sortField === 'title' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
-                            </th>
-                            <th onClick={() => handleSort('templateName')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                <div className="flex items-center gap-1">{t('contractDashboard.templateName')} {sortField === 'templateName' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
-                            </th>
-                            <th onClick={() => handleSort('customerName')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                <div className="flex items-center gap-1">{t('contractDashboard.customerName')} {sortField === 'customerName' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
-                            </th>
-                            <th onClick={() => handleSort('status')} className="cursor-pointer hover:bg-slate-100/80 text-center text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                <div className="flex items-center justify-center gap-1">{t('contractDashboard.status')} {sortField === 'status' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
-                            </th>
-                            <th onClick={() => handleSort('createdAt')} className="cursor-pointer hover:bg-slate-100/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                <div className="flex items-center gap-1">{t('contractDashboard.createdAt')} {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ArrowUpDown size={13} className="text-slate-400" />}</div>
-                            </th>
-                            <th className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-600 w-[160px]">{t('contractDashboard.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {paginatedItems.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="p-8 text-center text-slate-500 font-medium text-[13px]">
-                                    {t('contractDashboard.noContracts')}
-                                </td>
-                            </tr>
-                        ) : paginatedItems.map(c => (
-                            <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                                <td className="p-3 text-[13px]">
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuickViewContract(c)}
-                                        className="text-left font-semibold text-slate-900 hover:text-emerald-600 transition-colors cursor-pointer"
-                                        title="Nhấn để xem nhanh"
-                                    >
-                                        {c.title}
-                                    </button>
-                                </td>
-                                <td className="p-3 text-[13px] text-slate-600 dark:text-slate-300">{c.template.name}</td>
-                                <td className="p-3 text-[13px]">
-                                    <Link href={`/customers/${c.customer.id}`} className="font-medium text-slate-700 hover:text-emerald-600 transition-colors">
-                                        {c.customer.name}
-                                    </Link>
-                                </td>
-                                <td className="p-3 text-center">
-                                    <select
-                                        className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 border cursor-pointer focus:outline-none transition-colors"
-                                        style={{
-                                            background: c.status === 'SIGNED' ? '#ecfdf5' : c.status === 'CANCELLED' ? '#fef2f2' : c.status === 'SENT' ? '#eff6ff' : '#f8fafc',
-                                            color: c.status === 'SIGNED' ? '#047857' : c.status === 'CANCELLED' ? '#b91c1c' : c.status === 'SENT' ? '#1d4ed8' : '#475569',
-                                            borderColor: c.status === 'SIGNED' ? '#a7f3d0' : c.status === 'CANCELLED' ? '#fecaca' : c.status === 'SENT' ? '#bfdbfe' : '#e2e8f0',
-                                            opacity: canEdit ? 1 : 0.7,
-                                        }}
-                                        value={c.status}
-                                        onChange={(e) => handleStatusChange(c.id, e.target.value)}
-                                        disabled={!canEdit}
-                                    >
-                                        <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
-                                        <option value="SENT">{t('contractDashboard.statusSent')}</option>
-                                        <option value="SIGNED">{t('contractDashboard.statusSigned')}</option>
-                                        <option value="CANCELLED">{t('contractDashboard.statusCancelled')}</option>
-                                    </select>
-                                </td>
-                                <td className="p-3 text-slate-500 text-xs" suppressHydrationWarning>{formatDate(new Date(c.createdAt))}</td>
-                                <td className="p-3">
-                                    <div className="flex items-center justify-center gap-1">
-                                        {/* XEM NHANH: DRAWER */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setQuickViewContract(c)}
-                                            className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                                            title="Xem nhanh (Drawer)"
-                                        >
-                                            <Eye size={16} />
-                                        </button>
+            {/* 2. Balanced KPI Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Card 1: Total */}
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter('')}
+                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
+                    style={{
+                        background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                        border: statusFilter === '' ? '2px solid #9333ea' : '1px solid #e9d5ff',
+                        boxShadow: statusFilter === '' ? '0 4px 12px rgba(147, 51, 234, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
+                    }}
+                >
+                    <div className="min-w-0">
+                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#7e22ce' }}>
+                            Tất cả hợp đồng
+                        </div>
+                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#581c87' }}>
+                            {stats.total}
+                        </div>
+                        <div className="text-[12px] font-medium text-slate-500">
+                            Tổng số hợp đồng hệ thống
+                        </div>
+                    </div>
+                    <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: 'rgba(147, 51, 234, 0.12)', color: '#7e22ce' }}
+                    >
+                        <Layers size={21} strokeWidth={2} />
+                    </div>
+                </button>
 
-                                        {/* XEM CHI TIẾT: FULL PAGE */}
-                                        <Link href={`/contracts/${c.id}`}>
-                                            <button
-                                                type="button"
-                                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                                title="Mở chi tiết & in hợp đồng"
-                                            >
-                                                <ExternalLink size={15} />
-                                            </button>
-                                        </Link>
+                {/* Card 2: Draft */}
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter(statusFilter === 'DRAFT' ? '' : 'DRAFT')}
+                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
+                    style={{
+                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                        border: statusFilter === 'DRAFT' ? '2px solid #d97706' : '1px solid #fde68a',
+                        boxShadow: statusFilter === 'DRAFT' ? '0 4px 12px rgba(217, 119, 6, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
+                    }}
+                >
+                    <div className="min-w-0">
+                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#b45309' }}>
+                            {t('contractDashboard.statusDraft')}
+                        </div>
+                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#92400e' }}>
+                            {stats.draft}
+                        </div>
+                        <div className="text-[12px] font-medium text-slate-500">
+                            Bản thảo chưa gửi khách
+                        </div>
+                    </div>
+                    <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: 'rgba(217, 119, 6, 0.12)', color: '#b45309' }}
+                    >
+                        <Clock size={21} strokeWidth={2} />
+                    </div>
+                </button>
 
-                                        {/* SỬA */}
-                                        {canEdit && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEditClick(c)}
-                                                className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                                                title={t('contractDashboard.editContent')}
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                        )}
+                {/* Card 3: Sent */}
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter(statusFilter === 'SENT' ? '' : 'SENT')}
+                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
+                    style={{
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        border: statusFilter === 'SENT' ? '2px solid #0284c7' : '1px solid #bae6fd',
+                        boxShadow: statusFilter === 'SENT' ? '0 4px 12px rgba(2, 132, 199, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
+                    }}
+                >
+                    <div className="min-w-0">
+                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#0369a1' }}>
+                            {t('contractDashboard.statusSent')}
+                        </div>
+                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#075985' }}>
+                            {stats.sent}
+                        </div>
+                        <div className="text-[12px] font-medium text-slate-500">
+                            Đang chờ khách hàng ký
+                        </div>
+                    </div>
+                    <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: 'rgba(2, 132, 199, 0.12)', color: '#0284c7' }}
+                    >
+                        <Send size={20} strokeWidth={2} />
+                    </div>
+                </button>
 
-                                        {/* COPY LINK */}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const url = `${window.location.origin}/public/contracts/${c.id}`;
-                                                navigator.clipboard.writeText(url);
-                                                toast.success('Đã sao chép liên kết xem trước', url);
-                                            }}
-                                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                            title="Copy Link xem trước cho Khách hàng"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
+                {/* Card 4: Signed */}
+                <button
+                    type="button"
+                    onClick={() => setStatusFilter(statusFilter === 'SIGNED' ? '' : 'SIGNED')}
+                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
+                    style={{
+                        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                        border: statusFilter === 'SIGNED' ? '2px solid #059669' : '1px solid #a7f3d0',
+                        boxShadow: statusFilter === 'SIGNED' ? '0 4px 12px rgba(5, 150, 105, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
+                    }}
+                >
+                    <div className="min-w-0">
+                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#047857' }}>
+                            {t('contractDashboard.statusSigned')}
+                        </div>
+                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#065f46' }}>
+                            {stats.signed}
+                        </div>
+                        <div className="text-[12px] font-medium text-slate-500">
+                            Hợp đồng đã hoàn tất ký
+                        </div>
+                    </div>
+                    <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)', color: '#059669' }}
+                    >
+                        <CheckCircle2 size={21} strokeWidth={2} />
+                    </div>
+                </button>
+            </div>
 
-                                        {/* XÓA */}
-                                        {canDelete && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(c.id)}
-                                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                                title={t('contractDashboard.delete')}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+            {/* 3. Main Data Container (Toolbar + Table + Pagination) */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                {/* Filter & Search Ribbon */}
+                <div className="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    {/* Search Input (Flexbox aligned so icon never shifts) */}
+                    <div className="flex items-center flex-1 max-w-xl h-[38px] bg-white border border-slate-200/90 rounded-xl px-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all shadow-2xs">
+                        <Search size={16} className="text-slate-400 shrink-0 mr-2.5" />
+                        <input
+                            type="text"
+                            placeholder={t('contractDashboard.searchPlaceholder')}
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full h-full bg-transparent border-none outline-none text-[13px] text-slate-800 placeholder:text-slate-400 font-medium"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 shrink-0 ml-1"
+                                title="Xóa tìm kiếm"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right Filters: Template Select + Status Select + Reset */}
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        {templateOptions.length > 0 && (
+                            <select
+                                className="h-[38px] px-3 text-[13px] bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 font-medium cursor-pointer shadow-2xs"
+                                value={templateFilter}
+                                onChange={e => setTemplateFilter(e.target.value)}
+                            >
+                                <option value="">Tất cả loại mẫu ({templateOptions.length})</option>
+                                {templateOptions.map(tpl => (
+                                    <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                                ))}
+                            </select>
+                        )}
+
+                        <select
+                            className="h-[38px] px-3 text-[13px] bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 font-medium cursor-pointer shadow-2xs"
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value)}
+                        >
+                            <option value="">{t('contractDashboard.statusAll')} ({stats.total})</option>
+                            <option value="DRAFT">{t('contractDashboard.statusDraft')} ({stats.draft})</option>
+                            <option value="SENT">{t('contractDashboard.statusSent')} ({stats.sent})</option>
+                            <option value="SIGNED">{t('contractDashboard.statusSigned')} ({stats.signed})</option>
+                            <option value="CANCELLED">{t('contractDashboard.statusCancelled')} ({stats.cancelled})</option>
+                        </select>
+
+                        {(searchTerm || statusFilter || templateFilter) && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('');
+                                    setTemplateFilter('');
+                                }}
+                                className="h-[38px] px-3 rounded-xl text-[12.5px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 transition-colors"
+                            >
+                                Xóa lọc
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left">
+                        <thead>
+                            <tr className="bg-slate-50/90 border-b border-slate-200/80">
+                                <th
+                                    onClick={() => handleSort('title')}
+                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors min-w-[280px]"
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span>{t('contractDashboard.title')}</span>
+                                        {sortField === 'title' ? (
+                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown size={13} className="text-slate-300" />
                                         )}
                                     </div>
-                                </td>
+                                </th>
+                                <th
+                                    onClick={() => handleSort('templateName')}
+                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[180px]"
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span>{t('contractDashboard.templateName')}</span>
+                                        {sortField === 'templateName' ? (
+                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown size={13} className="text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    onClick={() => handleSort('customerName')}
+                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors min-w-[240px]"
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span>{t('contractDashboard.customerName')}</span>
+                                        {sortField === 'customerName' ? (
+                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown size={13} className="text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    onClick={() => handleSort('status')}
+                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-center text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[135px]"
+                                >
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <span>{t('contractDashboard.status')}</span>
+                                        {sortField === 'status' ? (
+                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown size={13} className="text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    onClick={() => handleSort('createdAt')}
+                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[130px]"
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span>{t('contractDashboard.createdAt')}</span>
+                                        {sortField === 'createdAt' ? (
+                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
+                                        ) : (
+                                            <ArrowUpDown size={13} className="text-slate-300" />
+                                        )}
+                                    </div>
+                                </th>
+                                <th className="py-3.5 px-4 text-center text-[11.5px] font-bold uppercase tracking-wider text-slate-500 w-[170px]">
+                                    {t('contractDashboard.actions')}
+                                </th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {paginatedItems.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="py-12 px-4 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <FileText size={20} />
+                                            </div>
+                                            <p className="text-[13.5px] font-semibold text-slate-700">
+                                                {t('contractDashboard.noContracts')}
+                                            </p>
+                                            <p className="text-[12.5px] text-slate-400">
+                                                Thử thay đổi bộ lọc hoặc tạo hợp đồng mới để bắt đầu
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                paginatedItems.map(c => {
+                                    const stStyle = getStatusStyle(c.status);
+                                    const isCopied = copiedId === c.id;
+
+                                    return (
+                                        <tr
+                                            key={c.id}
+                                            className="hover:bg-slate-50/80 transition-colors group"
+                                        >
+                                            {/* Col 1: Tên Hợp đồng */}
+                                            <td className="py-3.5 px-4 align-middle">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                                        style={{
+                                                            backgroundColor: stStyle.iconBg,
+                                                            color: stStyle.iconColor
+                                                        }}
+                                                    >
+                                                        <FileText size={16} strokeWidth={2} />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setQuickViewContract(c)}
+                                                        className="text-left text-[13.5px] font-semibold text-slate-800 group-hover:text-emerald-700 hover:underline transition-colors cursor-pointer leading-snug line-clamp-2"
+                                                        title="Nhấn để xem nhanh hợp đồng"
+                                                    >
+                                                        {c.title}
+                                                    </button>
+                                                </div>
+                                            </td>
+
+                                            {/* Col 2: Loại Mẫu */}
+                                            <td className="py-3.5 px-4 align-middle">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12.5px] font-medium bg-slate-100/90 text-slate-700 border border-slate-200/80 max-w-[180px] truncate">
+                                                    <FileCode size={13} className="text-slate-400 shrink-0" />
+                                                    <span className="truncate">{c.template?.name || 'Mặc định'}</span>
+                                                </span>
+                                            </td>
+
+                                            {/* Col 3: Khách hàng */}
+                                            <td className="py-3.5 px-4 align-middle">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <Building2 size={14} className="text-slate-400 shrink-0" />
+                                                    <Link
+                                                        href={`/customers/${c.customer.id}`}
+                                                        className="text-[13px] font-medium text-slate-700 hover:text-emerald-600 transition-colors leading-snug line-clamp-1"
+                                                        title={c.customer.name}
+                                                    >
+                                                        {c.customer.name}
+                                                    </Link>
+                                                </div>
+                                            </td>
+
+                                            {/* Col 4: Trạng thái */}
+                                            <td className="py-3.5 px-4 align-middle text-center">
+                                                <select
+                                                    className="text-[12px] font-semibold rounded-full px-3 py-1 border cursor-pointer focus:outline-none transition-all"
+                                                    style={{
+                                                        backgroundColor: stStyle.bg,
+                                                        color: stStyle.color,
+                                                        borderColor: stStyle.border,
+                                                        opacity: canEdit ? 1 : 0.75
+                                                    }}
+                                                    value={c.status}
+                                                    onChange={(e) => handleStatusChange(c.id, e.target.value)}
+                                                    disabled={!canEdit}
+                                                >
+                                                    <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
+                                                    <option value="SENT">{t('contractDashboard.statusSent')}</option>
+                                                    <option value="SIGNED">{t('contractDashboard.statusSigned')}</option>
+                                                    <option value="CANCELLED">{t('contractDashboard.statusCancelled')}</option>
+                                                </select>
+                                            </td>
+
+                                            {/* Col 5: Ngày tạo */}
+                                            <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                                                <div className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 tabular-nums" suppressHydrationWarning>
+                                                    <Calendar size={13} className="text-slate-400 shrink-0" />
+                                                    <span>{formatDate(new Date(c.createdAt))}</span>
+                                                </div>
+                                            </td>
+
+                                            {/* Col 6: Thao tác */}
+                                            <td className="py-3.5 px-4 align-middle">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    {/* XEM NHANH: DRAWER */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setQuickViewContract(c)}
+                                                        className="w-8 h-8 inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                                        title="Xem nhanh (Drawer)"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+
+                                                    {/* XEM CHI TIẾT: FULL PAGE */}
+                                                    <Link
+                                                        href={`/contracts/${c.id}`}
+                                                        className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
+                                                        title="Mở chi tiết & in hợp đồng"
+                                                    >
+                                                        <ExternalLink size={15} />
+                                                    </Link>
+
+                                                    {/* SỬA */}
+                                                    {canEdit && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleEditClick(c)}
+                                                            className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                                            title={t('contractDashboard.editContent')}
+                                                        >
+                                                            <Edit2 size={15} />
+                                                        </button>
+                                                    )}
+
+                                                    {/* COPY LINK */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCopyLink(c.id)}
+                                                        className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
+                                                        title="Sao chép liên kết xem trước cho khách hàng"
+                                                    >
+                                                        {isCopied ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />}
+                                                    </button>
+
+                                                    {/* XÓA */}
+                                                    {canDelete && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDelete(c.id)}
+                                                            className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                            title={t('contractDashboard.delete')}
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination Footer */}
                 <Pagination {...paginationProps} />
             </div>
 
@@ -376,7 +732,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                 maxWidth="1000px"
             >
                 <div className="flex flex-col gap-4">
-                    <p className="text-sm text-slate-500">
+                    <p className="text-[13px] text-slate-500">
                         {t('contractDashboard.customerLabel')}: <strong className="text-slate-800">{editingContract?.customer.name}</strong>
                     </p>
                     <RichTextEditor
