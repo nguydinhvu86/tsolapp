@@ -1,6 +1,5 @@
 'use client';
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,27 +8,27 @@ import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createForm, updateForm, deleteForm } from './actions';
-import { 
-    Search, 
-    Link as LinkIcon, 
-    FileText, 
-    CheckCircle2, 
-    XCircle, 
-    Plus, 
-    Edit, 
-    Trash2, 
+import {
+    Search,
+    FileText,
+    CheckCircle2,
+    XCircle,
+    Plus,
+    Edit,
+    Trash2,
     Sliders,
-    Layers,
     ExternalLink,
-    Copy,
-    Sparkles
+    Sparkles,
+    ChevronDown,
+    X,
+    RotateCcw,
+    Users
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 
 export type FormListType = MarketingForm & {
-    campaign: { id: string, name: string, code: string };
+    campaign: { id: string; name: string; code: string };
     _count: { participants: number };
 };
 
@@ -40,7 +39,7 @@ export default function FormClient({
     permissions,
 }: {
     initialData: FormListType[];
-    campaigns: { id: string, name: string, code: string }[];
+    campaigns: { id: string; name: string; code: string }[];
     isAdmin: boolean;
     permissions: string[];
 }) {
@@ -145,7 +144,7 @@ export default function FormClient({
 
     const handleDelete = async (id: string) => {
         if (!confirm('Bạn có chắc chắn muốn xóa form đăng ký này? Toàn bộ danh sách đăng ký theo form sẽ bị xóa.')) return;
-        
+
         try {
             const res = await deleteForm(id);
             if (res.success) {
@@ -161,195 +160,290 @@ export default function FormClient({
 
     const filteredData = useMemo(() => {
         return forms.filter(f => {
-            const matchSearch = 
+            const matchSearch =
                 f.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                f.campaign.name.toLowerCase().includes(searchTerm.toLowerCase());
+                f.campaign?.name?.toLowerCase().includes(searchTerm.toLowerCase());
             const matchStatus = statusFilter === 'ALL' || (statusFilter === 'ACTIVE' ? f.isActive : !f.isActive);
             return matchSearch && matchStatus;
         });
     }, [forms, searchTerm, statusFilter]);
 
+    const hasActiveFilters = searchTerm !== '' || statusFilter !== 'ALL';
+
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-xs">
-                        <FileText className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-slate-900">Thiết Kế Biểu Mẫu (Marketing Forms)</h1>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
-                                {forms.length} Biểu Mẫu
-                            </span>
+        <div className="w-full space-y-5 font-sans text-slate-800 pb-8">
+            {/* 1. Standard ERP Header */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0 mt-0.5">
+                            <FileText size={20} />
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5">Tạo trang Landing Page và form đăng ký thu thập thông tin khách hàng tiềm năng</p>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                    Tiếp Thị & Sự Kiện
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    {stats.active} form đang nhận đăng ký
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 mt-1">
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight m-0">
+                                    Thiết Kế Biểu Mẫu (Marketing Forms)
+                                </h1>
+                                <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full tabular-nums">
+                                    {forms.length} biểu mẫu
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 m-0">
+                                Tạo trang Landing Page và biểu mẫu đăng ký thu thập thông tin khách hàng tiềm năng (Lead)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                            href="/marketing/participants"
+                            className="inline-flex items-center gap-1.5 h-[36px] bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 px-3 rounded-lg text-xs font-semibold transition-all no-underline"
+                        >
+                            <Users size={14} className="text-emerald-600" />
+                            <span>Danh Sách Khách ĐK ({stats.totalSubmissions})</span>
+                        </Link>
+                        {canCreate && (
+                            <button
+                                type="button"
+                                onClick={() => handleOpenModal()}
+                                className="inline-flex items-center gap-1.5 h-[36px] bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer border-none"
+                            >
+                                <Plus size={15} />
+                                <span>Tạo Biểu Mẫu Mới</span>
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {canCreate && (
-                    <Button onClick={() => handleOpenModal()} className="gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-xs">
-                        <Plus className="w-4 h-4" /> Tạo Biểu Mẫu Mới
-                    </Button>
-                )}
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            {/* 2. KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div
+                    onClick={() => setStatusFilter('ALL')}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        statusFilter === 'ALL'
+                            ? 'bg-indigo-50/40 border-indigo-400 ring-2 ring-indigo-500/15 shadow-sm'
+                            : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-sm'
+                    }`}
+                >
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng biểu mẫu</div>
-                        <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{stats.total}</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Tổng Biểu Mẫu
+                        </p>
+                        <h3 className="text-2xl font-bold text-slate-900 tabular-nums mt-1 m-0">
+                            {stats.total}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Biểu mẫu thu thập thông tin
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                        <FileText className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200/70 shrink-0">
+                        <FileText size={19} />
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                <div
+                    onClick={() => setStatusFilter(statusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        statusFilter === 'ACTIVE'
+                            ? 'bg-emerald-50/50 border-emerald-400 ring-2 ring-emerald-500/15 shadow-sm'
+                            : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-sm'
+                    }`}
+                >
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đang nhận đăng ký</div>
-                        <div className="text-2xl font-mono font-bold text-emerald-600 mt-1">{stats.active}</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Đang Nhận Đăng Ký
+                        </p>
+                        <h3 className="text-2xl font-bold text-emerald-600 tabular-nums mt-1 m-0">
+                            {stats.active}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Landing page đang mở công khai
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                        <CheckCircle2 className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200/60 shrink-0">
+                        <CheckCircle2 size={19} />
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng lượt đăng ký</div>
-                        <div className="text-2xl font-mono font-bold text-purple-600 mt-1">{stats.totalSubmissions}</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Tổng Lượt Đăng Ký
+                        </p>
+                        <h3 className="text-2xl font-bold text-indigo-600 tabular-nums mt-1 m-0">
+                            {stats.totalSubmissions}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Tổng số khách hàng đã gửi form
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-                        <Sparkles className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
+                        <Sparkles size={19} />
                     </div>
                 </div>
             </div>
 
-            {/* Filter Toolbar */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {/* 3. Filter Toolbar */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="flex-1 flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-3 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all">
+                    <Search size={15} className="text-slate-400 shrink-0 mr-2" />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm theo tên form hoặc chiến dịch..."
+                        placeholder="Tìm kiếm theo tên biểu mẫu hoặc chiến dịch..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-colors"
+                        style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                        className="w-full h-full text-xs font-medium text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none p-0"
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="text-slate-400 hover:text-slate-600 ml-1.5 bg-transparent border-none cursor-pointer p-0.5 flex items-center"
+                        >
+                            <X size={13} />
+                        </button>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <select
-                        className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-slate-700 font-medium"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="ALL">Tất cả trạng thái</option>
-                        <option value="ACTIVE">Đang hoạt động</option>
-                        <option value="INACTIVE">Đã tạm dừng</option>
-                    </select>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className="relative flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-2.5 focus-within:bg-white focus-within:border-indigo-500 transition-all">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                            className="appearance-none pr-5 text-xs font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer h-full"
+                        >
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="ACTIVE">Đang hoạt động</option>
+                            <option value="INACTIVE">Đã tạm dừng</option>
+                        </select>
+                        <ChevronDown size={13} className="text-slate-400 pointer-events-none absolute right-2" />
+                    </div>
+
+                    {hasActiveFilters && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStatusFilter('ALL');
+                            }}
+                            className="inline-flex items-center gap-1 h-[36px] px-2.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 transition cursor-pointer"
+                        >
+                            <RotateCcw size={12} />
+                            <span>Đặt lại</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            {/* 4. Data Table */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm">
+                    <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                         <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                <th className="py-3.5 px-4 font-semibold">Tên Biểu Mẫu</th>
-                                <th className="py-3.5 px-4 font-semibold">Chiến Dịch / Sự Kiện</th>
-                                <th className="py-3.5 px-4 font-semibold text-center">Trạng Thái</th>
-                                <th className="py-3.5 px-4 font-semibold text-center">Lượt Đăng Ký</th>
-                                <th className="py-3.5 px-4 font-semibold">Liên Kết Public</th>
-                                <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
+                            <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500">
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Tên Biểu Mẫu</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Chiến Dịch / Sự Kiện</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] text-center">Trạng Thái</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] text-center">Lượt Đăng Ký</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Liên Kết Public</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] text-right">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-12 text-center">
+                                    <td colSpan={6} className="py-14 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
-                                                <FileText className="w-6 h-6" />
+                                            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400">
+                                                <FileText size={20} />
                                             </div>
-                                            <p className="text-sm font-medium text-slate-700">Chưa có biểu mẫu nào</p>
-                                            <p className="text-xs text-slate-400">Tạo form mới để bắt đầu thu thập lead đăng ký</p>
+                                            <p className="text-xs font-semibold text-slate-600 m-0">Chưa có biểu mẫu nào</p>
+                                            <p className="text-[11px] text-slate-400 m-0">Tạo biểu mẫu mới để bắt đầu thu thập dữ liệu khách hàng đăng ký</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredData.map((form) => (
-                                    <tr key={form.id} className="hover:bg-slate-50/60 transition-colors">
-                                        <td className="py-3.5 px-4">
+                                    <tr key={form.id} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="py-3 px-3.5 align-middle">
                                             <div className="flex items-center gap-2.5 font-bold text-slate-900">
-                                                <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                                                    <FileText className="w-4 h-4" />
+                                                <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <FileText size={14} />
                                                 </div>
                                                 <span>{form.title}</span>
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-4 text-slate-600">
-                                            <div className="font-medium text-slate-800">{form.campaign.name}</div>
-                                            <div className="text-[11px] font-mono text-slate-400">{form.campaign.code}</div>
+                                        <td className="py-3 px-3.5 text-slate-600 align-middle">
+                                            <div className="font-semibold text-slate-800">{form.campaign?.name}</div>
+                                            <div className="text-[11px] text-slate-400 tabular-nums">{form.campaign?.code}</div>
                                         </td>
-                                        <td className="py-3.5 px-4 text-center">
+                                        <td className="py-3 px-3.5 text-center align-middle">
                                             {form.isActive ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                                    <CheckCircle2 className="w-3 h-3" /> Hoạt động
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                                                    <CheckCircle2 size={11} /> Hoạt động
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                                                    <XCircle className="w-3 h-3" /> Tạm dừng
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                                    <XCircle size={11} /> Tạm dừng
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="py-3.5 px-4 text-center font-mono font-bold text-base text-slate-900">
+                                        <td className="py-3 px-3.5 text-center font-bold text-sm text-slate-900 tabular-nums align-middle">
                                             {form._count?.participants || 0}
                                         </td>
-                                        <td className="py-3.5 px-4">
+                                        <td className="py-3 px-3.5 align-middle">
                                             {form.isActive ? (
-                                                <a 
-                                                    target="_blank" 
-                                                    href={`/public/marketing/register/${form.id}`} 
-                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline"
+                                                <a
+                                                    target="_blank"
+                                                    href={`/public/marketing/register/${form.id}`}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline no-underline"
                                                 >
-                                                    <ExternalLink className="w-3.5 h-3.5" /> Mở Landing Page
+                                                    <ExternalLink size={13} /> Mở Landing Page
                                                 </a>
                                             ) : (
                                                 <span className="text-xs text-slate-400 italic">Chưa công khai</span>
                                             )}
                                         </td>
-                                        <td className="py-3.5 px-4 text-right">
+                                        <td className="py-3 px-3.5 text-right align-middle">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 {canEdit && (
-                                                    <Link 
+                                                    <Link
                                                         href={`/marketing/forms/${form.id}`}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition-colors no-underline"
                                                     >
-                                                        <Sliders className="w-3 h-3" /> Thiết kế
+                                                        <Sliders size={12} /> Thiết kế
                                                     </Link>
                                                 )}
                                                 {canEdit && (
-                                                    <button 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => handleOpenModal(form)}
                                                         title="Sửa thông tin"
-                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-transparent border-none cursor-pointer"
                                                     >
-                                                        <Edit className="w-4 h-4" />
+                                                        <Edit size={14} />
                                                     </button>
                                                 )}
                                                 {canDelete && (
-                                                    <button 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => handleDelete(form.id)}
                                                         title="Xóa form"
-                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors bg-transparent border-none cursor-pointer"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <Trash2 size={14} />
                                                     </button>
                                                 )}
                                             </div>
@@ -377,7 +471,7 @@ export default function FormClient({
                         <select
                             required
                             disabled={!!editingId}
-                            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                             value={formData.campaignId}
                             onChange={(e) => setFormData(prev => ({ ...prev, campaignId: e.target.value }))}
                         >
@@ -397,7 +491,7 @@ export default function FormClient({
                             required
                             value={formData.title}
                             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="Đăng ký tham gia hội thảo Vietbuild 2024..."
+                            placeholder="Đăng ký tham gia hội thảo..."
                         />
                     </div>
 
@@ -419,7 +513,7 @@ export default function FormClient({
                                 id="isActive"
                                 checked={formData.isActive}
                                 onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                                className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                                className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                             />
                             <span>Công khai biểu mẫu này (Cho phép khách hàng mở link đăng ký)</span>
                         </label>
@@ -429,7 +523,7 @@ export default function FormClient({
                         <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
                             Hủy bỏ
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="bg-purple-600 hover:bg-purple-700 text-white shadow-xs">
+                        <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
                             {isLoading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                         </Button>
                     </div>

@@ -1,14 +1,11 @@
 'use client';
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
-    Users, Search, Calendar, ChevronLeft, ChevronRight, Download, Printer, 
-    CheckSquare, Square, X, Filter, Clock, AlertTriangle, ShieldCheck, 
-    FileSpreadsheet, Sparkles, CheckCircle, Ban, Eye, UserCheck, 
-    ArrowUpDown, Info, MapPin, Camera, RefreshCw
+    Users, Search, Calendar, ChevronLeft, ChevronRight, ChevronDown, Printer, 
+    X, Clock, ShieldCheck, FileSpreadsheet, CheckCircle, Info, MapPin
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
@@ -71,6 +68,27 @@ const STATUS_CONFIG: Record<string, { label: string; code: string; bg: string; t
     'LEAVE_MATERNITY': { label: 'Thai sản', code: 'TS', bg: '#fce7f3', text: '#be185d', border: '#fbcfe8', desc: 'Chế độ thai sản theo luật' },
 };
 
+const cleanInputStyle: React.CSSProperties = {
+    border: 'none',
+    outline: 'none',
+    boxShadow: 'none',
+    backgroundColor: 'transparent',
+    padding: 0,
+    margin: 0,
+    fontFamily: 'inherit',
+};
+
+const cleanSelectStyle: React.CSSProperties = {
+    border: 'none',
+    outline: 'none',
+    boxShadow: 'none',
+    backgroundColor: 'transparent',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    appearance: 'none',
+    fontFamily: 'inherit',
+};
+
 export default function HRAttendanceClient({
     initialMatrix,
     month,
@@ -78,7 +96,6 @@ export default function HRAttendanceClient({
     daysInMonth
 }: HRAttendanceClientProps) {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     // Employee Multi-Select states
     const allUserIds = useMemo(() => initialMatrix.map(m => m.user.id), [initialMatrix]);
@@ -117,10 +134,8 @@ export default function HRAttendanceClient({
     // Filter matrix rows based on selected users & search
     const filteredMatrix = useMemo(() => {
         return initialMatrix.filter(row => {
-            // Must be selected in multi-select
             if (!selectedUserIds.includes(row.user.id)) return false;
 
-            // Search by name or email
             if (userSearchTerm.trim()) {
                 const q = userSearchTerm.toLowerCase();
                 const matchName = row.user.name?.toLowerCase().includes(q);
@@ -128,7 +143,6 @@ export default function HRAttendanceClient({
                 if (!matchName && !matchEmail) return false;
             }
 
-            // Quick preset filter
             if (quickPresetFilter === 'LATE' && row.totalLate === 0) return false;
             if (quickPresetFilter === 'LEAVE' && row.totalLeave === 0) return false;
             if (quickPresetFilter === 'PERFECT' && (row.totalLate > 0 || row.totalAbsent > 0)) return false;
@@ -223,77 +237,81 @@ export default function HRAttendanceClient({
     };
 
     return (
-        <div className="space-y-5 w-full text-xs">
+        <div className="space-y-5 w-full font-sans text-slate-800 pb-8">
             {/* Header & Controls Bar */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div 
-                        style={{ 
-                            background: 'linear-gradient(135deg, #047857 0%, #0d9488 100%)', 
-                            color: '#ffffff' 
-                        }}
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0"
-                    >
-                        <Calendar size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-xs shrink-0">
+                        <Calendar size={22} />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                            Bảng Chấm Công Toàn Công Ty
-                            <span 
-                                style={{ backgroundColor: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}
-                                className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-2xs"
-                            >
-                                Tháng {month}/{year}
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+                                NHÂN SỰ & CHẤM CÔNG
                             </span>
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50/80 border border-emerald-200/80 px-2 py-0.5 rounded-md tabular-nums">
+                                Kỳ công: Tháng {month}/{year}
+                            </span>
+                        </div>
+                        <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                            Bảng Chấm Công Toàn Công Ty
                         </h1>
-                        <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                            Theo dõi chuyên cần, số công, đi muộn và ngày nghỉ của nhân viên ({initialMatrix.length} nhân sự toàn công ty)
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Theo dõi chuyên cần, số ngày công, đi muộn và nghỉ phép của <span className="font-semibold text-slate-700 tabular-nums">{initialMatrix.length}</span> nhân sự toàn hệ thống
                         </p>
                     </div>
                 </div>
 
                 {/* Right controls: Month switcher & Export */}
                 <div className="flex items-center gap-2.5 flex-wrap">
-                    {/* Month Picker Box */}
-                    <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                    {/* Month Picker Box - No Double Borders */}
+                    <div className="inline-flex items-center h-[38px] bg-slate-50 px-1.5 rounded-xl border border-slate-200/90">
                         <button 
                             type="button" 
                             onClick={() => handleNavigateMonth('PREV')}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-colors cursor-pointer"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white transition-colors cursor-pointer"
                             title="Tháng trước"
                         >
-                            <ChevronLeft size={16} />
+                            <ChevronLeft size={15} />
                         </button>
 
-                        <select 
-                            value={month} 
-                            onChange={e => handleMonthSelect(Number(e.target.value))}
-                            className="bg-transparent font-bold text-slate-800 outline-none px-1.5 py-1 text-xs cursor-pointer"
-                        >
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                <option key={m} value={m}>Tháng {m}</option>
-                            ))}
-                        </select>
+                        <div className="relative flex items-center px-2 h-full">
+                            <select 
+                                value={month} 
+                                onChange={e => handleMonthSelect(Number(e.target.value))}
+                                style={cleanSelectStyle}
+                                className="font-semibold text-slate-800 text-xs pr-4 cursor-pointer"
+                            >
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                    <option key={m} value={m}>Tháng {m}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={12} className="text-slate-400 pointer-events-none absolute right-0.5" />
+                        </div>
 
-                        <span className="text-slate-300">/</span>
+                        <span className="text-slate-300 text-xs mx-0.5">/</span>
 
-                        <select 
-                            value={year} 
-                            onChange={e => handleYearSelect(Number(e.target.value))}
-                            className="bg-transparent font-bold text-slate-800 outline-none px-1.5 py-1 text-xs cursor-pointer"
-                        >
-                            {[year - 1, year, year + 1].map(y => (
-                                <option key={y} value={y}>{y}</option>
-                            ))}
-                        </select>
+                        <div className="relative flex items-center px-2 h-full">
+                            <select 
+                                value={year} 
+                                onChange={e => handleYearSelect(Number(e.target.value))}
+                                style={cleanSelectStyle}
+                                className="font-semibold text-slate-800 text-xs pr-4 cursor-pointer tabular-nums"
+                            >
+                                {[year - 1, year, year + 1].map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={12} className="text-slate-400 pointer-events-none absolute right-0.5" />
+                        </div>
 
                         <button 
                             type="button" 
                             onClick={() => handleNavigateMonth('NEXT')}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-colors cursor-pointer"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white transition-colors cursor-pointer"
                             title="Tháng sau"
                         >
-                            <ChevronRight size={16} />
+                            <ChevronRight size={15} />
                         </button>
                     </div>
 
@@ -301,8 +319,7 @@ export default function HRAttendanceClient({
                     <button
                         type="button"
                         onClick={handleExportExcel}
-                        style={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', color: '#047857' }}
-                        className="px-3.5 py-2 rounded-xl font-bold border hover:bg-emerald-50 hover:border-emerald-500 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        className="h-[38px] px-3.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                         <FileSpreadsheet size={15} />
                         <span>Xuất Excel</span>
@@ -311,8 +328,7 @@ export default function HRAttendanceClient({
                     <button
                         type="button"
                         onClick={() => window.print()}
-                        style={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', color: '#334155' }}
-                        className="px-3.5 py-2 rounded-xl font-bold border hover:bg-slate-100 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        className="h-[38px] px-3.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                         <Printer size={15} />
                         <span>In Bảng Công</span>
@@ -320,148 +336,240 @@ export default function HRAttendanceClient({
                 </div>
             </div>
 
+            {/* KPI Statistics Dashboard */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nhân Sự Đang Xem</div>
+                        <div className="flex items-baseline gap-1.5 my-1">
+                            <span className="text-xl font-bold text-slate-900 tabular-nums">{stats.totalEmployees}</span>
+                            <span className="text-xs text-slate-400 font-medium tabular-nums">/ {initialMatrix.length} người</span>
+                        </div>
+                        <div className="text-[11px] text-emerald-600 font-medium">Đang áp dụng bộ lọc</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                        <Users size={18} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tổng Ngày Công</div>
+                        <div className="flex items-baseline gap-1.5 my-1">
+                            <span className="text-xl font-bold text-emerald-600 tabular-nums">
+                                {stats.totalPresent + stats.totalLate + (stats.totalHalfDay * 0.5)}
+                            </span>
+                            <span className="text-xs text-slate-400 font-medium">công</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 tabular-nums">Đúng giờ: {stats.totalPresent} lượt</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                        <CheckCircle size={18} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Số Lượt Đi Muộn</div>
+                        <div className="flex items-baseline gap-1.5 my-1">
+                            <span className="text-xl font-bold text-amber-600 tabular-nums">{stats.totalLate}</span>
+                            <span className="text-xs text-slate-400 font-medium">lượt</span>
+                        </div>
+                        <div className="text-[11px] text-amber-600/90 font-medium">Cần theo dõi sát</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shrink-0">
+                        <Clock size={18} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nghỉ Phép / Chế Độ</div>
+                        <div className="flex items-baseline gap-1.5 my-1">
+                            <span className="text-xl font-bold text-purple-600 tabular-nums">{stats.totalLeave}</span>
+                            <span className="text-xs text-slate-400 font-medium">ngày</span>
+                        </div>
+                        <div className="text-[11px] text-purple-600/90 font-medium">Đã được HCNS duyệt</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shrink-0">
+                        <Calendar size={18} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between col-span-2 lg:col-span-1">
+                    <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tỷ Lệ Đúng Giờ</div>
+                        <div className="flex items-baseline gap-1 my-1">
+                            <span className="text-xl font-bold text-teal-600 tabular-nums">{stats.onTimeRate}%</span>
+                        </div>
+                        <div className="text-[11px] text-teal-600/90 font-medium">Tỷ lệ chuyên cần</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shrink-0">
+                        <ShieldCheck size={18} />
+                    </div>
+                </div>
+            </div>
+
             {/* Employee Multi-Select & Advanced Filter Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    {/* Left: Employee Selection Dropdown trigger */}
-                    <div className="relative min-w-[280px] max-w-md flex-1">
-                        <div className="flex items-center gap-2">
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+                        {/* Quick Search Input - No Double Border */}
+                        <div className="flex items-center h-[38px] bg-slate-50 border border-slate-200/90 rounded-xl px-3 flex-1 max-w-sm focus-within:bg-white focus-within:border-emerald-500 transition-all">
+                            <Search size={15} className="text-slate-400 mr-2 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Tìm nhanh theo tên hoặc email nhân sự..."
+                                value={userSearchTerm}
+                                onChange={e => setUserSearchTerm(e.target.value)}
+                                style={cleanInputStyle}
+                                className="w-full text-xs text-slate-800 placeholder:text-slate-400"
+                            />
+                            {userSearchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setUserSearchTerm('')}
+                                    className="text-slate-400 hover:text-slate-600 ml-1 cursor-pointer"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Employee Selection Dropdown Trigger */}
+                        <div className="relative min-w-[260px]">
                             <button
                                 type="button"
                                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                                style={{ 
-                                    backgroundColor: selectedUserIds.length < allUserIds.length ? '#f0fdf4' : '#ffffff',
-                                    borderColor: selectedUserIds.length < allUserIds.length ? '#059669' : '#cbd5e1'
-                                }}
-                                className="w-full px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between font-medium text-slate-800 shadow-2xs cursor-pointer hover:border-emerald-500 transition-all"
+                                className={`w-full h-[38px] px-3.5 rounded-xl border text-left flex items-center justify-between text-xs font-medium transition-all cursor-pointer ${
+                                    selectedUserIds.length < allUserIds.length
+                                        ? 'bg-emerald-50/70 border-emerald-500 text-emerald-900'
+                                        : 'bg-slate-50 border-slate-200/90 text-slate-700 hover:bg-white hover:border-slate-300'
+                                }`}
                             >
-                                <div className="flex items-center gap-2 truncate">
-                                    <Users size={16} className="text-emerald-600 shrink-0" />
-                                    <span className="font-bold text-slate-800">
+                                <div className="flex items-center gap-2 truncate pr-2">
+                                    <Users size={15} className="text-emerald-600 shrink-0" />
+                                    <span className="font-semibold truncate">
                                         {selectedUserIds.length === allUserIds.length 
-                                            ? `Tất cả nhân viên (${allUserIds.length} người)` 
-                                            : `Đang chọn ${selectedUserIds.length} / ${allUserIds.length} nhân sự`}
+                                            ? `Tất cả nhân sự (${allUserIds.length} người)` 
+                                            : `Đang chọn ${selectedUserIds.length}/${allUserIds.length} nhân sự`}
                                     </span>
                                 </div>
-                                <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-100">
-                                    {isUserDropdownOpen ? 'Đóng ▲' : 'Chọn nhân sự ▼'}
-                                </span>
+                                <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
-                        </div>
 
-                        {/* Dropdown Menu Modal / Popover */}
-                        {isUserDropdownOpen && (
-                            <div 
-                                style={{ 
-                                    backgroundColor: '#ffffff',
-                                    borderColor: '#cbd5e1',
-                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' 
-                                }}
-                                className="absolute left-0 top-full mt-2 w-full min-w-[340px] max-w-lg rounded-2xl border p-3 z-50 space-y-2.5"
-                            >
-                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                    <span className="font-bold text-slate-900 text-xs">Chọn nhân sự xem bảng công ({initialMatrix.length})</span>
-                                    <div className="flex items-center gap-2">
+                            {/* Dropdown Menu Popover */}
+                            {isUserDropdownOpen && (
+                                <div 
+                                    className="absolute left-0 top-full mt-2 w-full min-w-[340px] sm:min-w-[380px] bg-white rounded-2xl border border-slate-200 p-3.5 z-50 space-y-2.5 shadow-xl"
+                                >
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                        <span className="font-semibold text-slate-900 text-xs">
+                                            Chọn nhân sự hiển thị ({initialMatrix.length})
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                type="button" 
+                                                onClick={handleSelectAllUsers}
+                                                className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                                            >
+                                                Chọn tất cả
+                                            </button>
+                                            <span className="text-slate-300">|</span>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleDeselectAllUsers}
+                                                className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
+                                            >
+                                                Bỏ chọn
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Inner search without double border */}
+                                    <div className="flex items-center h-[34px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 focus-within:bg-white focus-within:border-emerald-500">
+                                        <Search className="text-slate-400 mr-2 shrink-0" size={13} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Lọc nhanh tên hoặc email..." 
+                                            value={userSearchTerm}
+                                            onChange={e => setUserSearchTerm(e.target.value)}
+                                            style={cleanInputStyle}
+                                            className="w-full text-xs text-slate-800 placeholder:text-slate-400"
+                                        />
+                                    </div>
+
+                                    {/* Checkbox list */}
+                                    <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                                        {initialMatrix.map(row => {
+                                            const isChecked = selectedUserIds.includes(row.user.id);
+                                            return (
+                                                <label 
+                                                    key={row.user.id} 
+                                                    className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
+                                                        isChecked 
+                                                            ? 'bg-emerald-50/50 border-emerald-200/80' 
+                                                            : 'bg-white border-slate-100 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={isChecked}
+                                                            onChange={() => handleToggleUser(row.user.id)}
+                                                            className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer shrink-0"
+                                                        />
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className={`text-xs font-semibold truncate ${isChecked ? 'text-emerald-950' : 'text-slate-800'}`}>
+                                                                {row.user.name || 'Người dùng vô danh'}
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 truncate">
+                                                                {row.user.email}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                                        <span className="text-[11px] font-medium text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200 tabular-nums">
+                                                            {row.totalPresent + row.totalLate} công
+                                                        </span>
+                                                        {row.totalLate > 0 && (
+                                                            <span className="text-[11px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md tabular-nums">
+                                                                {row.totalLate} muộn
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                        <span className="text-[11px] text-slate-500 tabular-nums">
+                                            Đang chọn <strong className="text-slate-800">{selectedUserIds.length}</strong> / {allUserIds.length} nhân sự
+                                        </span>
                                         <button 
                                             type="button" 
-                                            onClick={handleSelectAllUsers}
-                                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                                            onClick={() => setIsUserDropdownOpen(false)}
+                                            className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-semibold text-xs hover:bg-emerald-700 cursor-pointer transition-colors"
                                         >
-                                            Chọn tất cả
-                                        </button>
-                                        <span className="text-slate-300">|</span>
-                                        <button 
-                                            type="button" 
-                                            onClick={handleDeselectAllUsers}
-                                            className="text-[11px] font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
-                                        >
-                                            Bỏ chọn
+                                            Xong
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Inner search */}
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Tìm theo tên hoặc email nhân sự..." 
-                                        value={userSearchTerm}
-                                        onChange={e => setUserSearchTerm(e.target.value)}
-                                        className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                {/* Checkbox list */}
-                                <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                                    {initialMatrix.map(row => {
-                                        const isChecked = selectedUserIds.includes(row.user.id);
-                                        return (
-                                            <label 
-                                                key={row.user.id} 
-                                                className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
-                                                    isChecked 
-                                                        ? 'bg-emerald-50/60 border-emerald-200' 
-                                                        : 'bg-white border-slate-100 hover:bg-slate-50'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2.5">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={isChecked}
-                                                        onChange={() => handleToggleUser(row.user.id)}
-                                                        className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
-                                                    />
-                                                    <div className="flex flex-col">
-                                                        <span className={`font-bold ${isChecked ? 'text-emerald-900' : 'text-slate-800'}`}>
-                                                            {row.user.name || 'Người dùng vô danh'}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-400 font-normal">
-                                                            {row.user.email}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-                                                        {row.totalPresent + row.totalLate} công
-                                                    </span>
-                                                    {row.totalLate > 0 && (
-                                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                                                            {row.totalLate} muộn
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                    <span className="text-[11px] text-slate-500">
-                                        Đang xem <strong>{selectedUserIds.length}</strong> / {allUserIds.length} người
-                                    </span>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setIsUserDropdownOpen(false)}
-                                        className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 cursor-pointer"
-                                    >
-                                        Xác nhận
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     {/* Preset Filter Tabs */}
-                    <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200 flex-wrap">
+                    <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/70 flex-wrap">
                         <button
                             type="button"
                             onClick={() => setQuickPresetFilter('ALL')}
-                            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer tabular-nums ${
                                 quickPresetFilter === 'ALL' 
                                     ? 'bg-white text-slate-900 shadow-2xs' 
-                                    : 'text-slate-500 hover:text-slate-900'
+                                    : 'text-slate-600 hover:text-slate-900'
                             }`}
                         >
                             Tất cả ({selectedUserIds.length})
@@ -469,10 +577,10 @@ export default function HRAttendanceClient({
                         <button
                             type="button"
                             onClick={() => setQuickPresetFilter('LATE')}
-                            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 quickPresetFilter === 'LATE' 
                                     ? 'bg-amber-500 text-white shadow-2xs' 
-                                    : 'text-amber-700 hover:bg-amber-50'
+                                    : 'text-amber-700 hover:bg-amber-50/80'
                             }`}
                         >
                             Có đi muộn
@@ -480,10 +588,10 @@ export default function HRAttendanceClient({
                         <button
                             type="button"
                             onClick={() => setQuickPresetFilter('LEAVE')}
-                            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 quickPresetFilter === 'LEAVE' 
                                     ? 'bg-purple-600 text-white shadow-2xs' 
-                                    : 'text-purple-700 hover:bg-purple-50'
+                                    : 'text-purple-700 hover:bg-purple-50/80'
                             }`}
                         >
                             Có nghỉ phép
@@ -491,10 +599,10 @@ export default function HRAttendanceClient({
                         <button
                             type="button"
                             onClick={() => setQuickPresetFilter('PERFECT')}
-                            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 quickPresetFilter === 'PERFECT' 
                                     ? 'bg-emerald-600 text-white shadow-2xs' 
-                                    : 'text-emerald-700 hover:bg-emerald-50'
+                                    : 'text-emerald-700 hover:bg-emerald-50/80'
                             }`}
                         >
                             Chuyên cần 100%
@@ -504,16 +612,15 @@ export default function HRAttendanceClient({
 
                 {/* Selected User Chips */}
                 {selectedUserIds.length < allUserIds.length && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                        <span className="text-[11px] text-slate-500 font-semibold">Đang lọc theo nhân sự:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
+                        <span className="text-[11px] text-slate-500 font-medium">Đang lọc nhân sự:</span>
                         {selectedUserIds.map(uId => {
                             const u = initialMatrix.find(m => m.user.id === uId)?.user;
                             if (!u) return null;
                             return (
                                 <span 
                                     key={uId}
-                                    style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[11px] font-bold shadow-2xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold"
                                 >
                                     <span>{u.name || u.email}</span>
                                     <button 
@@ -530,7 +637,7 @@ export default function HRAttendanceClient({
                         <button 
                             type="button" 
                             onClick={handleSelectAllUsers}
-                            className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 underline cursor-pointer ml-1"
+                            className="text-[11px] font-semibold text-slate-500 hover:text-emerald-700 underline cursor-pointer ml-1"
                         >
                             Hiển thị lại toàn bộ
                         </button>
@@ -538,99 +645,27 @@ export default function HRAttendanceClient({
                 )}
             </div>
 
-            {/* KPI Statistics Dashboard */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Nhân Sự Đang Xem</div>
-                        <div className="flex items-baseline gap-1 my-0.5">
-                            <span className="text-xl font-black font-mono text-slate-800">{stats.totalEmployees}</span>
-                            <span className="text-[11px] text-slate-400 font-semibold">/ {initialMatrix.length} người</span>
-                        </div>
-                        <div className="text-[10px] text-emerald-600 font-medium">Đang áp dụng bộ lọc</div>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                        <Users size={18} />
-                    </div>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Tổng Ngày Công</div>
-                        <div className="flex items-baseline gap-1 my-0.5">
-                            <span className="text-xl font-black font-mono text-emerald-600">
-                                {stats.totalPresent + stats.totalLate + (stats.totalHalfDay * 0.5)}
-                            </span>
-                            <span className="text-[11px] text-slate-400 font-semibold">công</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500">Đúng giờ: {stats.totalPresent}</div>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                        <CheckCircle size={18} />
-                    </div>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Số Lượt Đi Muộn</div>
-                        <div className="flex items-baseline gap-1 my-0.5">
-                            <span className="text-xl font-black font-mono text-amber-600">{stats.totalLate}</span>
-                            <span className="text-[11px] text-slate-400 font-semibold">lượt</span>
-                        </div>
-                        <div className="text-[10px] text-amber-600/80">Cần theo dõi sát</div>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                        <Clock size={18} />
-                    </div>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Nghỉ Phép / Chế Độ</div>
-                        <div className="flex items-baseline gap-1 my-0.5">
-                            <span className="text-xl font-black font-mono text-purple-600">{stats.totalLeave}</span>
-                            <span className="text-[11px] text-slate-400 font-semibold">ngày</span>
-                        </div>
-                        <div className="text-[10px] text-purple-600/80">Đã được HCNS duyệt</div>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-                        <Calendar size={18} />
-                    </div>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Tỷ Lệ Đúng Giờ</div>
-                        <div className="flex items-baseline gap-1 my-0.5">
-                            <span className="text-xl font-black font-mono text-teal-600">{stats.onTimeRate}%</span>
-                        </div>
-                        <div className="text-[10px] text-teal-600/80">Tỷ lệ chuyên cần</div>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
-                        <ShieldCheck size={18} />
-                    </div>
-                </div>
-            </div>
-
             {/* Matrix Table Card */}
-            <div id="attendance-matrix-table" className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
+            <div id="attendance-matrix-table" className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 border-b border-slate-100 bg-slate-50/60">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                             Bảng Điểm Danh & Chuyên Cần Chi Tiết
                         </h2>
-                        <span className="text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2.5 py-0.5 rounded-full">
+                        <span className="text-[11px] font-semibold text-slate-600 bg-slate-200/70 px-2.5 py-0.5 rounded-full tabular-nums">
                             {filteredMatrix.length} nhân sự
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
-                        <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded bg-rose-100 border border-rose-300 inline-block"></span> Cuối tuần (T7, CN)
+                    <div className="flex items-center gap-4 text-[11px] text-slate-500 font-medium">
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-rose-100 border border-rose-300 inline-block"></span>
+                            <span>Cuối tuần (T7, CN)</span>
                         </span>
                         {isCurrentMonthYear && (
-                            <span className="flex items-center gap-1 font-bold text-emerald-700">
-                                <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span> Ngày hôm nay ({currentDayNum})
+                            <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 inline-block"></span>
+                                <span>Hôm nay (Ngày {currentDayNum})</span>
                             </span>
                         )}
                     </div>
@@ -644,16 +679,16 @@ export default function HRAttendanceClient({
                                 <th 
                                     colSpan={5} 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}
-                                    className="px-3 py-2 border-b border-r text-slate-700 text-xs font-bold text-center sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.04)]"
+                                    className="px-3 py-2 border-b border-r text-slate-700 text-xs font-semibold text-center sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.03)]"
                                 >
-                                    Thông tin Nhân sự & Tổng Hợp Công
+                                    Thông Tin Nhân Sự & Tổng Hợp Công
                                 </th>
                                 <th 
                                     colSpan={daysInMonth} 
                                     style={{ backgroundColor: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}
-                                    className="px-3 py-2 border-b text-xs font-bold text-center"
+                                    className="px-3 py-2 border-b text-xs font-semibold text-center tabular-nums"
                                 >
-                                    Chi tiết chấm công ngày trong tháng {month}/{year} ({daysInMonth} ngày)
+                                    Chi Tiết Chấm Công Tháng {month}/{year} ({daysInMonth} ngày)
                                 </th>
                             </tr>
 
@@ -661,34 +696,34 @@ export default function HRAttendanceClient({
                             <tr className="bg-slate-50 text-slate-600 font-semibold text-[11px] uppercase tracking-wider">
                                 <th 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', width: '220px' }}
-                                    className="px-4 py-2.5 border-b border-r sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.04)]"
+                                    className="px-4 py-2.5 border-b border-r sticky left-0 z-30 shadow-[2px_0_4px_rgba(0,0,0,0.03)]"
                                 >
                                     Họ và Tên
                                 </th>
                                 <th 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', width: '56px' }}
-                                    className="px-1 py-2.5 border-b border-r text-center font-bold" 
+                                    className="px-1 py-2.5 border-b border-r text-center font-semibold text-emerald-700" 
                                     title="Tổng Ngày Công Đạt Được"
                                 >
                                     Công
                                 </th>
                                 <th 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', width: '50px' }}
-                                    className="px-1 py-2.5 border-b border-r text-center font-bold text-amber-700" 
+                                    className="px-1 py-2.5 border-b border-r text-center font-semibold text-amber-700" 
                                     title="Số Lượt Đi Muộn"
                                 >
                                     Muộn
                                 </th>
                                 <th 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', width: '50px' }}
-                                    className="px-1 py-2.5 border-b border-r text-center font-bold text-purple-700" 
+                                    className="px-1 py-2.5 border-b border-r text-center font-semibold text-purple-700" 
                                     title="Số Ngày Nghỉ Phép / Chế Độ"
                                 >
                                     Phép
                                 </th>
                                 <th 
                                     style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', width: '50px' }}
-                                    className="px-1 py-2.5 border-b border-r text-center font-bold text-rose-700" 
+                                    className="px-1 py-2.5 border-b border-r text-center font-semibold text-rose-700" 
                                     title="Số Buổi Vắng Không Phép"
                                 >
                                     Vắng
@@ -715,11 +750,11 @@ export default function HRAttendanceClient({
                                             } : {
                                                 borderColor: '#e2e8f0'
                                             }}
-                                            className="p-1 border-b border-r text-center w-9.5 transition-colors"
+                                            className="p-1 border-b border-r text-center w-9.5 transition-colors tabular-nums"
                                         >
                                             <div className="flex flex-col items-center">
-                                                <span className={`font-black text-xs ${isToday ? 'text-white' : ''}`}>{day}</span>
-                                                <span className={`text-[9px] font-bold uppercase ${isToday ? 'text-emerald-100' : 'opacity-70'}`}>
+                                                <span className={`font-bold text-xs ${isToday ? 'text-white' : ''}`}>{day}</span>
+                                                <span className={`text-[9px] font-semibold uppercase ${isToday ? 'text-emerald-100' : 'opacity-75'}`}>
                                                     {dayOfWeek === 0 ? 'CN' : `T${dayOfWeek + 1}`}
                                                 </span>
                                             </div>
@@ -735,22 +770,22 @@ export default function HRAttendanceClient({
                                     {/* Sticky Left: Employee Column */}
                                     <td 
                                         style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}
-                                        className="px-4 py-2 border-b border-r sticky left-0 z-20 group-hover:bg-slate-50 transition-colors shadow-[2px_0_4px_rgba(0,0,0,0.04)]"
+                                        className="px-3.5 py-2 border-b border-r sticky left-0 z-20 group-hover:bg-slate-50 transition-colors shadow-[2px_0_4px_rgba(0,0,0,0.03)]"
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-[11px] shrink-0 border border-emerald-200">
+                                            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-[11px] shrink-0 border border-emerald-200/80">
                                                 {row.user.name ? row.user.name.charAt(0).toUpperCase() : 'U'}
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <button 
                                                     type="button"
                                                     onClick={() => setInspectedUserRow(row)}
-                                                    className="font-bold text-slate-900 hover:text-emerald-700 text-left truncate text-xs cursor-pointer transition-colors"
+                                                    className="font-semibold text-slate-900 hover:text-emerald-700 text-left truncate text-xs cursor-pointer transition-colors"
                                                     title="Bấm để xem lịch sử chi tiết nhân viên này"
                                                 >
                                                     {row.user.name || 'Người dùng vô danh'}
                                                 </button>
-                                                <span className="text-[10px] text-slate-400 font-normal truncate">
+                                                <span className="text-[11px] text-slate-400 font-normal truncate">
                                                     {row.user.email}
                                                 </span>
                                             </div>
@@ -760,28 +795,28 @@ export default function HRAttendanceClient({
                                     {/* Summary columns */}
                                     <td 
                                         style={{ backgroundColor: '#f0fdf4', borderColor: '#e2e8f0', color: '#047857' }}
-                                        className="px-1 py-2 border-b border-r text-center font-black font-mono text-xs"
+                                        className="px-1 py-2 border-b border-r text-center font-bold tabular-nums text-xs"
                                     >
                                         {row.totalPresent + row.totalLate + (row.totalHalfDay * 0.5)}
                                     </td>
 
                                     <td 
                                         style={{ backgroundColor: row.totalLate > 0 ? '#fffbeb' : '#ffffff', borderColor: '#e2e8f0', color: row.totalLate > 0 ? '#b45309' : '#94a3b8' }}
-                                        className="px-1 py-2 border-b border-r text-center font-bold font-mono text-xs"
+                                        className="px-1 py-2 border-b border-r text-center font-semibold tabular-nums text-xs"
                                     >
                                         {row.totalLate}
                                     </td>
 
                                     <td 
                                         style={{ backgroundColor: row.totalLeave > 0 ? '#faf5ff' : '#ffffff', borderColor: '#e2e8f0', color: row.totalLeave > 0 ? '#7e22ce' : '#94a3b8' }}
-                                        className="px-1 py-2 border-b border-r text-center font-bold font-mono text-xs"
+                                        className="px-1 py-2 border-b border-r text-center font-semibold tabular-nums text-xs"
                                     >
                                         {row.totalLeave}
                                     </td>
 
                                     <td 
                                         style={{ backgroundColor: row.totalAbsent > 0 ? '#fff1f2' : '#ffffff', borderColor: '#e2e8f0', color: row.totalAbsent > 0 ? '#be123c' : '#94a3b8' }}
-                                        className="px-1 py-2 border-b border-r text-center font-bold font-mono text-xs"
+                                        className="px-1 py-2 border-b border-r text-center font-semibold tabular-nums text-xs"
                                     >
                                         {row.totalAbsent}
                                     </td>
@@ -794,7 +829,7 @@ export default function HRAttendanceClient({
                                         const isToday = isCurrentMonthYear && day === currentDayNum;
 
                                         let content = '-';
-                                        let cellBg = isWeekend ? '#fff1f280' : 'transparent';
+                                        let cellBg = isWeekend ? '#fff1f266' : 'transparent';
                                         let cellText = '#cbd5e1';
                                         let cellBorder = '#e2e8f0';
 
@@ -817,7 +852,7 @@ export default function HRAttendanceClient({
                                                     color: cellText, 
                                                     borderColor: cellBorder 
                                                 }}
-                                                className={`p-1 border-b border-r text-center font-black text-[11px] cursor-pointer hover:scale-110 hover:shadow-xs transition-all ${isToday ? 'ring-1 ring-emerald-500' : ''}`}
+                                                className={`p-1 border-b border-r text-center font-bold text-[11px] cursor-pointer hover:brightness-95 transition-all ${isToday ? 'ring-1 ring-inset ring-emerald-500' : ''}`}
                                                 title={record 
                                                     ? `${row.user.name}: Ngày ${day}/${month} - ${STATUS_CONFIG[record.status]?.label || record.status}${record.checkInTime ? ` (Vào: ${new Date(record.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})` : ''}` 
                                                     : `Ngày ${day}/${month}: Không có dữ liệu`}
@@ -831,11 +866,11 @@ export default function HRAttendanceClient({
 
                             {filteredMatrix.length === 0 && (
                                 <tr>
-                                    <td colSpan={5 + daysInMonth} className="p-16 text-center text-slate-500 bg-slate-50/50">
+                                    <td colSpan={5 + daysInMonth} className="p-16 text-center text-slate-500 bg-slate-50/40">
                                         <div className="flex flex-col items-center justify-center">
                                             <Users className="w-10 h-10 text-slate-300 mb-2" strokeWidth={1.5} />
-                                            <h3 className="text-sm font-bold text-slate-700">Không tìm thấy nhân sự nào</h3>
-                                            <p className="text-xs text-slate-400 mt-0.5">Vui lòng điều chỉnh lại bộ lọc nhân sự hoặc tìm kiếm.</p>
+                                            <h3 className="text-sm font-semibold text-slate-700">Không tìm thấy nhân sự nào</h3>
+                                            <p className="text-xs text-slate-400 mt-0.5">Vui lòng điều chỉnh lại bộ lọc nhân sự hoặc từ khóa tìm kiếm.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -846,23 +881,25 @@ export default function HRAttendanceClient({
             </div>
 
             {/* Legend & Summary Guide */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                        <Info size={14} className="text-slate-400" />
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                    <span className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
+                        <Info size={14} className="text-emerald-600" />
                         Chú Thích Ký Hiệu & Mã Trạng Thái Chấm Công
                     </span>
-                    <span className="text-[11px] text-slate-400 font-medium">Bấm vào bất kỳ ô nào trên bảng để xem chi tiết giờ và GPS</span>
+                    <span className="text-[11px] text-slate-400">
+                        Bấm vào bất kỳ ô ngày công hoặc tên nhân sự nào trên bảng để xem chi tiết giờ Check-in/Check-out & vị trí GPS
+                    </span>
                 </div>
 
-                <div className="flex flex-wrap gap-2.5 items-center">
+                <div className="flex flex-wrap gap-2 items-center">
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                         <div 
                             key={key}
                             style={{ backgroundColor: cfg.bg, borderColor: cfg.border, color: cfg.text }}
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-semibold shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-medium"
                         >
-                            <span className="w-5 h-5 rounded-md flex items-center justify-center font-black text-[11px] bg-white border border-current">
+                            <span className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-[11px] bg-white border border-current/20">
                                 {cfg.code}
                             </span>
                             <span>{cfg.label}</span>
@@ -876,18 +913,18 @@ export default function HRAttendanceClient({
                 isOpen={!!selectedCell}
                 onClose={() => setSelectedCell(null)}
                 title={`Chi Tiết Điểm Danh: Ngày ${selectedCell?.day}/${month}/${year}`}
-                maxWidth="560px"
+                maxWidth="540px"
             >
                 {selectedCell && (
-                    <div className="space-y-4 text-xs">
+                    <div className="space-y-4 text-xs font-sans">
                         {/* User Header */}
-                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
+                        <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shrink-0">
                                 {selectedCell.user.name ? selectedCell.user.name.charAt(0).toUpperCase() : 'U'}
                             </div>
-                            <div>
-                                <h4 className="font-bold text-slate-900 text-sm">{selectedCell.user.name || 'Người dùng vô danh'}</h4>
-                                <p className="text-slate-500 text-[11px]">{selectedCell.user.email} • {selectedCell.user.role || 'Nhân sự'}</p>
+                            <div className="min-w-0">
+                                <h4 className="font-bold text-slate-900 text-sm truncate">{selectedCell.user.name || 'Người dùng vô danh'}</h4>
+                                <p className="text-slate-500 text-xs truncate">{selectedCell.user.email} • {selectedCell.user.role || 'Nhân sự'}</p>
                             </div>
                         </div>
 
@@ -895,28 +932,28 @@ export default function HRAttendanceClient({
                         {selectedCell.record ? (
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                                        <span className="text-[10.5px] text-slate-400 font-bold uppercase">Trạng Thái</span>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                        <span className="text-[11px] text-slate-500 font-semibold uppercase">Trạng Thái</span>
                                         <div>
                                             {(() => {
                                                 const cfg = STATUS_CONFIG[selectedCell.record.status];
                                                 return cfg ? (
                                                     <span 
                                                         style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.border }}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-xs"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-semibold text-xs"
                                                     >
                                                         {cfg.code} - {cfg.label}
                                                     </span>
-                                                ) : <span className="font-bold">{selectedCell.record.status}</span>;
+                                                ) : <span className="font-semibold">{selectedCell.record.status}</span>;
                                             })()}
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                                        <span className="text-[10.5px] text-slate-400 font-bold uppercase">Thời Gian Làm</span>
-                                        <p className="font-black text-slate-900 text-sm">
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                                        <span className="text-[11px] text-slate-500 font-semibold uppercase">Thời Gian Làm Việc</span>
+                                        <p className="font-bold text-slate-900 text-sm tabular-nums">
                                             {selectedCell.record.totalWorkMinutes 
-                                                ? `${Math.floor(selectedCell.record.totalWorkMinutes / 60)}h ${selectedCell.record.totalWorkMinutes % 60}m` 
+                                                ? `${Math.floor(selectedCell.record.totalWorkMinutes / 60)} giờ ${selectedCell.record.totalWorkMinutes % 60} phút` 
                                                 : '-'}
                                         </p>
                                     </div>
@@ -925,32 +962,32 @@ export default function HRAttendanceClient({
                                 {/* Check-In & Check-Out Times */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100 space-y-1">
-                                        <span className="text-[10.5px] font-bold uppercase text-emerald-800 flex items-center gap-1">
-                                            <Clock size={12} /> Giờ Check-In:
+                                        <span className="text-[11px] font-semibold uppercase text-emerald-800 flex items-center gap-1">
+                                            <Clock size={12} /> Giờ Check-In
                                         </span>
-                                        <p className="font-bold text-emerald-900 text-sm">
+                                        <p className="font-bold text-emerald-900 text-sm tabular-nums">
                                             {selectedCell.record.checkInTime 
                                                 ? new Date(selectedCell.record.checkInTime).toLocaleTimeString('vi-VN') 
                                                 : 'Chưa Check-In'}
                                         </p>
                                         {selectedCell.record.checkInLocation && (
-                                            <p className="text-[10.5px] text-emerald-700 flex items-center gap-1 mt-1 truncate" title={selectedCell.record.checkInLocation}>
+                                            <p className="text-[11px] text-emerald-700 flex items-center gap-1 mt-1 truncate" title={selectedCell.record.checkInLocation}>
                                                 <MapPin size={11} className="shrink-0" /> {selectedCell.record.checkInLocation}
                                             </p>
                                         )}
                                     </div>
 
                                     <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-1">
-                                        <span className="text-[10.5px] font-bold uppercase text-indigo-800 flex items-center gap-1">
-                                            <Clock size={12} /> Giờ Check-Out:
+                                        <span className="text-[11px] font-semibold uppercase text-indigo-800 flex items-center gap-1">
+                                            <Clock size={12} /> Giờ Check-Out
                                         </span>
-                                        <p className="font-bold text-indigo-900 text-sm">
+                                        <p className="font-bold text-indigo-900 text-sm tabular-nums">
                                             {selectedCell.record.checkOutTime 
                                                 ? new Date(selectedCell.record.checkOutTime).toLocaleTimeString('vi-VN') 
                                                 : 'Chưa Check-Out'}
                                         </p>
                                         {selectedCell.record.checkOutLocation && (
-                                            <p className="text-[10.5px] text-indigo-700 flex items-center gap-1 mt-1 truncate" title={selectedCell.record.checkOutLocation}>
+                                            <p className="text-[11px] text-indigo-700 flex items-center gap-1 mt-1 truncate" title={selectedCell.record.checkOutLocation}>
                                                 <MapPin size={11} className="shrink-0" /> {selectedCell.record.checkOutLocation}
                                             </p>
                                         )}
@@ -959,15 +996,15 @@ export default function HRAttendanceClient({
 
                                 {/* Notes if any */}
                                 {selectedCell.record.notes && (
-                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Ghi chú:</span>
-                                        <p className="text-slate-600 italic leading-relaxed">{selectedCell.record.notes}</p>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                                        <span className="font-semibold text-slate-700 block mb-0.5">Ghi chú:</span>
+                                        <p className="text-slate-600 leading-relaxed">{selectedCell.record.notes}</p>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">
-                                Không có bản ghi chấm công hoặc xin nghỉ nào vào ngày này.
+                            <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200/80">
+                                Không có bản ghi chấm công hoặc đăng ký nghỉ phép nào vào ngày này.
                             </div>
                         )}
 
@@ -984,40 +1021,40 @@ export default function HRAttendanceClient({
             <Modal
                 isOpen={!!inspectedUserRow}
                 onClose={() => setInspectedUserRow(null)}
-                title={`Hồ Sơ Chấm Công: ${inspectedUserRow?.user.name || 'Nhân sự'}`}
+                title={`Hồ Sơ Chấm Công Tháng ${month}/${year}: ${inspectedUserRow?.user.name || 'Nhân sự'}`}
                 maxWidth="680px"
             >
                 {inspectedUserRow && (
-                    <div className="space-y-4 text-xs">
+                    <div className="space-y-4 text-xs font-sans">
                         {/* Summary Bar */}
-                        <div className="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <div className="grid grid-cols-4 gap-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-center">
                             <div>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Tổng công</span>
-                                <p className="text-base font-black text-emerald-600">{inspectedUserRow.totalPresent + inspectedUserRow.totalLate}</p>
+                                <span className="text-[11px] text-slate-500 font-semibold uppercase">Tổng công</span>
+                                <p className="text-base font-bold text-emerald-600 tabular-nums mt-0.5">{inspectedUserRow.totalPresent + inspectedUserRow.totalLate}</p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Đi muộn</span>
-                                <p className="text-base font-black text-amber-600">{inspectedUserRow.totalLate}</p>
+                                <span className="text-[11px] text-slate-500 font-semibold uppercase">Đi muộn</span>
+                                <p className="text-base font-bold text-amber-600 tabular-nums mt-0.5">{inspectedUserRow.totalLate}</p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Nghỉ phép</span>
-                                <p className="text-base font-black text-purple-600">{inspectedUserRow.totalLeave}</p>
+                                <span className="text-[11px] text-slate-500 font-semibold uppercase">Nghỉ phép</span>
+                                <p className="text-base font-bold text-purple-600 tabular-nums mt-0.5">{inspectedUserRow.totalLeave}</p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Vắng mặt</span>
-                                <p className="text-base font-black text-rose-600">{inspectedUserRow.totalAbsent}</p>
+                                <span className="text-[11px] text-slate-500 font-semibold uppercase">Vắng mặt</span>
+                                <p className="text-base font-bold text-rose-600 tabular-nums mt-0.5">{inspectedUserRow.totalAbsent}</p>
                             </div>
                         </div>
 
                         {/* Day list table */}
-                        <div className="max-h-80 overflow-y-auto rounded-xl border border-slate-200 custom-scrollbar">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-[10.5px] uppercase font-bold text-slate-500 border-b border-slate-200 sticky top-0">
+                        <div className="max-h-80 overflow-y-auto rounded-xl border border-slate-200/80 custom-scrollbar">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 text-[11px] uppercase font-semibold text-slate-500 border-b border-slate-200 sticky top-0">
                                     <tr>
-                                        <th className="px-3 py-2">Ngày</th>
-                                        <th className="px-3 py-2 text-center">Trạng thái</th>
-                                        <th className="px-3 py-2">Giờ Vào - Giờ Ra</th>
-                                        <th className="px-3 py-2">Ghi chú</th>
+                                        <th className="px-3.5 py-2.5">Ngày</th>
+                                        <th className="px-3.5 py-2.5 text-center">Trạng thái</th>
+                                        <th className="px-3.5 py-2.5">Giờ Vào - Giờ Ra</th>
+                                        <th className="px-3.5 py-2.5">Ghi chú</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -1028,18 +1065,18 @@ export default function HRAttendanceClient({
                                         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
                                         return (
-                                            <tr key={day} className={`hover:bg-slate-50 ${isWeekend ? 'bg-slate-50/50' : ''}`}>
-                                                <td className="px-3 py-2 font-bold text-slate-800">
+                                            <tr key={day} className={`hover:bg-slate-50 ${isWeekend ? 'bg-slate-50/40' : ''}`}>
+                                                <td className="px-3.5 py-2 font-semibold text-slate-800 tabular-nums">
                                                     Ngày {day} ({dayName})
                                                 </td>
-                                                <td className="px-3 py-2 text-center">
+                                                <td className="px-3.5 py-2 text-center">
                                                     {rec ? (
                                                         (() => {
                                                             const cfg = STATUS_CONFIG[rec.status];
                                                             return cfg ? (
                                                                 <span 
                                                                     style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.border }}
-                                                                    className="px-2 py-0.5 rounded-md border font-bold text-[10.5px]"
+                                                                    className="px-2 py-0.5 rounded-md border font-semibold text-[11px]"
                                                                 >
                                                                     {cfg.label}
                                                                 </span>
@@ -1047,7 +1084,7 @@ export default function HRAttendanceClient({
                                                         })()
                                                     ) : <span className="text-slate-300">-</span>}
                                                 </td>
-                                                <td className="px-3 py-2 text-slate-600">
+                                                <td className="px-3.5 py-2 text-slate-600 tabular-nums">
                                                     {rec?.checkInTime ? (
                                                         <span>
                                                             {new Date(rec.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -1055,7 +1092,7 @@ export default function HRAttendanceClient({
                                                         </span>
                                                     ) : <span className="text-slate-300">-</span>}
                                                 </td>
-                                                <td className="px-3 py-2 text-slate-500 italic max-w-[180px] truncate" title={rec?.notes || ''}>
+                                                <td className="px-3.5 py-2 text-slate-500 max-w-[180px] truncate" title={rec?.notes || ''}>
                                                     {rec?.notes || '-'}
                                                 </td>
                                             </tr>

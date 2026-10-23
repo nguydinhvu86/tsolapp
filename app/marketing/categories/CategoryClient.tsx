@@ -1,26 +1,26 @@
 'use client';
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { MarketingCategory } from '@prisma/client';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createCategory, updateCategory, deleteCategory } from './actions';
-import { 
-    Plus, 
-    Edit, 
-    Trash2, 
-    Search, 
-    Target, 
-    Tag, 
-    Clock, 
+import {
+    Plus,
+    Edit,
+    Trash2,
+    Search,
+    Target,
+    Tag,
     Layers,
-    FileText
+    FileText,
+    X,
+    Megaphone
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
+import Link from 'next/link';
 
 export default function CategoryClient({
     initialData,
@@ -31,7 +31,6 @@ export default function CategoryClient({
     isAdmin: boolean;
     permissions: string[];
 }) {
-    const router = useRouter();
     const [categories, setCategories] = useState<MarketingCategory[]>(initialData);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,7 +47,7 @@ export default function CategoryClient({
     const canDelete = isAdmin || permissions.includes('MARKETING_DELETE');
 
     const filteredData = useMemo(() => {
-        return categories.filter(c => 
+        return categories.filter(c =>
             c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (c.description && c.description.toLowerCase().includes(searchTerm.toLowerCase()))
         );
@@ -103,7 +102,7 @@ export default function CategoryClient({
 
     const handleDelete = async (id: string) => {
         if (!confirm('Bạn có chắc chắn muốn xóa phân loại này?')) return;
-        
+
         try {
             const res = await deleteCategory(id);
             if (res.success) {
@@ -118,141 +117,204 @@ export default function CategoryClient({
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-xs">
-                        <Target className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-slate-900">Phân Loại Sự Kiện & Chiến Dịch</h1>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                                {categories.length} Phân Loại
-                            </span>
+        <div className="w-full space-y-5 font-sans text-slate-800 pb-8">
+            {/* 1. Standard ERP Header */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0 mt-0.5">
+                            <Target size={20} />
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5">Quản lý danh mục phân loại sự kiện (Hội thảo, Triển lãm, Quảng cáo trực tuyến...)</p>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                    Tiếp Thị & Sự Kiện
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Danh Mục Hệ Thống
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 mt-1">
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight m-0">
+                                    Phân Loại Sự Kiện & Chiến Dịch
+                                </h1>
+                                <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full tabular-nums">
+                                    {categories.length} phân loại
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 m-0">
+                                Quản lý danh mục phân loại sự kiện (Hội thảo, Triển lãm, Quảng cáo trực tuyến...)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                            href="/marketing/campaigns"
+                            className="inline-flex items-center gap-1.5 h-[36px] bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 px-3 rounded-lg text-xs font-semibold transition-all no-underline"
+                        >
+                            <Megaphone size={14} className="text-slate-500" />
+                            <span>Danh Sách Chiến Dịch</span>
+                        </Link>
+                        {canCreate && (
+                            <button
+                                type="button"
+                                onClick={() => handleOpenModal()}
+                                className="inline-flex items-center gap-1.5 h-[36px] bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer border-none"
+                            >
+                                <Plus size={15} />
+                                <span>Thêm Phân Loại Mới</span>
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {canCreate && (
-                    <Button onClick={() => handleOpenModal()} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
-                        <Plus className="w-4 h-4" /> Thêm Phân Loại Mới
-                    </Button>
-                )}
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+            {/* 2. KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng phân loại</div>
-                        <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{categories.length}</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Tổng Phân Loại
+                        </p>
+                        <h3 className="text-2xl font-bold text-slate-900 tabular-nums mt-1 m-0">
+                            {categories.length}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Nhóm chiến dịch tiếp thị & sự kiện
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                        <Layers className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200/70 shrink-0">
+                        <Layers size={19} />
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Có mô tả chi tiết</div>
-                        <div className="text-2xl font-mono font-bold text-indigo-600 mt-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Có Mô Tả Chi Tiết
+                        </p>
+                        <h3 className="text-2xl font-bold text-indigo-600 tabular-nums mt-1 m-0">
                             {categories.filter(c => c.description).length}
-                        </div>
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Đã chuẩn hóa nội dung danh mục
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                        <FileText className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
+                        <FileText size={19} />
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between">
                     <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Trạng thái</div>
-                        <div className="text-sm font-semibold text-emerald-600 mt-1">Đang kích hoạt</div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Trạng Thái Danh Mục
+                        </p>
+                        <h3 className="text-base font-bold text-emerald-600 mt-1.5 m-0">
+                            Đang kích hoạt
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Sẵn sàng gắn cho chiến dịch mới
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                        <Tag className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200/60 shrink-0">
+                        <Tag size={19} />
                     </div>
                 </div>
             </div>
 
-            {/* Search Ribbon */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-3">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {/* 3. Search Toolbar */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
+                <div className="flex-1 flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-3 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all">
+                    <Search size={15} className="text-slate-400 shrink-0 mr-2" />
                     <input
                         type="text"
                         placeholder="Tìm kiếm phân loại theo tên hoặc mô tả..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
+                        style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                        className="w-full h-full text-xs font-medium text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none p-0"
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="text-slate-400 hover:text-slate-600 ml-1.5 bg-transparent border-none cursor-pointer p-0.5 flex items-center"
+                        >
+                            <X size={13} />
+                        </button>
+                    )}
+                </div>
+
+                <div className="text-xs text-slate-500 tabular-nums shrink-0 hidden sm:block">
+                    Hiển thị <strong className="text-slate-900">{filteredData.length}</strong> / {categories.length} phân loại
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            {/* 4. Data Table */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm">
+                    <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                         <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                <th className="py-3.5 px-4 font-semibold">Tên Phân Loại</th>
-                                <th className="py-3.5 px-4 font-semibold">Mô Tả Danh Mục</th>
-                                <th className="py-3.5 px-4 font-semibold">Ngày Cập Nhật</th>
-                                <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
+                            <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500">
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Tên Phân Loại</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Mô Tả Danh Mục</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px]">Ngày Cập Nhật</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] text-right">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="py-12 text-center">
+                                    <td colSpan={4} className="py-14 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                <Target className="w-6 h-6" />
+                                            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400">
+                                                <Target size={20} />
                                             </div>
-                                            <p className="text-sm font-medium text-slate-700">Chưa có phân loại nào</p>
-                                            <p className="text-xs text-slate-400">Thêm phân loại mới để gắn cho các chiến dịch</p>
+                                            <p className="text-xs font-semibold text-slate-600 m-0">Chưa có phân loại nào</p>
+                                            <p className="text-[11px] text-slate-400 m-0">Thêm phân loại mới để gắn cho các chiến dịch sự kiện</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredData.map((category) => (
-                                    <tr key={category.id} className="hover:bg-slate-50/60 transition-colors">
-                                        <td className="py-3.5 px-4">
+                                    <tr key={category.id} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="py-3 px-3.5 align-middle">
                                             <div className="flex items-center gap-2.5 font-bold text-slate-900">
-                                                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                                                    <Target className="w-4 h-4" />
+                                                <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <Target size={14} />
                                                 </div>
                                                 <span>{category.name}</span>
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-4 text-slate-600 max-w-md truncate">
+                                        <td className="py-3 px-3.5 text-slate-600 max-w-md truncate align-middle">
                                             {category.description || <span className="text-slate-400 italic">Chưa có mô tả</span>}
                                         </td>
-                                        <td className="py-3.5 px-4 text-slate-500 text-xs">
+                                        <td className="py-3 px-3.5 text-slate-500 tabular-nums align-middle">
                                             {formatDate(category.updatedAt)}
                                         </td>
-                                        <td className="py-3.5 px-4 text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
+                                        <td className="py-3 px-3.5 text-right align-middle">
+                                            <div className="flex items-center justify-end gap-1">
                                                 {canEdit && (
-                                                    <button 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => handleOpenModal(category)}
                                                         title="Chỉnh sửa"
-                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-transparent border-none cursor-pointer"
                                                     >
-                                                        <Edit className="w-4 h-4" />
+                                                        <Edit size={14} />
                                                     </button>
                                                 )}
                                                 {canDelete && (
-                                                    <button 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => handleDelete(category.id)}
                                                         title="Xóa"
-                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors bg-transparent border-none cursor-pointer"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <Trash2 size={14} />
                                                     </button>
                                                 )}
                                             </div>

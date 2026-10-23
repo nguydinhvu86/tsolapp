@@ -3,7 +3,6 @@ import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import FormClient from "./FormClient";
-import { buildViewFilter } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +24,11 @@ export default async function MarketingFormsPage() {
     const viewOwn = permissions.includes('MARKETING_VIEW_OWN');
 
     if (!isAdmin && !viewAll && !viewOwn) {
-        if(!permissions.includes('MARKETING_VIEW')) {
+        if (!permissions.includes('MARKETING_VIEW')) {
             redirect("/dashboard");
         }
     }
 
-    // Build the query filter using the parent Campaign's creator
     let campaignFilter = {};
     if (!isAdmin && !viewAll && viewOwn) {
         campaignFilter = { creatorId: session.user.id };
@@ -58,10 +56,7 @@ export default async function MarketingFormsPage() {
     });
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Quản lý Biểu Mẫu</h2>
-            </div>
+        <div className="w-full">
             <FormClient
                 initialData={forms}
                 campaigns={campaigns}

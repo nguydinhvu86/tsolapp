@@ -31,7 +31,7 @@ const hasPermission = (permissions: string[], requiredPerm: string) => {
 
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', nameKey: 'sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
-    { name: 'Executive BI & Dự Báo', nameKey: 'sidebar.executive_bi', href: '/executive-bi', icon: Activity, permission: 'VIEW_DASHBOARD' },
+    { name: 'Executive BI & Dự Báo', nameKey: 'sidebar.executive_bi', href: '/executive-bi', icon: Activity, permission: 'VIEW_EXECUTIVE_BI' },
     { name: 'Bảng Vinh Danh', nameKey: 'sidebar.leaderboard', href: '/leaderboard', icon: Trophy, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
     { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
@@ -400,7 +400,12 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
 
     const toggleSubMenu = (name: string) => setOpenSubMenus(prev => ({ ...prev, [name]: !prev[name] }));
 
-    const userPermissions = session?.user?.permissions || [];
+    const rawPerms = session?.user?.permissions || [];
+    const upperRole = (session?.user?.role || '').toUpperCase();
+    const isManagerRole = ['ADMIN', 'MANAGER', 'DIRECTOR', 'CEO', 'CFO', 'LEADER'].includes(upperRole);
+    const userPermissions = isManagerRole && !rawPerms.includes('VIEW_EXECUTIVE_BI')
+        ? [...rawPerms, 'VIEW_EXECUTIVE_BI']
+        : rawPerms;
     const isAdmin = session?.user?.role === 'ADMIN';
 
     const sensors = useSensors(

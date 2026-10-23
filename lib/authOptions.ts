@@ -5,6 +5,33 @@ import bcrypt from "bcryptjs";
 import { authenticator } from "@otplib/preset-default";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 
+function isManagementLevelUser(role?: string | null, groupName?: string | null, position?: string | null): boolean {
+    const upperRole = (role || '').toUpperCase().trim();
+    if (['ADMIN', 'MANAGER', 'DIRECTOR', 'CEO', 'CFO', 'LEADER'].includes(upperRole)) {
+        return true;
+    }
+
+    const checkText = `${groupName || ''} ${position || ''}`.toLowerCase();
+    const managementKeywords = [
+        'quản lý',
+        'quan ly',
+        'manager',
+        'trưởng phòng',
+        'truong phong',
+        'trưởng bộ phận',
+        'giám đốc',
+        'giam doc',
+        'director',
+        'ban giám đốc',
+        'ceo',
+        'cfo',
+        'admin',
+        'leader',
+        'team lead'
+    ];
+    return managementKeywords.some(kw => checkText.includes(kw));
+}
+
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
@@ -21,7 +48,7 @@ export const authOptions: NextAuthOptions = {
 
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
-                    include: { permissionGroup: true }
+                    include: { permissionGroup: true, employeeProfile: { select: { position: true } } }
                 });
 
                 if (!user || !user.password) {
@@ -63,7 +90,7 @@ export const authOptions: NextAuthOptions = {
                             await triggerPusherEvent('admin-channel', 'customer-login', {
                                 customerId: customer.id,
                                 customerName: customer.name,
-                                message: `Khách hàng ${customer.name} vửa đăng nhập.`
+                                message: `Khách hàng ${customer.name} vừa đăng nhập.`
                             });
                         } catch (e) { console.error("Notification Error:", e) }
 
@@ -122,6 +149,10 @@ export const authOptions: NextAuthOptions = {
                     } else {
                         mergedPerms.add(p);
                     }
+                }
+
+                if (isManagementLevelUser(user.role, user.permissionGroup?.name, user.employeeProfile?.position)) {
+                    mergedPerms.add('VIEW_EXECUTIVE_BI');
                 }
 
                 // Xác định thiết bị & IP
@@ -208,7 +239,7 @@ export const authOptions: NextAuthOptions = {
 
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
-                        include: { permissionGroup: true }
+                        include: { permissionGroup: true, employeeProfile: { select: { position: true } } }
                     });
                     if (dbUser) {
                         token.role = dbUser.role;
@@ -232,6 +263,9 @@ export const authOptions: NextAuthOptions = {
                                 } else {
                                     upgradedPerms.add(p);
                                 }
+                            }
+                            if (isManagementLevelUser(dbUser.role, dbUser.permissionGroup?.name, dbUser.employeeProfile?.position)) {
+                                upgradedPerms.add('VIEW_EXECUTIVE_BI');
                             }
                             token.permissions = Array.from(upgradedPerms);
                         }

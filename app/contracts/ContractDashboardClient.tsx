@@ -24,7 +24,6 @@ import {
     CheckCircle2,
     ExternalLink,
     Building2,
-    Calendar,
     FileCode,
     Send,
     Clock,
@@ -178,259 +177,213 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
         setTimeout(() => setCopiedId(null), 2000);
     };
 
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'SIGNED':
-                return {
-                    bg: '#ecfdf5',
-                    color: '#047857',
-                    border: '#a7f3d0',
-                    iconBg: '#d1fae5',
-                    iconColor: '#059669'
-                };
-            case 'SENT':
-                return {
-                    bg: '#f0f9ff',
-                    color: '#0369a1',
-                    border: '#bae6fd',
-                    iconBg: '#e0f2fe',
-                    iconColor: '#0284c7'
-                };
-            case 'CANCELLED':
-                return {
-                    bg: '#fff1f2',
-                    color: '#be123c',
-                    border: '#fecdd3',
-                    iconBg: '#ffe4e6',
-                    iconColor: '#e11d48'
-                };
-            default:
-                return {
-                    bg: '#fffbeb',
-                    color: '#b45309',
-                    border: '#fde68a',
-                    iconBg: '#fef3c7',
-                    iconColor: '#d97706'
-                };
-        }
-    };
-
     const pageHeading =
         t('contractDashboard.pageTitle') !== 'contractDashboard.pageTitle'
             ? t('contractDashboard.pageTitle')
             : 'Quản lý Hợp đồng';
 
     return (
-        <div className="space-y-5 font-sans text-slate-800">
-            {/* 1. Executive Header Card */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start sm:items-center gap-3.5">
-                    <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                        style={{
-                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                            color: '#ffffff'
-                        }}
-                    >
-                        <FileText size={22} strokeWidth={2} />
+        <div className="space-y-4">
+            {/* 1. ERP Header Bar (Đồng bộ chuẩn font & kích thước toàn hệ thống) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            QUẢN LÝ VĂN THƯ
+                        </span>
+                        <span className="text-slate-300 text-xs">|</span>
+                        <span className="text-xs font-semibold text-slate-500">Hợp đồng &amp; Ký kết B2B</span>
                     </div>
-                    <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-[20px] font-bold text-slate-900 tracking-tight leading-snug m-0">
-                                {pageHeading}
-                            </h1>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 tabular-nums">
-                                {stats.total} hợp đồng
-                            </span>
-                        </div>
-                        <p className="text-[13px] text-slate-500 mt-0.5 font-normal">
-                            Quản lý các hợp đồng mẫu, hợp đồng khách hàng và trạng thái ký kết
-                        </p>
+                    <div className="flex items-center gap-2.5">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                            {pageHeading}
+                        </h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-2xs">
+                            {stats.total}
+                        </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
                     <Link
                         href="/templates"
-                        className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl text-[13px] font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 transition-all"
+                        className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
                     >
-                        <FileCode size={15} className="text-slate-500" />
+                        <FileCode size={15} />
                         <span>Mẫu hợp đồng</span>
                     </Link>
                     <Link
                         href="/contract-appendices"
-                        className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl text-[13px] font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 transition-all"
+                        className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
                     >
-                        <FileSpreadsheet size={15} className="text-slate-500" />
+                        <FileSpreadsheet size={15} />
                         <span>Phụ lục HĐ</span>
                     </Link>
                     {canCreate && (
-                        <Link
-                            href="/contracts/new"
-                            className="inline-flex items-center gap-2 h-[38px] px-4 rounded-xl text-[13px] font-semibold text-white shadow-xs transition-all hover:opacity-95 active:scale-[0.99]"
-                            style={{ backgroundColor: '#059669' }}
-                        >
-                            <Plus size={17} strokeWidth={2.5} />
-                            <span>{t('contractDashboard.createContract')}</span>
+                        <Link href="/contracts/new">
+                            <button
+                                type="button"
+                                style={{ backgroundColor: '#05A613' }}
+                                className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                            >
+                                <Plus size={16} className="stroke-[3]" />
+                                <span>{t('contractDashboard.createContract')}</span>
+                            </button>
                         </Link>
                     )}
                 </div>
             </div>
 
-            {/* 2. Balanced KPI Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Card 1: Total */}
-                <button
-                    type="button"
+            {/* 2. KPI Filter Cards (Đồng bộ chuẩn thẻ hệ thống) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Card 1: Tất cả */}
+                <div
                     onClick={() => setStatusFilter('')}
-                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
-                    style={{
-                        background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
-                        border: statusFilter === '' ? '2px solid #9333ea' : '1px solid #e9d5ff',
-                        boxShadow: statusFilter === '' ? '0 4px 12px rgba(147, 51, 234, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
-                    }}
+                    style={statusFilter === '' ? { borderColor: '#7c3aed', backgroundColor: '#faf5ff', boxShadow: '0 0 0 2px rgba(124, 58, 237, 0.15)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
-                    <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#7e22ce' }}>
-                            Tất cả hợp đồng
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{ backgroundColor: '#7c3aed' }}
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
+                                <Layers size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">Tất cả hợp đồng</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Tổng số hợp đồng hệ thống</p>
+                            </div>
                         </div>
-                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#581c87' }}>
+                        <span
+                            style={statusFilter === '' ? { color: '#7c3aed' } : {}}
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             {stats.total}
-                        </div>
-                        <div className="text-[12px] font-medium text-slate-500">
-                            Tổng số hợp đồng hệ thống
-                        </div>
+                        </span>
                     </div>
-                    <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: 'rgba(147, 51, 234, 0.12)', color: '#7e22ce' }}
-                    >
-                        <Layers size={21} strokeWidth={2} />
-                    </div>
-                </button>
+                </div>
 
-                {/* Card 2: Draft */}
-                <button
-                    type="button"
+                {/* Card 2: Bản nháp */}
+                <div
                     onClick={() => setStatusFilter(statusFilter === 'DRAFT' ? '' : 'DRAFT')}
-                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
-                    style={{
-                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                        border: statusFilter === 'DRAFT' ? '2px solid #d97706' : '1px solid #fde68a',
-                        boxShadow: statusFilter === 'DRAFT' ? '0 4px 12px rgba(217, 119, 6, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
-                    }}
+                    style={statusFilter === 'DRAFT' ? { borderColor: '#f59e0b', backgroundColor: '#fffbeb', boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
-                    <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#b45309' }}>
-                            {t('contractDashboard.statusDraft')}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{ backgroundColor: '#f59e0b' }}
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
+                                <Clock size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('contractDashboard.statusDraft')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Bản thảo chưa gửi khách</p>
+                            </div>
                         </div>
-                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#92400e' }}>
+                        <span
+                            style={statusFilter === 'DRAFT' ? { color: '#d97706' } : {}}
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             {stats.draft}
-                        </div>
-                        <div className="text-[12px] font-medium text-slate-500">
-                            Bản thảo chưa gửi khách
-                        </div>
+                        </span>
                     </div>
-                    <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: 'rgba(217, 119, 6, 0.12)', color: '#b45309' }}
-                    >
-                        <Clock size={21} strokeWidth={2} />
-                    </div>
-                </button>
+                </div>
 
-                {/* Card 3: Sent */}
-                <button
-                    type="button"
+                {/* Card 3: Đã gửi */}
+                <div
                     onClick={() => setStatusFilter(statusFilter === 'SENT' ? '' : 'SENT')}
-                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
-                    style={{
-                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                        border: statusFilter === 'SENT' ? '2px solid #0284c7' : '1px solid #bae6fd',
-                        boxShadow: statusFilter === 'SENT' ? '0 4px 12px rgba(2, 132, 199, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
-                    }}
+                    style={statusFilter === 'SENT' ? { borderColor: '#0ea5e9', backgroundColor: '#f0f9ff', boxShadow: '0 0 0 2px rgba(14, 165, 233, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
-                    <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#0369a1' }}>
-                            {t('contractDashboard.statusSent')}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{ backgroundColor: '#0ea5e9' }}
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
+                                <Send size={19} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('contractDashboard.statusSent')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Đang chờ khách hàng ký</p>
+                            </div>
                         </div>
-                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#075985' }}>
+                        <span
+                            style={statusFilter === 'SENT' ? { color: '#0284c7' } : {}}
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             {stats.sent}
-                        </div>
-                        <div className="text-[12px] font-medium text-slate-500">
-                            Đang chờ khách hàng ký
-                        </div>
+                        </span>
                     </div>
-                    <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: 'rgba(2, 132, 199, 0.12)', color: '#0284c7' }}
-                    >
-                        <Send size={20} strokeWidth={2} />
-                    </div>
-                </button>
+                </div>
 
-                {/* Card 4: Signed */}
-                <button
-                    type="button"
+                {/* Card 4: Đã ký */}
+                <div
                     onClick={() => setStatusFilter(statusFilter === 'SIGNED' ? '' : 'SIGNED')}
-                    className="text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between gap-3"
-                    style={{
-                        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                        border: statusFilter === 'SIGNED' ? '2px solid #059669' : '1px solid #a7f3d0',
-                        boxShadow: statusFilter === 'SIGNED' ? '0 4px 12px rgba(5, 150, 105, 0.12)' : '0 1px 3px rgba(0, 0, 0, 0.03)'
-                    }}
+                    style={statusFilter === 'SIGNED' ? { borderColor: '#05A613', backgroundColor: '#ecfdf5', boxShadow: '0 0 0 2px rgba(5, 166, 19, 0.2)' } : {}}
+                    className="relative cursor-pointer transition-all duration-200 rounded-xl p-3.5 bg-white border border-slate-200 shadow-xs hover:-translate-y-0.5 hover:shadow-sm"
                 >
-                    <div className="min-w-0">
-                        <div className="text-[11.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#047857' }}>
-                            {t('contractDashboard.statusSigned')}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{ backgroundColor: '#05A613' }}
+                                className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-sm shrink-0"
+                            >
+                                <CheckCircle2 size={20} className="stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-slate-900 tracking-tight">{t('contractDashboard.statusSigned')}</h3>
+                                <p className="text-[11px] text-slate-500 mt-0.5">Hợp đồng đã hoàn tất ký</p>
+                            </div>
                         </div>
-                        <div className="text-[28px] font-extrabold leading-none tabular-nums mb-1.5" style={{ color: '#065f46' }}>
+                        <span
+                            style={statusFilter === 'SIGNED' ? { color: '#05A613' } : {}}
+                            className="text-lg font-extrabold font-mono text-slate-800"
+                        >
                             {stats.signed}
-                        </div>
-                        <div className="text-[12px] font-medium text-slate-500">
-                            Hợp đồng đã hoàn tất ký
-                        </div>
+                        </span>
                     </div>
-                    <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: 'rgba(5, 150, 105, 0.12)', color: '#059669' }}
-                    >
-                        <CheckCircle2 size={21} strokeWidth={2} />
-                    </div>
-                </button>
+                </div>
             </div>
 
-            {/* 3. Main Data Container (Toolbar + Table + Pagination) */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-                {/* Filter & Search Ribbon */}
-                <div className="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    {/* Search Input (Flexbox aligned so icon never shifts) */}
-                    <div className="flex items-center flex-1 max-w-xl h-[38px] bg-white border border-slate-200/90 rounded-xl px-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all shadow-2xs">
-                        <Search size={16} className="text-slate-400 shrink-0 mr-2.5" />
+            {/* 3. Main Data Container */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* Search & Filter Toolbar */}
+                <div className="p-3.5 border-b border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                    {/* Search Input */}
+                    <div className="flex items-center w-full sm:w-[380px] h-[36px] bg-white border border-slate-300 rounded-lg px-3 focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600/20 transition-all shadow-2xs">
+                        <Search size={14} className="text-slate-400 shrink-0 mr-2" />
                         <input
                             type="text"
                             placeholder={t('contractDashboard.searchPlaceholder')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full h-full bg-transparent border-none outline-none text-[13px] text-slate-800 placeholder:text-slate-400 font-medium"
+                            className="w-full h-full text-xs bg-transparent border-none outline-none text-slate-800 placeholder-slate-400"
                         />
                         {searchTerm && (
                             <button
                                 type="button"
                                 onClick={() => setSearchTerm('')}
-                                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 shrink-0 ml-1"
-                                title="Xóa tìm kiếm"
+                                className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer shrink-0 ml-1"
                             >
-                                <X size={14} />
+                                <X size={13} />
                             </button>
                         )}
                     </div>
 
-                    {/* Right Filters: Template Select + Status Select + Reset */}
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Right Filter Controls */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] font-semibold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                            Hiển thị <span className="text-slate-900 font-bold font-mono">{filteredData.length}</span> / {stats.total} hợp đồng
+                        </span>
+
                         {templateOptions.length > 0 && (
                             <select
-                                className="h-[38px] px-3 text-[13px] bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 font-medium cursor-pointer shadow-2xs"
+                                className="h-[34px] px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-600 text-slate-700 font-semibold cursor-pointer shadow-2xs"
                                 value={templateFilter}
                                 onChange={e => setTemplateFilter(e.target.value)}
                             >
@@ -442,7 +395,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                         )}
 
                         <select
-                            className="h-[38px] px-3 text-[13px] bg-white border border-slate-200/90 rounded-xl focus:outline-none focus:border-emerald-500 text-slate-700 font-medium cursor-pointer shadow-2xs"
+                            className="h-[34px] px-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-600 text-slate-700 font-semibold cursor-pointer shadow-2xs"
                             value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}
                         >
@@ -452,94 +405,75 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                             <option value="SIGNED">{t('contractDashboard.statusSigned')} ({stats.signed})</option>
                             <option value="CANCELLED">{t('contractDashboard.statusCancelled')} ({stats.cancelled})</option>
                         </select>
-
-                        {(searchTerm || statusFilter || templateFilter) && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchTerm('');
-                                    setStatusFilter('');
-                                    setTemplateFilter('');
-                                }}
-                                className="h-[38px] px-3 rounded-xl text-[12.5px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 transition-colors"
-                            >
-                                Xóa lọc
-                            </button>
-                        )}
                     </div>
                 </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/90 border-b border-slate-200/80">
+                            <tr className="border-b border-slate-200 bg-slate-100/80">
                                 <th
                                     onClick={() => handleSort('title')}
-                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors min-w-[280px]"
+                                    className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/60 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <span>{t('contractDashboard.title')}</span>
+                                        {t('contractDashboard.title')}
                                         {sortField === 'title' ? (
-                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
-                                        ) : (
-                                            <ArrowUpDown size={13} className="text-slate-300" />
-                                        )}
+                                            sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                        ) : <ArrowUpDown size={11} className="opacity-30" />}
                                     </div>
                                 </th>
+
                                 <th
                                     onClick={() => handleSort('templateName')}
-                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[180px]"
+                                    className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[170px] hover:bg-slate-200/60 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <span>{t('contractDashboard.templateName')}</span>
+                                        {t('contractDashboard.templateName')}
                                         {sortField === 'templateName' ? (
-                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
-                                        ) : (
-                                            <ArrowUpDown size={13} className="text-slate-300" />
-                                        )}
+                                            sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                        ) : <ArrowUpDown size={11} className="opacity-30" />}
                                     </div>
                                 </th>
+
                                 <th
                                     onClick={() => handleSort('customerName')}
-                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors min-w-[240px]"
+                                    className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider hover:bg-slate-200/60 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <span>{t('contractDashboard.customerName')}</span>
+                                        {t('contractDashboard.customerName')}
                                         {sortField === 'customerName' ? (
-                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
-                                        ) : (
-                                            <ArrowUpDown size={13} className="text-slate-300" />
-                                        )}
+                                            sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                        ) : <ArrowUpDown size={11} className="opacity-30" />}
                                     </div>
                                 </th>
+
                                 <th
                                     onClick={() => handleSort('status')}
-                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-center text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[135px]"
+                                    className="cursor-pointer select-none py-2.5 px-3.5 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[130px] hover:bg-slate-200/60 transition-colors"
                                 >
                                     <div className="flex items-center justify-center gap-1.5">
-                                        <span>{t('contractDashboard.status')}</span>
+                                        {t('contractDashboard.status')}
                                         {sortField === 'status' ? (
-                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
-                                        ) : (
-                                            <ArrowUpDown size={13} className="text-slate-300" />
-                                        )}
+                                            sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                        ) : <ArrowUpDown size={11} className="opacity-30" />}
                                     </div>
                                 </th>
+
                                 <th
                                     onClick={() => handleSort('createdAt')}
-                                    className="cursor-pointer select-none hover:bg-slate-100/80 py-3.5 px-4 text-[11.5px] font-bold uppercase tracking-wider text-slate-500 transition-colors w-[130px]"
+                                    className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[115px] hover:bg-slate-200/60 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
-                                        <span>{t('contractDashboard.createdAt')}</span>
+                                        {t('contractDashboard.createdAt')}
                                         {sortField === 'createdAt' ? (
-                                            sortOrder === 'asc' ? <ChevronUp size={14} className="text-emerald-600" /> : <ChevronDown size={14} className="text-emerald-600" />
-                                        ) : (
-                                            <ArrowUpDown size={13} className="text-slate-300" />
-                                        )}
+                                            sortOrder === 'asc' ? <ChevronUp size={12} className="text-emerald-600 stroke-[3]" /> : <ChevronDown size={12} className="text-emerald-600 stroke-[3]" />
+                                        ) : <ArrowUpDown size={11} className="opacity-30" />}
                                     </div>
                                 </th>
-                                <th className="py-3.5 px-4 text-center text-[11.5px] font-bold uppercase tracking-wider text-slate-500 w-[170px]">
+
+                                <th className="py-2.5 px-3.5 text-right text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[195px]">
                                     {t('contractDashboard.actions')}
                                 </th>
                             </tr>
@@ -547,88 +481,73 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                         <tbody className="divide-y divide-slate-100">
                             {paginatedItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-12 px-4 text-center">
+                                    <td colSpan={6} className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                                                <FileText size={20} />
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                                <Search size={18} />
                                             </div>
-                                            <p className="text-[13.5px] font-semibold text-slate-700">
-                                                {t('contractDashboard.noContracts')}
-                                            </p>
-                                            <p className="text-[12.5px] text-slate-400">
-                                                Thử thay đổi bộ lọc hoặc tạo hợp đồng mới để bắt đầu
-                                            </p>
+                                            <p className="text-xs font-semibold text-slate-600">{t('contractDashboard.noContracts')}</p>
+                                            <p className="text-[11px] text-slate-400">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 paginatedItems.map(c => {
-                                    const stStyle = getStatusStyle(c.status);
                                     const isCopied = copiedId === c.id;
 
                                     return (
-                                        <tr
-                                            key={c.id}
-                                            className="hover:bg-slate-50/80 transition-colors group"
-                                        >
-                                            {/* Col 1: Tên Hợp đồng */}
-                                            <td className="py-3.5 px-4 align-middle">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div
-                                                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                                        style={{
-                                                            backgroundColor: stStyle.iconBg,
-                                                            color: stStyle.iconColor
-                                                        }}
-                                                    >
-                                                        <FileText size={16} strokeWidth={2} />
+                                        <tr key={c.id} className="hover:bg-slate-50/90 transition-colors group">
+                                            {/* TÊN HỢP ĐỒNG */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
+                                                        <FileText size={14} />
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => setQuickViewContract(c)}
-                                                        className="text-left text-[13.5px] font-semibold text-slate-800 group-hover:text-emerald-700 hover:underline transition-colors cursor-pointer leading-snug line-clamp-2"
-                                                        title="Nhấn để xem nhanh hợp đồng"
+                                                        className="text-left font-bold text-xs text-slate-900 hover:text-emerald-700 transition-colors cursor-pointer"
+                                                        title="Nhấn để Xem nhanh"
                                                     >
                                                         {c.title}
                                                     </button>
                                                 </div>
                                             </td>
 
-                                            {/* Col 2: Loại Mẫu */}
-                                            <td className="py-3.5 px-4 align-middle">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12.5px] font-medium bg-slate-100/90 text-slate-700 border border-slate-200/80 max-w-[180px] truncate">
-                                                    <FileCode size={13} className="text-slate-400 shrink-0" />
-                                                    <span className="truncate">{c.template?.name || 'Mặc định'}</span>
+                                            {/* LOẠI MẪU */}
+                                            <td className="py-2.5 px-3.5 align-middle">
+                                                <span className="font-mono text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 inline-block truncate max-w-[160px]">
+                                                    {c.template?.name || 'Mặc định'}
                                                 </span>
                                             </td>
 
-                                            {/* Col 3: Khách hàng */}
-                                            <td className="py-3.5 px-4 align-middle">
+                                            {/* KHÁCH HÀNG */}
+                                            <td className="py-2.5 px-3.5 align-middle">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <Building2 size={14} className="text-slate-400 shrink-0" />
+                                                    <Building2 size={13} className="text-slate-400 shrink-0" />
                                                     <Link
                                                         href={`/customers/${c.customer.id}`}
-                                                        className="text-[13px] font-medium text-slate-700 hover:text-emerald-600 transition-colors leading-snug line-clamp-1"
-                                                        title={c.customer.name}
+                                                        className="text-xs font-semibold text-slate-800 hover:text-emerald-700 transition-colors truncate max-w-[280px]"
                                                     >
                                                         {c.customer.name}
                                                     </Link>
                                                 </div>
                                             </td>
 
-                                            {/* Col 4: Trạng thái */}
-                                            <td className="py-3.5 px-4 align-middle text-center">
+                                            {/* TRẠNG THÁI */}
+                                            <td className="py-2.5 px-3.5 align-middle text-center">
                                                 <select
-                                                    className="text-[12px] font-semibold rounded-full px-3 py-1 border cursor-pointer focus:outline-none transition-all"
-                                                    style={{
-                                                        backgroundColor: stStyle.bg,
-                                                        color: stStyle.color,
-                                                        borderColor: stStyle.border,
-                                                        opacity: canEdit ? 1 : 0.75
-                                                    }}
                                                     value={c.status}
                                                     onChange={(e) => handleStatusChange(c.id, e.target.value)}
                                                     disabled={!canEdit}
+                                                    style={{
+                                                        backgroundColor: c.status === 'SIGNED' ? '#ecfdf5' : c.status === 'CANCELLED' ? '#fff1f2' : c.status === 'SENT' ? '#f0f9ff' : '#fffbeb',
+                                                        color: c.status === 'SIGNED' ? '#047857' : c.status === 'CANCELLED' ? '#be123c' : c.status === 'SENT' ? '#0369a1' : '#b45309',
+                                                        borderColor: c.status === 'SIGNED' ? '#a7f3d0' : c.status === 'CANCELLED' ? '#fecdd3' : c.status === 'SENT' ? '#bae6fd' : '#fde68a',
+                                                    }}
+                                                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border focus:outline-none transition-colors shadow-2xs ${
+                                                        canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-75'
+                                                    }`}
                                                 >
                                                     <option value="DRAFT">{t('contractDashboard.statusDraft')}</option>
                                                     <option value="SENT">{t('contractDashboard.statusSent')}</option>
@@ -637,34 +556,34 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                                 </select>
                                             </td>
 
-                                            {/* Col 5: Ngày tạo */}
-                                            <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                                                <div className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 tabular-nums" suppressHydrationWarning>
-                                                    <Calendar size={13} className="text-slate-400 shrink-0" />
-                                                    <span>{formatDate(new Date(c.createdAt))}</span>
-                                                </div>
+                                            {/* NGÀY TẠO */}
+                                            <td className="py-2.5 px-3.5 align-middle whitespace-nowrap">
+                                                <span className="text-xs font-mono text-slate-500" suppressHydrationWarning>
+                                                    {formatDate(new Date(c.createdAt))}
+                                                </span>
                                             </td>
 
-                                            {/* Col 6: Thao tác */}
-                                            <td className="py-3.5 px-4 align-middle">
-                                                <div className="flex items-center justify-center gap-1">
+                                            {/* THAO TÁC */}
+                                            <td className="py-2.5 px-3.5 align-middle text-right">
+                                                <div className="flex items-center justify-end gap-1">
                                                     {/* XEM NHANH: DRAWER */}
                                                     <button
                                                         type="button"
                                                         onClick={() => setQuickViewContract(c)}
-                                                        className="w-8 h-8 inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                                                        title="Xem nhanh (Drawer)"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs shrink-0"
+                                                        title="Xem nhanh Hợp đồng"
                                                     >
-                                                        <Eye size={16} />
+                                                        <Eye size={13} />
+                                                        <span>Xem nhanh</span>
                                                     </button>
 
                                                     {/* XEM CHI TIẾT: FULL PAGE */}
                                                     <Link
                                                         href={`/contracts/${c.id}`}
-                                                        className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
-                                                        title="Mở chi tiết & in hợp đồng"
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-emerald-700 hover:bg-slate-100 transition-colors"
+                                                        title="Mở trang chi tiết & in chuẩn A4"
                                                     >
-                                                        <ExternalLink size={15} />
+                                                        <ExternalLink size={14} />
                                                     </Link>
 
                                                     {/* SỬA */}
@@ -672,10 +591,10 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                                         <button
                                                             type="button"
                                                             onClick={() => handleEditClick(c)}
-                                                            className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
                                                             title={t('contractDashboard.editContent')}
                                                         >
-                                                            <Edit2 size={15} />
+                                                            <Edit2 size={14} />
                                                         </button>
                                                     )}
 
@@ -683,10 +602,10 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCopyLink(c.id)}
-                                                        className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors cursor-pointer"
-                                                        title="Sao chép liên kết xem trước cho khách hàng"
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                                                        title="Sao chép Link xem trước cho khách"
                                                     >
-                                                        {isCopied ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />}
+                                                        {isCopied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                                                     </button>
 
                                                     {/* XÓA */}
@@ -694,10 +613,10 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                                                         <button
                                                             type="button"
                                                             onClick={() => handleDelete(c.id)}
-                                                            className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                                             title={t('contractDashboard.delete')}
                                                         >
-                                                            <Trash2 size={15} />
+                                                            <Trash2 size={14} />
                                                         </button>
                                                     )}
                                                 </div>
@@ -710,7 +629,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                     </table>
                 </div>
 
-                {/* Pagination Footer */}
+                {/* Pagination */}
                 <Pagination {...paginationProps} />
             </div>
 
@@ -732,7 +651,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                 maxWidth="1000px"
             >
                 <div className="flex flex-col gap-4">
-                    <p className="text-[13px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                         {t('contractDashboard.customerLabel')}: <strong className="text-slate-800">{editingContract?.customer.name}</strong>
                     </p>
                     <RichTextEditor
@@ -740,7 +659,7 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                         onChange={setEditContent}
                         placeholder={t('contractDashboard.editPlaceholder')}
                     />
-                    <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+                    <div className="flex gap-2 justify-end pt-2 border-t border-slate-200">
                         <Button variant="secondary" onClick={() => setEditingContract(null)}>{t('contractDashboard.cancel')}</Button>
                         <Button onClick={handleSaveContract} disabled={isSaving}>
                             {isSaving ? t('contractDashboard.saving') : t('contractDashboard.saveChanges')}

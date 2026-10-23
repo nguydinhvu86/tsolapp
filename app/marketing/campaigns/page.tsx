@@ -25,12 +25,11 @@ export default async function MarketingCampaignsPage() {
     const viewOwn = permissions.includes('MARKETING_VIEW_OWN');
 
     if (!isAdmin && !viewAll && !viewOwn) {
-        if(!permissions.includes('MARKETING_VIEW')) {
+        if (!permissions.includes('MARKETING_VIEW')) {
             redirect("/dashboard");
         }
     }
 
-    // Build the query filter for campaigns
     const viewFilter = isAdmin ? {} : buildViewFilter(session.user.id, permissions, 'MARKETING', 'creatorId');
     if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') {
         redirect("/dashboard");
@@ -55,10 +54,7 @@ export default async function MarketingCampaignsPage() {
     });
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Quản lý Chiến Dịch & Sự Kiện</h2>
-            </div>
+        <div className="w-full">
             <CampaignClient
                 initialData={campaigns}
                 categories={categories}

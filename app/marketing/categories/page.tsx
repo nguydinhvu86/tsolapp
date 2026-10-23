@@ -3,7 +3,6 @@ import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CategoryClient from "./CategoryClient";
-import { buildViewFilter } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +24,7 @@ export default async function MarketingCategoriesPage() {
     const viewOwn = permissions.includes('MARKETING_VIEW_OWN');
 
     if (!isAdmin && !viewAll && !viewOwn) {
-        // Fallback for standalone access right before full perm matrix
-        if(!permissions.includes('MARKETING_VIEW')) {
+        if (!permissions.includes('MARKETING_VIEW')) {
             redirect("/dashboard");
         }
     }
@@ -36,10 +34,7 @@ export default async function MarketingCategoriesPage() {
     });
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Phân loại Sự Kiện</h2>
-            </div>
+        <div className="w-full">
             <CategoryClient
                 initialData={categories}
                 isAdmin={isAdmin}

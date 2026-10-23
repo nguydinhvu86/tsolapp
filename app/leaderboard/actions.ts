@@ -1380,8 +1380,8 @@ export async function addPostComment(data: {
 
                 await createNotification(
                     targetUserId,
-                    '💬 Bạn được tag trong bình luận',
-                    `${currentUser.name || 'Đồng nghiệp'} vừa nhắc đến bạn trong một bình luận trên Bảng Vinh Danh.`,
+                    data.parentId ? '💬 Phản hồi bình luận của bạn' : '💬 Bạn được tag trong bình luận',
+                    `${currentUser.name || 'Đồng nghiệp'} vừa nhắc đến bạn trong bình luận: "${data.content.slice(0, 80)}"`,
                     'INFO',
                     `/leaderboard?postId=${data.postId}`
                 );

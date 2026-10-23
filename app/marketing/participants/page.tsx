@@ -24,7 +24,7 @@ export default async function ParticipantsPage() {
     const viewOwn = permissions.includes('MARKETING_VIEW_OWN');
 
     if (!isAdmin && !viewAll && !viewOwn) {
-        if(!permissions.includes('MARKETING_VIEW')) {
+        if (!permissions.includes('MARKETING_VIEW')) {
             redirect("/dashboard");
         }
     }
@@ -52,10 +52,7 @@ export default async function ParticipantsPage() {
     });
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Danh sách Người tham gia</h2>
-            </div>
+        <div className="w-full">
             <ParticipantClient
                 initialData={participants}
                 campaigns={campaigns}

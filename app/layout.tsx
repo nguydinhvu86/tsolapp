@@ -86,11 +86,11 @@ export default async function RootLayout({
     const locale = getCurrentLocale();
 
     return (
-        <html lang={locale}>
+        <html lang={locale} className={inter.variable}>
             <head>
                 <meta name="mobile-web-app-capable" content="yes" />
             </head>
-            <body className={inter.className} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
+            <body className={`${inter.className} ${inter.variable}`} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
                     <LanguageProvider dictionary={dictionary} locale={locale}>
                         <ToastProvider>

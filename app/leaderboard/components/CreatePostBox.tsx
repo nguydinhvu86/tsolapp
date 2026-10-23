@@ -1,9 +1,8 @@
 'use client';
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image as ImageIcon, AtSign, Sparkles, X, Loader2, Trophy, Shield, Users, Flame, CheckCircle2 } from 'lucide-react';
+import { Send, Image as ImageIcon, AtSign, X, Loader2, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createSocialPost, searchMentionUsers } from '../actions';
 
 interface Props {
@@ -37,6 +36,7 @@ export function CreatePostBox({
     const [postType, setPostType] = useState<'USER_POST' | 'INDIVIDUAL_HONOR' | 'TEAM_HONOR'>('USER_POST');
     const [content, setContent] = useState('');
     const [images, setImages] = useState<string[]>([]);
+    const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [taggedUsers, setTaggedUsers] = useState<{ id: string; name: string }[]>([]);
@@ -45,7 +45,6 @@ export function CreatePostBox({
 
     // Mention Autocomplete state
     const [showMentionDropdown, setShowMentionDropdown] = useState(false);
-    const [mentionSearch, setMentionSearch] = useState('');
     const [mentionUsers, setMentionUsers] = useState<any[]>([]);
     const [isLoadingMentions, setIsLoadingMentions] = useState(false);
 
@@ -86,11 +85,10 @@ export function CreatePostBox({
 
         if (lastAtIndex !== -1 && (lastAtIndex === 0 || /\s/.test(textBeforeCursor[lastAtIndex - 1]))) {
             const query = textBeforeCursor.slice(lastAtIndex + 1);
-            if (!query.includes(' ')) {
+            if (!query.includes('\n') && query.split(' ').length <= 3 && query.length <= 30) {
                 setShowMentionDropdown(true);
-                setMentionSearch(query);
                 setIsLoadingMentions(true);
-                const results = await searchMentionUsers(query);
+                const results = await searchMentionUsers(query.trim());
                 setMentionUsers(results);
                 setIsLoadingMentions(false);
                 return;
@@ -99,13 +97,28 @@ export function CreatePostBox({
         setShowMentionDropdown(false);
     };
 
+    const triggerMentionButton = async () => {
+        const el = textareaRef.current;
+        const newContent = content.endsWith(' ') || content.length === 0 ? `${content}@` : `${content} @`;
+        setContent(newContent);
+        setShowMentionDropdown(true);
+        setIsLoadingMentions(true);
+        el?.focus();
+        const results = await searchMentionUsers('');
+        setMentionUsers(results);
+        setIsLoadingMentions(false);
+    };
+
     const selectMentionUser = (user: any) => {
         const cursorPos = textareaRef.current?.selectionStart || content.length;
         const textBeforeCursor = content.slice(0, cursorPos);
         const lastAtIndex = textBeforeCursor.lastIndexOf('@');
         const textAfterCursor = content.slice(cursorPos);
 
-        const newText = textBeforeCursor.slice(0, lastAtIndex) + `@${user.name} ` + textAfterCursor;
+        const newText =
+            lastAtIndex !== -1
+                ? textBeforeCursor.slice(0, lastAtIndex) + `@${user.name} ` + textAfterCursor
+                : content + `@${user.name} `;
         setContent(newText);
         setTaggedUsers(prev => {
             if (prev.some(u => u.id === user.id)) return prev;
@@ -145,6 +158,7 @@ export function CreatePostBox({
 
     const removeImage = (index: number) => {
         setImages(prev => prev.filter((_, i) => i !== index));
+        if (previewIndex !== null) setPreviewIndex(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -153,7 +167,9 @@ export function CreatePostBox({
 
         setIsSubmitting(true);
         try {
-            const mentionedIds = taggedUsers.map(u => u.id);
+            const mentionedIds = taggedUsers
+                .filter(u => content.includes(`@${u.name}`))
+                .map(u => u.id);
             const metadata: any = {};
             if (selectedBadge) metadata.badge = selectedBadge;
 
@@ -179,7 +195,7 @@ export function CreatePostBox({
     };
 
     return (
-        <div 
+        <div
             className="rounded-3xl p-4 sm:p-5 shadow-sm border relative space-y-3"
             style={{ background: '#ffffff', borderColor: '#e2e8f0' }}
         >
@@ -272,7 +288,7 @@ export function CreatePostBox({
                     value={content}
                     onChange={handleTextChange}
                     placeholder={
-                        postType === 'INDIVIDUAL_HONOR' 
+                        postType === 'INDIVIDUAL_HONOR'
                             ? "Viết lời khen ngợi, tuyên dương đồng nghiệp xuất sắc... (Gõ @ để tag tên)"
                             : postType === 'TEAM_HONOR'
                             ? "Chúc mừng và tiếp thêm lửa cho các thành viên trong đội nhóm..."
@@ -284,8 +300,17 @@ export function CreatePostBox({
                 {/* Mention Autocomplete Dropdown */}
                 {showMentionDropdown && (
                     <div className="absolute left-0 bottom-full mb-1 w-72 max-h-56 overflow-y-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-30 p-1.5 space-y-1">
-                        <div className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">
-                            Gợi ý đồng nghiệp ({mentionUsers.length})
+                        <div className="flex items-center justify-between px-2 py-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Tag đồng nghiệp ({mentionUsers.length})
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setShowMentionDropdown(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                         {isLoadingMentions ? (
                             <div className="text-center py-3 text-slate-400 text-xs">Đang tìm...</div>
@@ -323,35 +348,59 @@ export function CreatePostBox({
                 <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] font-bold text-slate-400">Đã tag:</span>
                     {taggedUsers.map(u => (
-                        <span 
+                        <span
                             key={u.id}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200 dark:border-emerald-800"
                         >
                             <span>@{u.name}</span>
-                            <X 
-                                className="w-3 h-3 hover:text-rose-500 cursor-pointer" 
-                                onClick={() => setTaggedUsers(prev => prev.filter(item => item.id !== u.id))} 
+                            <X
+                                className="w-3 h-3 hover:text-rose-500 cursor-pointer"
+                                onClick={() => setTaggedUsers(prev => prev.filter(item => item.id !== u.id))}
                             />
                         </span>
                     ))}
                 </div>
             )}
 
-            {/* Image Preview Grid */}
+            {/* Compact Image Preview Strip */}
             {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                    {images.map((img, idx) => (
-                        <div key={idx} className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 h-20 sm:h-24">
-                            <img src={img} alt="Upload" className="w-full h-full object-cover" />
+                <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                        <span>Đã đính kèm {images.length} hình ảnh (nhấn vào ảnh để xem phóng to)</span>
+                        {images.length > 1 && (
                             <button
                                 type="button"
-                                onClick={() => removeImage(idx)}
-                                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-rose-600 transition-colors cursor-pointer"
+                                onClick={() => setImages([])}
+                                className="text-rose-500 hover:underline text-[11px] font-semibold"
                             >
-                                <X className="w-3.5 h-3.5" />
+                                Xóa tất cả
                             </button>
-                        </div>
-                    ))}
+                        )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {images.map((img, idx) => (
+                            <div
+                                key={idx}
+                                className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 shrink-0 shadow-2xs"
+                                style={{ width: '80px', height: '80px' }}
+                            >
+                                <img
+                                    src={img}
+                                    alt={`Upload ${idx + 1}`}
+                                    onClick={() => setPreviewIndex(idx)}
+                                    className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(idx)}
+                                    className="absolute top-1 right-1 p-1 rounded-full bg-black/65 text-white hover:bg-rose-600 transition-colors cursor-pointer"
+                                    title="Xóa ảnh này"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -384,14 +433,11 @@ export function CreatePostBox({
 
                     <button
                         type="button"
-                        onClick={() => {
-                            setContent(prev => prev + '@');
-                            textareaRef.current?.focus();
-                        }}
+                        onClick={triggerMentionButton}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Nhắc đến đồng nghiệp (@mention)"
                     >
-                        <AtSign className="w-4 h-4 text-blue-600" />
+                        <AtSign className="w-4 h-4 text-emerald-600" />
                         <span className="hidden sm:inline">Tag tên</span>
                     </button>
                 </div>
@@ -415,6 +461,43 @@ export function CreatePostBox({
                     )}
                 </button>
             </div>
+
+            {/* Lightbox for previewing uploaded images before posting */}
+            {previewIndex !== null && images[previewIndex] && (
+                <div
+                    onClick={() => setPreviewIndex(null)}
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="relative flex items-center justify-center max-w-[90vw] max-h-[82vh]"
+                    >
+                        {images.length > 1 && (
+                            <button
+                                type="button"
+                                onClick={() => setPreviewIndex((previewIndex - 1 + images.length) % images.length)}
+                                className="absolute left-2 sm:-left-12 p-2.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all cursor-pointer z-10"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                        )}
+                        <img
+                            src={images[previewIndex]}
+                            alt="Preview"
+                            className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain"
+                        />
+                        {images.length > 1 && (
+                            <button
+                                type="button"
+                                onClick={() => setPreviewIndex((previewIndex + 1) % images.length)}
+                                className="absolute right-2 sm:-right-12 p-2.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all cursor-pointer z-10"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

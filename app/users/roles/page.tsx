@@ -21,16 +21,7 @@ export default async function RolesPage() {
     }));
 
     return (
-        <div>
-            <div className="flex justify-between items-center" style={{ marginBottom: '2rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Nhóm Quyền (Vai Trò)</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                        Tạo và tùy chỉnh các nhóm quyền cho nhân viên.
-                    </p>
-                </div>
-            </div>
-
+        <div className="space-y-4 w-full">
             <RolesClient initialGroups={formattedGroups} />
         </div>
     );

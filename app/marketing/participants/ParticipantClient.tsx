@@ -1,38 +1,37 @@
 'use client';
 
-
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { MarketingParticipant } from '@prisma/client';
-import { Button } from '@/app/components/ui/Button';
-import { 
-    checkInParticipant, 
-    cancelCheckInParticipant, 
-    deleteParticipant, 
-    updateParticipantStatus 
+import {
+    checkInParticipant,
+    cancelCheckInParticipant,
+    deleteParticipant,
+    updateParticipantStatus
 } from './actions';
-import { 
-    Trash2, 
-    Search, 
-    CheckCircle, 
-    Clock, 
-    MapPin, 
-    UserCheck, 
-    Download, 
-    ChevronUp, 
-    ChevronDown, 
+import {
+    Trash2,
+    Search,
+    CheckCircle,
+    Clock,
+    UserCheck,
+    Download,
+    ChevronUp,
+    ChevronDown,
     ArrowUpDown,
     Users,
     Bell,
     CheckCircle2,
-    RotateCcw
+    RotateCcw,
+    X,
+    FileText
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
+import Link from 'next/link';
 
 export type ParticipantListType = MarketingParticipant & {
-    campaign: { id: string, name: string, code: string };
-    form: { id: string, title: string } | null;
+    campaign: { id: string; name: string; code: string };
+    form: { id: string; title: string } | null;
 };
 
 export default function ParticipantClient({
@@ -42,16 +41,18 @@ export default function ParticipantClient({
     permissions,
 }: {
     initialData: ParticipantListType[];
-    campaigns: { id: string, name: string }[];
+    campaigns: { id: string; name: string }[];
     isAdmin: boolean;
     permissions: string[];
 }) {
-    const router = useRouter();
     const [participants, setParticipants] = useState<ParticipantListType[]>(initialData);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCampaignId, setFilterCampaignId] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
-    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'createdAt', direction: 'desc' });
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({
+        key: 'createdAt',
+        direction: 'desc'
+    });
 
     const canEdit = isAdmin || permissions.includes('MARKETING_EDIT');
     const canDelete = isAdmin || permissions.includes('MARKETING_DELETE');
@@ -124,7 +125,7 @@ export default function ParticipantClient({
 
     const handleDelete = async (id: string) => {
         if (!confirm('Bạn có chắc muốn xóa dữ liệu người tham gia này?')) return;
-        
+
         try {
             const res = await deleteParticipant(id);
             if (res.success) {
@@ -140,7 +141,7 @@ export default function ParticipantClient({
 
     const filteredData = participants.filter(p => {
         const searchStr = `${p.name} ${p.phone || ''} ${p.email || ''} ${p.campaign?.name || ''}`.toLowerCase();
-        
+
         const matchSearch = searchStr.includes(searchTerm.toLowerCase());
         const matchCampaign = filterCampaignId === 'ALL' || p.campaignId === filterCampaignId;
         const matchStatus = filterStatus === 'ALL' || p.status === filterStatus;
@@ -150,7 +151,7 @@ export default function ParticipantClient({
 
     const sortedData = [...filteredData].sort((a, b) => {
         if (!sortConfig) return 0;
-        
+
         let valA: any, valB: any;
         if (sortConfig.key === 'info') {
             valA = (a.name || '').toLowerCase();
@@ -183,9 +184,9 @@ export default function ParticipantClient({
 
     const SortIcon = ({ columnKey }: { columnKey: string }) => {
         if (sortConfig?.key !== columnKey) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="w-3.5 h-3.5 ml-1 text-emerald-600" />
-            : <ChevronDown className="w-3.5 h-3.5 ml-1 text-emerald-600" />;
+        return sortConfig.direction === 'asc'
+            ? <ChevronUp className="w-3.5 h-3.5 ml-1 text-indigo-600" />
+            : <ChevronDown className="w-3.5 h-3.5 ml-1 text-indigo-600" />;
     };
 
     const exportToCSV = () => {
@@ -215,151 +216,261 @@ export default function ParticipantClient({
         document.body.removeChild(link);
     };
 
+    const hasActiveFilters = searchTerm !== '' || filterCampaignId !== 'ALL' || filterStatus !== 'ALL';
+
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
-                        <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-slate-900">Quản Lý Người Tham Gia</h1>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                {participants.length} Khách
-                            </span>
+        <div className="w-full space-y-5 font-sans text-slate-800 pb-8">
+            {/* 1. Standard ERP Header */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0 mt-0.5">
+                            <Users size={20} />
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5">Theo dõi danh sách đăng ký sự kiện, điểm danh check-in và gửi nhắc nhở</p>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                    Tiếp Thị & Sự Kiện
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    {stats.attended} khách đã check-in ({stats.rate}%)
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 mt-1">
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight m-0">
+                                    Danh Sách Người Tham Gia Sự Kiện
+                                </h1>
+                                <span className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full tabular-nums">
+                                    {participants.length} khách
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 m-0">
+                                Theo dõi danh sách đăng ký sự kiện, điểm danh check-in trực tiếp và gửi nhắc hẹn khách tham dự
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <Button onClick={exportToCSV} variant="secondary" className="gap-2 border-slate-200 shadow-xs">
-                    <Download className="w-4 h-4 text-emerald-600" /> Xuất File CSV / Excel
-                </Button>
-            </div>
-
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tổng đăng ký</div>
-                        <div className="text-2xl font-mono font-bold text-slate-900 mt-1">{stats.total}</div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                        <Users className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đã check-in</div>
-                        <div className="text-2xl font-mono font-bold text-emerald-600 mt-1">{stats.attended}</div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                        <UserCheck className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Đã gửi nhắc hẹn</div>
-                        <div className="text-2xl font-mono font-bold text-indigo-600 mt-1">{stats.reminded}</div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                        <Bell className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tỷ lệ tham dự</div>
-                        <div className="text-2xl font-mono font-bold text-purple-600 mt-1">{stats.rate}%</div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-                        <CheckCircle2 className="w-5 h-5" />
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                            href="/marketing/forms"
+                            className="inline-flex items-center gap-1.5 h-[36px] bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 px-3 rounded-lg text-xs font-semibold transition-all no-underline"
+                        >
+                            <FileText size={14} className="text-indigo-600" />
+                            <span>Biểu Mẫu Đăng Ký</span>
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={exportToCSV}
+                            className="inline-flex items-center gap-1.5 h-[36px] bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer border-none"
+                        >
+                            <Download size={14} />
+                            <span>Xuất File CSV / Excel</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Filter Toolbar */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {/* 2. KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div
+                    onClick={() => setFilterStatus('ALL')}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        filterStatus === 'ALL'
+                            ? 'bg-indigo-50/40 border-indigo-400 ring-2 ring-indigo-500/15 shadow-sm'
+                            : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-sm'
+                    }`}
+                >
+                    <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Tổng Đăng Ký
+                        </p>
+                        <h3 className="text-2xl font-bold text-slate-900 tabular-nums mt-1 m-0">
+                            {stats.total}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Toàn bộ khách hàng đăng ký
+                        </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200/70 shrink-0">
+                        <Users size={19} />
+                    </div>
+                </div>
+
+                <div
+                    onClick={() => setFilterStatus(filterStatus === 'ATTENDED' ? 'ALL' : 'ATTENDED')}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        filterStatus === 'ATTENDED'
+                            ? 'bg-emerald-50/50 border-emerald-400 ring-2 ring-emerald-500/15 shadow-sm'
+                            : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-sm'
+                    }`}
+                >
+                    <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Đã Check-in
+                        </p>
+                        <h3 className="text-2xl font-bold text-emerald-600 tabular-nums mt-1 m-0">
+                            {stats.attended}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Khách đã có mặt tại sự kiện
+                        </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200/60 shrink-0">
+                        <UserCheck size={19} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                            Đã Gửi Nhắc Hẹn
+                        </p>
+                        <h3 className="text-2xl font-bold text-indigo-600 tabular-nums mt-1 m-0">
+                            {stats.reminded}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 m-0">
+                            Khách đã được liên hệ nhắc lịch
+                        </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
+                        <Bell size={19} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 m-0">
+                                Tỷ Lệ Tham Dự
+                            </p>
+                            <h3 className="text-2xl font-bold text-purple-600 tabular-nums mt-1 m-0">
+                                {stats.rate}%
+                            </h3>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shrink-0">
+                            <CheckCircle2 size={19} />
+                        </div>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                        <div
+                            className="bg-purple-600 h-1.5 rounded-full transition-all"
+                            style={{ width: `${Math.min(stats.rate, 100)}%` }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. Filter Toolbar */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="flex-1 flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-3 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all">
+                    <Search size={15} className="text-slate-400 shrink-0 mr-2" />
                     <input
                         type="text"
-                        placeholder="Tìm theo tên, SĐT, Email..."
+                        placeholder="Tìm theo họ tên khách hàng, số điện thoại, email, chiến dịch..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors"
+                        style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                        className="w-full h-full text-xs font-medium text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none p-0"
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="text-slate-400 hover:text-slate-600 ml-1.5 bg-transparent border-none cursor-pointer p-0.5 flex items-center"
+                        >
+                            <X size={13} />
+                        </button>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                    <select
-                        className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-700 font-medium"
-                        value={filterCampaignId}
-                        onChange={(e) => setFilterCampaignId(e.target.value)}
-                    >
-                        <option value="ALL">Tất cả chiến dịch</option>
-                        {campaigns.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <div className="relative flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-2.5 focus-within:bg-white focus-within:border-indigo-500 transition-all">
+                        <select
+                            value={filterCampaignId}
+                            onChange={(e) => setFilterCampaignId(e.target.value)}
+                            style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                            className="appearance-none pr-5 text-xs font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer h-full"
+                        >
+                            <option value="ALL">Tất cả chiến dịch</option>
+                            {campaigns.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                        <ChevronDown size={13} className="text-slate-400 pointer-events-none absolute right-2" />
+                    </div>
 
-                    <select
-                        className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-700 font-medium"
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                    >
-                        <option value="ALL">Tất cả trạng thái</option>
-                        <option value="REGISTERED">Đã đăng ký (Chưa tới)</option>
-                        <option value="ATTENDED">Đã check-in (Tham gia)</option>
-                        <option value="CANCELLED">Hủy tham gia</option>
-                    </select>
+                    <div className="relative flex items-center h-[36px] bg-slate-50/80 border border-slate-200 rounded-lg px-2.5 focus-within:bg-white focus-within:border-indigo-500 transition-all">
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
+                            className="appearance-none pr-5 text-xs font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer h-full"
+                        >
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="REGISTERED">Đã đăng ký (Chưa tới)</option>
+                            <option value="ATTENDED">Đã check-in (Tham gia)</option>
+                            <option value="CANCELLED">Hủy tham gia</option>
+                        </select>
+                        <ChevronDown size={13} className="text-slate-400 pointer-events-none absolute right-2" />
+                    </div>
+
+                    {hasActiveFilters && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchTerm('');
+                                setFilterCampaignId('ALL');
+                                setFilterStatus('ALL');
+                            }}
+                            className="inline-flex items-center gap-1 h-[36px] px-2.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 transition cursor-pointer"
+                        >
+                            <RotateCcw size={12} />
+                            <span>Đặt lại</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            {/* 4. Data Table */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm">
+                    <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                         <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                <th className="py-3.5 px-4 font-semibold cursor-pointer group" onClick={() => handleSort('info')}>
+                            <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500">
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] cursor-pointer group" onClick={() => handleSort('info')}>
                                     <div className="flex items-center">
                                         Khách Hàng <SortIcon columnKey="info" />
                                     </div>
                                 </th>
-                                <th className="py-3.5 px-4 font-semibold cursor-pointer group" onClick={() => handleSort('campaign')}>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] cursor-pointer group" onClick={() => handleSort('campaign')}>
                                     <div className="flex items-center">
                                         Chiến Dịch / Form <SortIcon columnKey="campaign" />
                                     </div>
                                 </th>
-                                <th className="py-3.5 px-4 font-semibold cursor-pointer group" onClick={() => handleSort('createdAt')}>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] cursor-pointer group" onClick={() => handleSort('createdAt')}>
                                     <div className="flex items-center">
                                         Thời Gian Đăng Ký <SortIcon columnKey="createdAt" />
                                     </div>
                                 </th>
-                                <th className="py-3.5 px-4 font-semibold cursor-pointer group" onClick={() => handleSort('status')}>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] cursor-pointer group" onClick={() => handleSort('status')}>
                                     <div className="flex items-center">
                                         Trạng Thái & Tiến Độ <SortIcon columnKey="status" />
                                     </div>
                                 </th>
-                                <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
+                                <th className="py-3 px-3.5 font-bold uppercase tracking-wider text-[11px] text-right">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {sortedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center">
+                                    <td colSpan={5} className="py-14 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                <Users className="w-6 h-6" />
+                                            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400">
+                                                <Users size={20} />
                                             </div>
-                                            <p className="text-sm font-medium text-slate-700">Chưa có người tham gia phù hợp</p>
-                                            <p className="text-xs text-slate-400">Thử thay đổi bộ lọc tìm kiếm hoặc chiến dịch</p>
+                                            <p className="text-xs font-semibold text-slate-600 m-0">Chưa có người tham gia phù hợp</p>
+                                            <p className="text-[11px] text-slate-400 m-0">Thử thay đổi bộ lọc tìm kiếm hoặc chiến dịch</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -371,90 +482,95 @@ export default function ParticipantClient({
                                     } catch (e) {}
 
                                     return (
-                                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                                            <td className="py-3.5 px-4">
+                                        <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
+                                            <td className="py-3 px-3.5 align-middle">
                                                 <div className="font-bold text-slate-900">{p.name || '[Chưa nhập tên]'}</div>
-                                                <div className="text-xs font-mono text-slate-600 mt-0.5">{p.phone || '---'}</div>
-                                                <div className="text-xs text-slate-400 truncate max-w-[180px]">{p.email || ''}</div>
+                                                <div className="text-[11px] font-medium text-slate-600 tabular-nums mt-0.5">{p.phone || '---'}</div>
+                                                {p.email && <div className="text-[11px] text-slate-400 truncate max-w-[200px]">{p.email}</div>}
                                             </td>
-                                            <td className="py-3.5 px-4 text-slate-600">
-                                                <div className="font-medium text-slate-800 truncate max-w-[200px]" title={p.campaign?.name}>
+                                            <td className="py-3 px-3.5 text-slate-600 align-middle">
+                                                <div className="font-semibold text-slate-800 truncate max-w-[220px]" title={p.campaign?.name}>
                                                     {p.campaign?.name}
                                                 </div>
                                                 <div className="text-[11px] text-slate-400">{p.form?.title}</div>
                                             </td>
-                                            <td className="py-3.5 px-4 text-slate-600 text-xs">
-                                                <div>{new Date(p.createdAt).toLocaleDateString('vi-VN')}</div>
-                                                <div className="text-slate-400 font-mono mt-0.5">{new Date(p.createdAt).toLocaleTimeString('vi-VN')}</div>
+                                            <td className="py-3 px-3.5 text-slate-600 tabular-nums align-middle">
+                                                <div className="font-medium text-slate-700">{new Date(p.createdAt).toLocaleDateString('vi-VN')}</div>
+                                                <div className="text-[11px] text-slate-400 mt-0.5">{new Date(p.createdAt).toLocaleTimeString('vi-VN')}</div>
                                             </td>
-                                            <td className="py-3.5 px-4">
+                                            <td className="py-3 px-3.5 align-middle">
                                                 <div className="flex flex-col gap-1">
                                                     {p.status === 'CANCELLED' ? (
-                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                                                             Hủy tham gia
                                                         </span>
                                                     ) : p.status === 'ATTENDED' ? (
-                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                                            <UserCheck className="w-3.5 h-3.5" /> Đã Check-in ({p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('vi-VN') : ''})
+                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                                                            <UserCheck size={12} /> Đã Check-in ({p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('vi-VN') : ''})
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                                                        <span className="inline-flex items-center gap-1 w-max px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/70">
                                                             Đăng ký chờ tới
                                                         </span>
                                                     )}
 
                                                     {parsed._remind1At && (
-                                                        <span className="inline-flex items-center gap-1 w-max px-2 py-0.5 rounded-md text-[11px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-200/60">
-                                                            <Clock className="w-3 h-3" /> Đã nhắc L1: {new Date(parsed._remind1At).toLocaleTimeString('vi-VN')}
+                                                        <span className="inline-flex items-center gap-1 w-max px-2 py-0.5 rounded-md text-[10px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-200/60 tabular-nums">
+                                                            <Clock size={10} /> Đã nhắc L1: {new Date(parsed._remind1At).toLocaleTimeString('vi-VN')}
                                                         </span>
                                                     )}
                                                     {parsed._remind2At && (
-                                                        <span className="inline-flex items-center gap-1 w-max px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                                                            <Clock className="w-3 h-3" /> Đã nhắc L2: {new Date(parsed._remind2At).toLocaleTimeString('vi-VN')}
+                                                        <span className="inline-flex items-center gap-1 w-max px-2 py-0.5 rounded-md text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/60 tabular-nums">
+                                                            <Clock size={10} /> Đã nhắc L2: {new Date(parsed._remind2At).toLocaleTimeString('vi-VN')}
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="py-3.5 px-4 text-right">
+                                            <td className="py-3 px-3.5 text-right align-middle">
                                                 <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     {canEdit && (p.status === 'REGISTERED' || p.status === 'REMINDED_1' || p.status === 'REMINDED_2') && (
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleCheckIn(p.id)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-xs"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors border-none cursor-pointer"
                                                         >
-                                                            <CheckCircle className="w-3.5 h-3.5" /> Check-in
+                                                            <CheckCircle size={12} /> Check-in
                                                         </button>
                                                     )}
                                                     {canEdit && p.status === 'REGISTERED' && (
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleUpdateStatus(p.id, 'REMINDED_1')}
-                                                            className="px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-colors"
+                                                            className="px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 transition-colors cursor-pointer"
                                                         >
                                                             Nhắc L1
                                                         </button>
                                                     )}
                                                     {canEdit && p.status === 'REMINDED_1' && (
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleUpdateStatus(p.id, 'REMINDED_2')}
-                                                            className="px-2 py-1 rounded-lg text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+                                                            className="px-2 py-1 rounded-lg text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
                                                         >
                                                             Nhắc L2
                                                         </button>
                                                     )}
                                                     {canEdit && p.status === 'ATTENDED' && (
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleCancelCheckIn(p.id)}
-                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
                                                         >
-                                                            <RotateCcw className="w-3 h-3" /> Hoàn tác
+                                                            <RotateCcw size={11} /> Hoàn tác
                                                         </button>
                                                     )}
                                                     {canDelete && (
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleDelete(p.id)}
-                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors bg-transparent border-none cursor-pointer"
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            <Trash2 size={14} />
                                                         </button>
                                                     )}
                                                 </div>
