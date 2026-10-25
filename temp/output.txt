@@ -1,2 +1,0 @@
-Error MAU 2: pdf is not a function
-Error MAU 3: pdf is not a function
