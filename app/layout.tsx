@@ -21,9 +21,10 @@ import { getDictionary, getCurrentLocale } from './i18n/getDictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
     const { name: brandName, logo: logoUrl } = await getLayoutSettings();
-    const siteTitle = brandName || 'T-SOLUTION';
+    const siteTitle = brandName || 'INCALL VIỆT NAM';
     const description = 'Manage Your Business Easily And Efficiently - Nền tảng quản trị và cộng tác doanh nghiệp toàn diện';
     const finalLogo = logoUrl || '/icons/icon-192x192.png';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://erp.incall.vn';
 
     return {
         title: {
@@ -32,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
         },
         description,
         manifest: '/manifest.json',
-        metadataBase: new URL('https://inside.tsol.vn'),
+        metadataBase: new URL(appUrl),
         icons: {
             icon: finalLogo,
             apple: finalLogo,
@@ -40,12 +41,12 @@ export async function generateMetadata(): Promise<Metadata> {
         openGraph: {
             title: siteTitle,
             description,
-            url: 'https://inside.tsol.vn',
+            url: appUrl,
             siteName: siteTitle,
             images: [
                 {
-                    url: 'https://inside.tsol.vn/og-image.jpg',
-                    secureUrl: 'https://inside.tsol.vn/og-image.jpg',
+                    url: `${appUrl}/og-image.jpg`,
+                    secureUrl: `${appUrl}/og-image.jpg`,
                     width: 1200,
                     height: 630,
                     type: 'image/jpeg',
@@ -59,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
             card: 'summary_large_image',
             title: siteTitle,
             description,
-            images: ['https://inside.tsol.vn/og-image.jpg'],
+            images: [`${appUrl}/og-image.jpg`],
         },
         appleWebApp: {
             statusBarStyle: 'default',
