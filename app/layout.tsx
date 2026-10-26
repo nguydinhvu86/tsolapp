@@ -45,8 +45,8 @@ export async function generateMetadata(): Promise<Metadata> {
             siteName: siteTitle,
             images: [
                 {
-                    url: `${appUrl}/og-image.jpg`,
-                    secureUrl: `${appUrl}/og-image.jpg`,
+                    url: `${appUrl}/og-image.jpg?v=2`,
+                    secureUrl: `${appUrl}/og-image.jpg?v=2`,
                     width: 1200,
                     height: 630,
                     type: 'image/jpeg',
@@ -60,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
             card: 'summary_large_image',
             title: siteTitle,
             description,
-            images: [`${appUrl}/og-image.jpg`],
+            images: [`${appUrl}/og-image.jpg?v=2`],
         },
         appleWebApp: {
             statusBarStyle: 'default',
