@@ -1,14 +1,30 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, maxWidth?: string }) {
-    if (!isOpen) return null;
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [isOpen]);
+
+    if (!isOpen || !mounted) return null;
 
     const isTailwindMaxW = maxWidth.startsWith('max-w-');
     const maxWidthStyle = isTailwindMaxW ? undefined : maxWidth;
     const maxWidthClass = isTailwindMaxW ? maxWidth : '';
 
-    return (
+    const modalContent = (
         <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, padding: '1rem', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)' }}>
             <div
                 className={`modal-container ${maxWidthClass}`}
@@ -31,5 +47,8 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
             </div>
         </div>
     );
-}
 
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(modalContent, document.body);
+}
