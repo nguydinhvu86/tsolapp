@@ -1,4 +1,4 @@
-import { Box, CheckCircle, Phone, Mail, Globe, MapPin, Tag, ShieldCheck, User } from 'lucide-react';
+import { Box, Phone, Mail, Globe, Sparkles, User, Share2 } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
@@ -6,10 +6,17 @@ import PublicEcatalogClient from './PublicEcatalogClient';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-    title: 'Product E-Catalog',
-    description: 'Bản xem trước E-Catalog sản phẩm trực tuyến',
-};
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const ecatalog = await prisma.ecatalog.findUnique({
+        where: { id: params.id },
+        select: { name: true, description: true }
+    });
+
+    return {
+        title: ecatalog?.name ? `${ecatalog.name} | E-Catalog Trực Tuyến` : 'Product E-Catalog',
+        description: ecatalog?.description || 'Bản xem trước E-Catalog sản phẩm trực tuyến công nghệ cao',
+    };
+}
 
 export default async function PublicEcatalogPage({ params }: { params: { id: string } }) {
     const ecatalog = await prisma.ecatalog.findUnique({
@@ -44,140 +51,108 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
     const companyPhone = getSetting('COMPANY_PHONE');
     const companyWebsite = getSetting('COMPANY_WEBSITE');
 
+    const companyInfo = {
+        name: companyName,
+        fullName: companyFullName,
+        logo: companyLogo,
+        email: companyEmail,
+        phone: companyPhone,
+        website: companyWebsite
+    };
+
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
-            {/* Top Navigation Bar */}
-            <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="min-h-screen bg-slate-950 font-sans text-slate-100 pb-20 selection:bg-emerald-500 selection:text-white overflow-x-hidden relative">
+            {/* Ambient Background Tech Glows */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px]" />
+                <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[140px]" />
+                <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-cyan-500/10 rounded-full blur-[140px]" />
+                {/* Tech Grid Pattern */}
+                <div 
+                    className="absolute inset-0 opacity-[0.03]" 
+                    style={{ 
+                        backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px)`, 
+                        backgroundSize: '32px 32px' 
+                    }} 
+                />
+            </div>
+
+            {/* Top Enterprise Header */}
+            <header className="relative z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 shadow-xl shadow-black/20">
                 <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-                        {/* Logo & Company Name */}
-                        <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between py-3.5 gap-3">
+                        {/* Brand Logo & Name */}
+                        <div className="flex items-center gap-3.5">
                             {companyLogo ? (
-                                <img src={companyLogo} alt={companyName} className="h-12 w-auto object-contain drop-shadow-sm" />
+                                <img src={companyLogo} alt={companyName} className="h-10 w-auto object-contain drop-shadow" />
                             ) : (
-                                <div className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
+                                <div className="h-10 w-10 bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 rounded-xl flex items-center justify-center text-slate-950 font-black text-lg shadow-lg shadow-emerald-500/20">
                                     {companyName.charAt(0)}
                                 </div>
                             )}
                             <div>
-                                <h1 className="text-lg font-bold text-slate-800 leading-tight tracking-tight">{companyName}</h1>
-                                <p className="text-xs font-medium text-emerald-600 tracking-wider uppercase">Official Partner</p>
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-base font-extrabold text-white tracking-tight leading-none">{companyName}</h1>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                        E-CATALOG v2.4
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Digital Interactive Product Experience</p>
                             </div>
                         </div>
 
-                        {/* Contact Badges */}
-                        <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs font-medium text-slate-600">
+                        {/* Direct Contacts & Consultant Quick Actions */}
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold">
                             {companyPhone && (
-                                <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 hover:bg-slate-100 transition-colors">
-                                    <Phone size={14} className="text-emerald-600" />
-                                    <span>{companyPhone}</span>
-                                </div>
+                                <a 
+                                    href={`tel:${companyPhone.replace(/\s+/g, '')}`}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                >
+                                    <Phone size={13} className="text-emerald-400" />
+                                    <span className="hidden sm:inline">{companyPhone}</span>
+                                    <span className="sm:hidden">Hotline</span>
+                                </a>
                             )}
                             {companyEmail && (
-                                <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 hover:bg-slate-100 transition-colors">
-                                    <Mail size={14} className="text-emerald-600" />
+                                <a 
+                                    href={`mailto:${companyEmail}`}
+                                    className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                >
+                                    <Mail size={13} className="text-teal-400" />
                                     <span>{companyEmail}</span>
-                                </div>
+                                </a>
                             )}
                             {companyWebsite && (
-                                <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 hover:bg-slate-100 transition-colors">
-                                    <Globe size={14} className="text-emerald-600" />
-                                    <span>{companyWebsite}</span>
-                                </div>
+                                <a 
+                                    href={companyWebsite.startsWith('http') ? companyWebsite : `https://${companyWebsite}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                >
+                                    <Globe size={13} className="text-cyan-400" />
+                                    <span>Website</span>
+                                </a>
                             )}
                         </div>
                     </div>
                 </div>
-            </nav>
+            </header>
 
-            {/* Hero Section */}
-            <div className="relative bg-[#022c22] overflow-hidden">
-                {/* Decorative background shapes */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#065f46] to-[#0f172a] opacity-80 mix-blend-multiply"></div>
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 pointer-events-none">
-                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-emerald-400 blur-3xl"></div>
-                    <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-teal-400 blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-                </div>
+            {/* Interactive Catalog Workspace (Client Component) */}
+            <main className="relative z-10">
+                <PublicEcatalogClient 
+                    ecatalog={ecatalog} 
+                    companyInfo={companyInfo} 
+                />
+            </main>
 
-                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-32 relative z-10">
-                    <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 text-xs font-bold px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider backdrop-blur-sm">
-                            <Tag size={14} /> Product E-Catalog
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight drop-shadow-md">
-                            {ecatalog.name}
-                        </h2>
-                        <p className="text-lg text-emerald-50/80 mb-8 max-w-2xl leading-relaxed">
-                            {ecatalog.description || 'Khám phá danh mục sản phẩm chính hãng với các thông tin chi tiết, xuất xứ rõ ràng và chính sách giá ưu đãi tốt nhất dành cho đối tác và khách hàng.'}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Floating Consultant Card */}
-            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-40 -mt-20 mb-8">
-                <div className="flex flex-col lg:flex-row justify-between items-end gap-6">
-                    {/* Consultant Card */}
-                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 border border-slate-100 w-full lg:w-auto">
-                        <div className="relative">
-                            {ecatalog.creator.avatar ? (
-                                <img src={ecatalog.creator.avatar} alt={ecatalog.creator.name || ''} className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-emerald-50" />
-                            ) : (
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 flex items-center justify-center text-emerald-600 font-bold text-xl border-2 border-white shadow-md ring-2 ring-emerald-50">
-                                    {ecatalog.creator.name?.charAt(0) || 'U'}
-                                </div>
-                            )}
-                            <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
-                        </div>
-                        <div className="text-center sm:text-left">
-                            <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1 flex items-center justify-center sm:justify-start gap-1">
-                                <User size={12} /> Phụ trách tư vấn
-                            </p>
-                            <h3 className="text-lg font-extrabold text-slate-800">{ecatalog.creator.name}</h3>
-                            <p className="text-sm text-slate-500 mt-0.5">{ecatalog.creator.email}</p>
-                            <div className="relative group inline-block w-full sm:w-auto mt-3">
-                                <button className="bg-slate-900 group-hover:bg-emerald-600 text-white text-xs font-bold py-2.5 px-5 rounded-xl transition-all duration-300 w-full shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                                    Liên hệ ngay
-                                </button>
-                                <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden transform origin-top-left scale-95 group-hover:scale-100">
-                                    <div className="p-2">
-                                        <a href="tel:0901232255" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">
-                                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                                <Phone size={14} className="text-emerald-600" />
-                                            </div>
-                                            Gọi: 090 123 2255
-                                        </a>
-                                        <a href="https://zalo.me/0901232255" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 text-sm font-bold text-slate-700 hover:text-blue-700 transition-colors mt-1">
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                                                <div className="w-4 h-4 bg-blue-600 text-white flex items-center justify-center rounded-[4px] text-[10px] font-black">Z</div>
-                                            </div>
-                                            Zalo: 0901232255
-                                        </a>
-                                        <a href="mailto:vutg@trinhgiatelecom.vn" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 text-sm font-bold text-slate-700 hover:text-amber-700 transition-colors mt-1">
-                                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                                                <Mail size={14} className="text-amber-600" />
-                                            </div>
-                                            Email cho chúng tôi
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Consultant Card is now taking full focus here. The "Danh sách sản phẩm" badge is moved to the client component */}
-                </div>
-            </div>
-
-            {/* Product Grid & Modals (Client Component) */}
-            <PublicEcatalogClient ecatalog={ecatalog} />
-
-            {/* Footer */}
-            <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-slate-200/60 pt-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
-                    <p>&copy; {new Date().getFullYear()} <span className="text-slate-800 font-bold">{companyFullName}</span>. All rights reserved.</p>
+            {/* Tech Footer */}
+            <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-slate-800/60 pt-8 relative z-10">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                    <p>&copy; {new Date().getFullYear()} <span className="text-slate-300 font-bold">{companyFullName}</span>. Tất cả quyền được bảo lưu.</p>
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <p>Powered by ContractMgr E-Catalog System</p>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <p className="text-slate-400">Hệ thống E-Catalog Trực Tuyến TsolApp 2.0</p>
                     </div>
                 </div>
             </footer>

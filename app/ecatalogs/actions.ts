@@ -37,6 +37,16 @@ export async function getEcatalogs(filterParams: any = {}) {
         orderBy: { createdAt: 'desc' },
         include: {
             creator: { select: { name: true, email: true, avatar: true } },
+            items: {
+                take: 4,
+                orderBy: { displayOrder: 'asc' },
+                select: {
+                    imageUrl: true,
+                    customName: true,
+                    customRetailPrice: true,
+                    product: { select: { name: true, imageUrl: true } }
+                }
+            },
             _count: {
                 select: { items: true }
             }
