@@ -59,7 +59,7 @@ export default function EcatalogDetailClient({
     // KPI Metrics calculation
     const metrics = useMemo(() => {
         const totalItems = items.length;
-        const itemsWithImages = items.filter(i => i.imageUrl || i.product?.imageUrl).length;
+        const itemsWithImages = items.filter(i => i.imageUrl).length;
         const imagePercentage = totalItems > 0 ? Math.round((itemsWithImages / totalItems) * 100) : 0;
         const totalRetailValue = items.reduce((sum, item) => {
             const price = item.customRetailPrice || item.customPrice || item.product?.salePrice || 0;
@@ -105,7 +105,7 @@ export default function EcatalogDetailClient({
                     customDealerPrice: Number(item.customDealerPrice) || 0,
                     customOrigin: item.customOrigin || '',
                     customNote: item.customNote || '',
-                    imageUrl: item.imageUrl || item.product?.imageUrl || '',
+                    imageUrl: item.imageUrl || '',
                     displayOrder: idx
                 }))
             }, currentUserId);
@@ -584,9 +584,9 @@ export default function EcatalogDetailClient({
                                                     }}
                                                     title="Nhấn để tải hoặc chọn ảnh mới"
                                                 >
-                                                    {item.imageUrl || item.product?.imageUrl ? (
+                                                    {item.imageUrl ? (
                                                         <img 
-                                                            src={item.imageUrl || item.product?.imageUrl} 
+                                                            src={item.imageUrl} 
                                                             alt="" 
                                                             className="w-full h-full object-contain"
                                                         />

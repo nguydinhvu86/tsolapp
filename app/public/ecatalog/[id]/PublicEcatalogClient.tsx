@@ -305,7 +305,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
         return encodeURIComponent(text);
     };
 
-    const consultantPhone = companyInfo.phone || '0901232255';
+    const consultantPhone = companyInfo?.phone || '0901232255';
     const cleanPhone = consultantPhone.replace(/\s+/g, '');
 
     return (
@@ -356,7 +356,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                     <User size={12} /> Chuyên Viên Tư Vấn
                                 </div>
                                 <div className="text-sm font-bold text-white">{ecatalog.creator.name || 'Đội ngũ kỹ thuật'}</div>
-                                <div className="text-xs text-slate-400">{companyPhone}</div>
+                                <div className="text-xs text-slate-400">{consultantPhone}</div>
                             </div>
                         </div>
 
@@ -1234,7 +1234,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                                 <span>Gọi điện trực tiếp: {consultantPhone}</span>
                                             </a>
 
-                                            {companyInfo.email && (
+                                            {companyInfo?.email && (
                                                 <a
                                                     href={`mailto:${companyInfo.email}?subject=Yêu cầu báo giá sản phẩm ${drawerItem.customName || drawerItem.product?.name}&body=${decodeURIComponent(getConsultationMessage(drawerItem))}`}
                                                     className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2"
@@ -1373,7 +1373,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                             CHUYÊN VIÊN PHỤ TRÁCH DỰ ÁN
                         </span>
                         <h3 className="text-xl font-black text-white mb-1">{ecatalog.creator.name || 'Tư vấn kỹ thuật'}</h3>
-                        <p className="text-xs text-slate-400 mb-6">{companyInfo.fullName}</p>
+                        <p className="text-xs text-slate-400 mb-6">{companyInfo?.fullName || ''}</p>
 
                         <div className="space-y-2 text-xs font-bold text-left">
                             <a
@@ -1404,7 +1404,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                 </div>
                             </a>
 
-                            {companyInfo.email && (
+                            {companyInfo?.email && (
                                 <a
                                     href={`mailto:${companyInfo.email}`}
                                     className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 transition-colors"

@@ -437,7 +437,7 @@ export default function EcatalogClient({
                                         {previewItems.length > 0 && (
                                             <div className="flex items-center gap-1.5 mb-3.5 p-2 bg-slate-50 rounded-xl border border-slate-100">
                                                 {previewItems.slice(0, 4).map((p: any, idx: number) => {
-                                                    const img = p.imageUrl || p.product?.imageUrl;
+                                                    const img = p.imageUrl;
                                                     return (
                                                         <div
                                                             key={idx}

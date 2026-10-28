@@ -44,7 +44,7 @@ export async function getEcatalogs(filterParams: any = {}) {
                     imageUrl: true,
                     customName: true,
                     customRetailPrice: true,
-                    product: { select: { name: true, imageUrl: true } }
+                    product: { select: { name: true, sku: true } }
                 }
             },
             _count: {
