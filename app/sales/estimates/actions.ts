@@ -36,6 +36,40 @@ const estimateSchema = z.object({
     items: z.array(itemSchema).min(1, "At least one item is required") // Custom validator
 });
 
+const estimateDetailedInclude = {
+    customer: true,
+    lead: { select: { id: true, code: true, name: true, company: true, contactName: true, phone: true, email: true } },
+    creator: true,
+    salesperson: true,
+    projects: true,
+    items: {
+        include: { product: true }
+    }
+};
+
+export async function getSalesEstimateById(id: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
+        const estimate = await prisma.salesEstimate.findUnique({
+            where: { id },
+            include: estimateDetailedInclude
+        });
+
+        if (!estimate) {
+            return { success: false, error: 'Không tìm thấy báo giá.' };
+        }
+
+        return { success: true, data: estimate };
+    } catch (error: any) {
+        console.error('Lỗi khi lấy chi tiết báo giá:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function logSalesEstimateActivity(estimateId: string, userId: string, action: string, details?: string) {
     try {
         await prisma.salesEstimateActivityLog.create({
@@ -259,11 +293,7 @@ export async function submitSalesEstimate(creatorId: string, formData: any) {
                     }))
                 }
             },
-            include: {
-                customer: true,
-                creator: true,
-                salesperson: true
-            }
+            include: estimateDetailedInclude
         });
 
         await logSalesEstimateActivity(estimate.id, actualCreatorId, 'CREATED', 'Tạo Báo giá mới');
@@ -447,11 +477,7 @@ export async function updateSalesEstimate(id: string, formData: any) {
                     }))
                 }
             },
-            include: {
-                customer: true,
-                creator: true,
-                salesperson: true
-            }
+            include: estimateDetailedInclude
         });
 
         const customDetails = changes.length > 0 ? JSON.stringify({ diffs: changes }) : 'Cập nhật nội dung Báo giá';
@@ -500,15 +526,7 @@ export async function getSalesEstimates(employeeId?: string) {
 
         const estimates = await prisma.salesEstimate.findMany({
             where: whereClause,
-            include: {
-                customer: true,
-                lead: { select: { id: true, code: true, name: true, company: true, contactName: true, phone: true, email: true } },
-                creator: true,
-                salesperson: true,
-                items: {
-                    include: { product: true }
-                }
-            },
+            include: estimateDetailedInclude,
             orderBy: [
                 { createdAt: 'desc' },
                 { id: 'desc' }
@@ -927,7 +945,8 @@ export async function cloneSalesEstimate(estimateId: string) {
                         laborPrice: i.laborPrice || 0
                     }))
                 }
-            }
+            },
+            include: estimateDetailedInclude
         });
 
         await logSalesEstimateActivity(clonedEstimate.id, creatorId, 'CREATED', `Tạo Báo giá ${clonedEstimate.code} (Sao chép từ ${estimate.code})`);

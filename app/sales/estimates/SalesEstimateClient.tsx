@@ -15,7 +15,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, FileSearch, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
 import { SalesEstimateAnalyticsBar } from './SalesEstimateAnalyticsBar';
 import { SalesEstimateQuickViewDrawer } from './SalesEstimateQuickViewDrawer';
-import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder } from './actions';
+import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder, getSalesEstimateById } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
@@ -25,6 +25,21 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     const { t } = useTranslation();
     const router = useRouter();
     const [estimates, setEstimates] = useState(initialEstimates);
+
+    useEffect(() => {
+        setEstimates(initialEstimates);
+    }, [initialEstimates]);
+
+    const handleOpenQuickView = async (est: any) => {
+        setQuickViewEstimate(est);
+        if (!est.items || (est.items.length === 0 && (est.totalAmount > 0 || est.subTotal > 0))) {
+            const res = await getSalesEstimateById(est.id);
+            if (res?.success && res.data) {
+                setQuickViewEstimate(res.data);
+                setEstimates((prev: any[]) => prev.map((item: any) => item.id === est.id ? res.data : item));
+            }
+        }
+    };
     const [isFormOpen, setIsFormOpen] = useState(initialAction === 'new');
     const [showAnalytics, setShowAnalytics] = useState(true);
     const [quickViewEstimate, setQuickViewEstimate] = useState<any | null>(null);
@@ -470,9 +485,10 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
         if (res.success) {
             if (formData.id) {
-                setEstimates(estimates.map((e: any) => e.id === formData.id ? res.data : e));
+                setEstimates((prev: any[]) => prev.map((e: any) => e.id === formData.id ? res.data : e));
+                setQuickViewEstimate((prev: any) => prev && prev.id === formData.id ? res.data : prev);
             } else {
-                setEstimates([res.data, ...estimates]);
+                setEstimates((prev: any[]) => [res.data, ...prev]);
             }
             setIsFormOpen(false);
             router.refresh();
@@ -875,7 +891,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                 <FileText size={15} className={`text-emerald-600 ${isExpired ? 'text-slate-400' : ''}`} />
                                                 <button
                                                     type="button"
-                                                    onClick={() => setQuickViewEstimate(est)}
+                                                    onClick={() => handleOpenQuickView(est)}
                                                     className={`font-semibold hover:text-emerald-700 hover:underline transition-colors block text-xs text-left cursor-pointer ${isExpired ? 'text-slate-500' : 'text-slate-900'}`}
                                                     title="Xem nhanh Báo giá (trượt từ bên phải)"
                                                 >
@@ -958,7 +974,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setQuickViewEstimate(est)}
+                                                        onClick={() => handleOpenQuickView(est)}
                                                         title="Xem nhanh Báo giá (trượt từ bên phải)"
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs shrink-0"
                                                     >
@@ -1451,6 +1467,9 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 }}
                 onConvertToOrder={(id: string) => setConvertOrderModalId(id)}
                 onConvertToInvoice={(id: string) => setConvertModalId(id)}
+                onEstimateLoaded={(updated: any) => {
+                    setEstimates((prev: any[]) => prev.map((e: any) => e.id === updated.id ? updated : e));
+                }}
             />
 
             {/* Convert Modal */}

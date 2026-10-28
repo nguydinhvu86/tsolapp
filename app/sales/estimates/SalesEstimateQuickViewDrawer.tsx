@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Drawer } from '@/app/components/ui/Drawer';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { TagDisplay } from '@/app/components/ui/TagDisplay';
+import { getSalesEstimateById } from './actions';
 import { 
     FileText, 
     Printer, 
@@ -41,6 +42,7 @@ interface SalesEstimateQuickViewDrawerProps {
     onCopy: (estimate: any) => void;
     onConvertToOrder?: (id: string) => void;
     onConvertToInvoice?: (id: string) => void;
+    onEstimateLoaded?: (updatedEstimate: any) => void;
 }
 
 const ESTIMATE_STEPS = [
@@ -59,15 +61,37 @@ export function SalesEstimateQuickViewDrawer({
     onEdit,
     onCopy,
     onConvertToOrder,
-    onConvertToInvoice
+    onConvertToInvoice,
+    onEstimateLoaded
 }: SalesEstimateQuickViewDrawerProps) {
     const [copiedShareLink, setCopiedShareLink] = useState(false);
     const [activeTab, setActiveTab] = useState<'items' | 'customer' | 'notes'>('items');
+    const [drawerEstimate, setDrawerEstimate] = useState<any>(estimate);
+    const [isLoadingItems, setIsLoadingItems] = useState(false);
 
-    if (!estimate) return null;
+    useEffect(() => {
+        setDrawerEstimate(estimate);
+        if (estimate?.id && (!estimate.items || (estimate.items.length === 0 && (estimate.totalAmount > 0 || estimate.subTotal > 0)))) {
+            setIsLoadingItems(true);
+            getSalesEstimateById(estimate.id)
+                .then((res) => {
+                    if (res?.success && res.data) {
+                        setDrawerEstimate(res.data);
+                        if (onEstimateLoaded) {
+                            onEstimateLoaded(res.data);
+                        }
+                    }
+                })
+                .catch((err) => console.error("Error fetching estimate items:", err))
+                .finally(() => setIsLoadingItems(false));
+        }
+    }, [estimate?.id]);
+
+    const est = drawerEstimate || estimate;
+    if (!est) return null;
 
     const handleCopyPublicUrl = () => {
-        const url = `${window.location.origin}/public/sales/estimate/${estimate.id}`;
+        const url = `${window.location.origin}/public/sales/estimate/${est.id}`;
         navigator.clipboard.writeText(url);
         setCopiedShareLink(true);
         setTimeout(() => setCopiedShareLink(false), 2000);
@@ -75,29 +99,29 @@ export function SalesEstimateQuickViewDrawer({
 
     // Calculate Step Index
     let currentStepIndex = 0;
-    if (estimate.status === 'SENT') currentStepIndex = 1;
-    if (estimate.status === 'ACCEPTED') currentStepIndex = 2;
-    if (estimate.status === 'ORDERED') currentStepIndex = 3;
-    if (estimate.status === 'INVOICED') currentStepIndex = 4;
-    const isSpecialFailed = estimate.status === 'EXPIRED' || estimate.status === 'REJECTED';
+    if (est.status === 'SENT') currentStepIndex = 1;
+    if (est.status === 'ACCEPTED') currentStepIndex = 2;
+    if (est.status === 'ORDERED') currentStepIndex = 3;
+    if (est.status === 'INVOICED') currentStepIndex = 4;
+    const isSpecialFailed = est.status === 'EXPIRED' || est.status === 'REJECTED';
 
-    const customerName = estimate.customer?.name || estimate.lead?.company || estimate.lead?.name || 'Khách hàng vãng lai';
-    const customerPhone = estimate.customer?.phone || estimate.lead?.phone;
-    const customerEmail = estimate.customer?.email || estimate.lead?.email;
-    const customerAddress = estimate.customer?.address;
+    const customerName = est.customer?.name || est.lead?.company || est.lead?.name || 'Khách hàng vãng lai';
+    const customerPhone = est.customer?.phone || est.lead?.phone;
+    const customerEmail = est.customer?.email || est.lead?.email;
+    const customerAddress = est.customer?.address;
 
     return (
         <Drawer
             isOpen={isOpen}
             onClose={onClose}
-            title={estimate.code || 'Chi tiết Báo Giá'}
+            title={est.code || 'Chi tiết Báo Giá'}
             subtitle={
                 <span className="flex items-center gap-2">
-                    <span>Ngày: {formatDate(estimate.date)}</span>
-                    {estimate.validUntil && (
+                    <span>Ngày: {formatDate(est.date)}</span>
+                    {est.validUntil && (
                         <>
                             <span>•</span>
-                            <span className="text-amber-600 font-medium">Hiệu lực đến: {formatDate(estimate.validUntil)}</span>
+                            <span className="text-amber-600 font-medium">Hiệu lực đến: {formatDate(est.validUntil)}</span>
                         </>
                     )}
                 </span>
@@ -106,20 +130,20 @@ export function SalesEstimateQuickViewDrawer({
             width="xl"
             badge={
                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                    estimate.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                    estimate.status === 'ORDERED' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
-                    estimate.status === 'INVOICED' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
-                    estimate.status === 'SENT' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
-                    estimate.status === 'EXPIRED' ? 'bg-slate-100 text-slate-700 border border-slate-300' :
-                    estimate.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                    est.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                    est.status === 'ORDERED' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
+                    est.status === 'INVOICED' ? 'bg-purple-100 text-purple-800 border border-purple-300' :
+                    est.status === 'SENT' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                    est.status === 'EXPIRED' ? 'bg-slate-100 text-slate-700 border border-slate-300' :
+                    est.status === 'REJECTED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
                     'bg-amber-100 text-amber-800 border border-amber-300'
                 }`}>
-                    {estimate.status === 'DRAFT' ? 'Bản nháp' :
-                     estimate.status === 'SENT' ? 'Đã gửi khách' :
-                     estimate.status === 'ACCEPTED' ? 'Đã chốt' :
-                     estimate.status === 'ORDERED' ? 'Đã lên Đơn hàng' :
-                     estimate.status === 'INVOICED' ? 'Đã lên Hóa đơn' :
-                     estimate.status === 'EXPIRED' ? 'Hết hạn' : 'Từ chối'}
+                    {est.status === 'DRAFT' ? 'Bản nháp' :
+                     est.status === 'SENT' ? 'Đã gửi khách' :
+                     est.status === 'ACCEPTED' ? 'Đã chốt' :
+                     est.status === 'ORDERED' ? 'Đã lên Đơn hàng' :
+                     est.status === 'INVOICED' ? 'Đã lên Hóa đơn' :
+                     est.status === 'EXPIRED' ? 'Hết hạn' : 'Từ chối'}
                 </span>
             }
             footer={
@@ -136,7 +160,7 @@ export function SalesEstimateQuickViewDrawer({
                         </button>
 
                         <Link
-                            href={`/print/sales/estimate/${estimate.id}`}
+                            href={`/print/sales/estimate/${est.id}`}
                             target="_blank"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors shadow-2xs"
                         >
@@ -147,12 +171,12 @@ export function SalesEstimateQuickViewDrawer({
 
                     {/* Right Conversions & Edit */}
                     <div className="flex items-center gap-2">
-                        {onConvertToOrder && (estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
+                        {onConvertToOrder && (est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED') && (
                             <button
                                 type="button"
                                 onClick={() => {
                                     onClose();
-                                    onConvertToOrder(estimate.id);
+                                    onConvertToOrder(est.id);
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors shadow-2xs cursor-pointer"
                             >
@@ -161,12 +185,12 @@ export function SalesEstimateQuickViewDrawer({
                             </button>
                         )}
 
-                        {onConvertToInvoice && (estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED' || estimate.status === 'ORDERED') && (
+                        {onConvertToInvoice && (est.status === 'DRAFT' || est.status === 'SENT' || est.status === 'ACCEPTED' || est.status === 'ORDERED') && (
                             <button
                                 type="button"
                                 onClick={() => {
                                     onClose();
-                                    onConvertToInvoice(estimate.id);
+                                    onConvertToInvoice(est.id);
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
                             >
@@ -179,7 +203,7 @@ export function SalesEstimateQuickViewDrawer({
                             type="button"
                             onClick={() => {
                                 onClose();
-                                onEdit(estimate);
+                                onEdit(est);
                             }}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                         >
@@ -188,7 +212,7 @@ export function SalesEstimateQuickViewDrawer({
                         </button>
 
                         <Link
-                            href={`/sales/estimates/${estimate.id}`}
+                            href={`/sales/estimates/${est.id}`}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-2xs"
                         >
                             <ExternalLink size={14} />
@@ -209,8 +233,8 @@ export function SalesEstimateQuickViewDrawer({
                         <div className="flex items-center gap-2">
                             <span className="text-[11px] text-slate-500 font-medium">Chuyển trạng thái:</span>
                             <select
-                                value={estimate.status}
-                                onChange={(e) => onStatusChange(estimate.id, e.target.value)}
+                                value={est.status}
+                                onChange={(e) => onStatusChange(est.id, e.target.value)}
                                 className="text-xs font-bold bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-slate-800 focus:outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
                             >
                                 <option value="DRAFT">1. Bản nháp</option>
@@ -250,7 +274,7 @@ export function SalesEstimateQuickViewDrawer({
                     ) : (
                         <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-semibold flex items-center gap-2">
                             <AlertCircle size={14} className="text-rose-600 shrink-0" />
-                            <span>Báo giá đang ở trạng thái: <strong>{estimate.status === 'EXPIRED' ? 'Hết hạn hiệu lực' : 'Đã từ chối / Hủy'}</strong></span>
+                            <span>Báo giá đang ở trạng thái: <strong>{est.status === 'EXPIRED' ? 'Hết hạn hiệu lực' : 'Đã từ chối / Hủy'}</strong></span>
                         </div>
                     )}
                 </div>
@@ -262,7 +286,7 @@ export function SalesEstimateQuickViewDrawer({
                             Tiền hàng (chưa thuế)
                         </span>
                         <span className="text-base font-extrabold text-slate-800 font-mono mt-0.5 block">
-                            {formatMoney(estimate.subTotal || 0)}
+                            {formatMoney(est.subTotal || 0)}
                         </span>
                     </div>
 
@@ -271,7 +295,7 @@ export function SalesEstimateQuickViewDrawer({
                             Thuế GTGT (VAT)
                         </span>
                         <span className="text-base font-extrabold text-slate-800 font-mono mt-0.5 block">
-                            {formatMoney(estimate.taxAmount || 0)}
+                            {formatMoney(est.taxAmount || 0)}
                         </span>
                     </div>
 
@@ -280,7 +304,7 @@ export function SalesEstimateQuickViewDrawer({
                             Tổng cộng báo giá
                         </span>
                         <span className="text-base sm:text-lg font-black text-emerald-700 font-mono mt-0.5 block">
-                            {formatMoney(estimate.totalAmount || 0)}
+                            {formatMoney(est.totalAmount || 0)}
                         </span>
                     </div>
                 </div>
@@ -297,7 +321,7 @@ export function SalesEstimateQuickViewDrawer({
                         }`}
                     >
                         <Layers size={14} />
-                        <span>Sản phẩm & Dịch vụ ({estimate.items?.length || 0})</span>
+                        <span>Sản phẩm & Dịch vụ ({isLoadingItems ? '...' : (est.items?.length || 0)})</span>
                     </button>
 
                     <button
@@ -344,8 +368,17 @@ export function SalesEstimateQuickViewDrawer({
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {estimate.items && estimate.items.length > 0 ? (
-                                        estimate.items.map((item: any, idx: number) => (
+                                    {isLoadingItems ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-8 text-center text-slate-500 text-xs">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                                    <span>Đang tải danh sách sản phẩm...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : est.items && est.items.length > 0 ? (
+                                        est.items.map((item: any, idx: number) => (
                                             <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                                 <td className="py-2.5 px-3 text-center text-slate-400 font-mono">
                                                     {idx + 1}
@@ -399,9 +432,9 @@ export function SalesEstimateQuickViewDrawer({
                                     <Building2 size={16} className="text-emerald-600" />
                                     <h4 className="text-xs font-bold text-slate-900">Thông tin Khách hàng / Doanh nghiệp</h4>
                                 </div>
-                                {estimate.customerId && (
+                                {est.customerId && (
                                     <Link
-                                        href={`/customers/${estimate.customerId}`}
+                                        href={`/customers/${est.customerId}`}
                                         className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1"
                                     >
                                         <span>Xem hồ sơ</span>
@@ -434,7 +467,7 @@ export function SalesEstimateQuickViewDrawer({
                                 <div>
                                     <span className="text-slate-400 block text-[11px]">Nhân viên phụ trách:</span>
                                     <span className="font-semibold text-slate-800 block">
-                                        {estimate.salesperson?.name || estimate.creator?.name || 'Chưa phân công'}
+                                        {est.salesperson?.name || est.creator?.name || 'Chưa phân công'}
                                     </span>
                                 </div>
 
@@ -448,7 +481,7 @@ export function SalesEstimateQuickViewDrawer({
                         </div>
 
                         {/* Associated Lead Card */}
-                        {estimate.lead && (
+                        {est.lead && (
                             <div className="bg-indigo-50/50 rounded-xl border border-indigo-200/70 p-3.5 space-y-2 text-xs">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -456,7 +489,7 @@ export function SalesEstimateQuickViewDrawer({
                                         <span className="font-bold text-indigo-900">Liên kết Cơ hội bán hàng (Lead)</span>
                                     </div>
                                     <Link
-                                        href={`/sales/leads/${estimate.lead.id}`}
+                                        href={`/sales/leads/${est.lead.id}`}
                                         className="text-[11px] font-bold text-indigo-700 hover:underline inline-flex items-center gap-1"
                                     >
                                         <span>Chi tiết cơ hội</span>
@@ -464,7 +497,7 @@ export function SalesEstimateQuickViewDrawer({
                                     </Link>
                                 </div>
                                 <div className="text-slate-700">
-                                    Mã cơ hội: <strong className="font-mono text-indigo-900">{estimate.lead.code}</strong> - {estimate.lead.name}
+                                    Mã cơ hội: <strong className="font-mono text-indigo-900">{est.lead.code}</strong> - {est.lead.name}
                                 </div>
                             </div>
                         )}
@@ -478,8 +511,8 @@ export function SalesEstimateQuickViewDrawer({
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                 Thẻ phân loại (Tags)
                             </span>
-                            {estimate.tags ? (
-                                <TagDisplay tagsString={estimate.tags} />
+                            {est.tags ? (
+                                <TagDisplay tagsString={est.tags} />
                             ) : (
                                 <span className="text-slate-400 text-xs italic">Chưa gắn thẻ</span>
                             )}
@@ -489,9 +522,9 @@ export function SalesEstimateQuickViewDrawer({
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                                 Ghi chú / Điều khoản báo giá
                             </span>
-                            {estimate.notes ? (
+                            {est.notes ? (
                                 <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-700 whitespace-pre-wrap leading-relaxed border border-slate-200/60 font-sans">
-                                    {estimate.notes}
+                                    {est.notes}
                                 </div>
                             ) : (
                                 <span className="text-slate-400 text-xs italic">Không có ghi chú</span>
