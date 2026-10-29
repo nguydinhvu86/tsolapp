@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { createNotification } from '@/app/notifications/actions';
+import { dispatchCommentNotifications, dispatchPostNotifications, dispatchGroupMemberNotifications } from './notification-service';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { revalidatePath } from 'next/cache';
 
@@ -692,28 +693,29 @@ export async function createCompetitionGroup(data: {
             } catch (err) {
                 console.warn('Failed to add competition group member:', err);
             }
-
-            // In-app Notification to member
-            if (userId !== currentUser.id) {
-                await createNotification(
-                    userId,
-                    '🛡️ Bạn vừa được thêm vào Nhóm Thi Đua mới!',
-                    `Chào mừng bạn gia nhập nhóm thi đua "${data.name}"! Cùng đồng đội chinh phục mục tiêu rực rỡ! 🔥`,
-                    'SUCCESS',
-                    '/leaderboard'
-                );
-            }
         }
+
+        // Send notifications (In-app, Web Push, and Welcome Email) to added members
+        await dispatchGroupMemberNotifications({
+            groupId,
+            groupName: data.name,
+            slogan: data.slogan,
+            targetRevenue: targetRev,
+            leaderId: data.leaderId,
+            targetUserIds: memberList,
+            isNewlyCreated: true,
+            currentUser: { id: currentUser.id, name: currentUser.name }
+        });
     }
 
     // 3. Create celebration announcement post on Social Wall
     try {
         const announcementPostId = genId();
-        const postContent = `🎉 CHÀO MỪNG ĐỘI THI ĐUA MỚI: ${data.name.toUpperCase()}!\n\n` +
-            `🎯 Slogan: "${data.slogan || 'Quyết chiến quyết thắng!'}"\n` +
-            `🏆 Mục tiêu doanh số: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(targetRev)}\n` +
-            `👥 Thành viên: ${memberList.length} chiến binh đã sẵn sàng xuất kích!\n\n` +
-            `Chúc đội gặt hái nhiều thắng lợi rực rỡ và giành ngôi vị Quán Quân kỳ này! 🔥🚀`;
+        const postContent = '🎉 CHÀO MỪNG ĐỘI THI ĐUA MỚI: ' + data.name.toUpperCase() + '!\n\n' +
+            '🎯 Slogan: "' + (data.slogan || 'Quyết chiến quyết thắng!') + '"\n' +
+            '🏆 Mục tiêu doanh số: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(targetRev) + '\n' +
+            '👥 Thành viên: ' + memberList.length + ' chiến binh đã sẵn sàng xuất kích!\n\n' +
+            'Chúc đội gặt hái nhiều thắng lợi rực rỡ và giành ngôi vị Quán Quân kỳ này! 🔥🚀';
 
         await prisma.leaderboardPost.create({
             data: {
@@ -752,15 +754,28 @@ export async function updateCompetitionGroup(groupId: string, data: {
 
     const currentUser = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, role: true }
+        select: { id: true, name: true, role: true }
     });
 
     if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'MANAGER') {
         throw new Error('Chỉ Quản trị viên hoặc Quản lý mới có quyền chỉnh sửa nhóm thi đua.');
     }
 
+    // Fetch existing group to check previous members & leader
+    const existingGroup = await prisma.competitionGroup.findUnique({
+        where: { id: groupId },
+        include: {
+            members: { select: { userId: true, role: true } }
+        }
+    });
+
+    if (!existingGroup) throw new Error('Không tìm thấy nhóm thi đua.');
+
+    const oldMemberIds = new Set(existingGroup.members.map(m => m.userId));
+    const previousLeaderId = existingGroup.leaderId;
+
     // Update group basic info
-    await prisma.competitionGroup.update({
+    const updatedGroup = await prisma.competitionGroup.update({
         where: { id: groupId },
         data: {
             ...(data.name !== undefined ? { name: data.name } : {}),
@@ -773,6 +788,10 @@ export async function updateCompetitionGroup(groupId: string, data: {
             ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
         }
     });
+
+    const groupName = data.name || updatedGroup.name;
+    const groupSlogan = data.slogan !== undefined ? data.slogan : updatedGroup.slogan;
+    const groupTargetRevenue = data.targetRevenue !== undefined ? data.targetRevenue : updatedGroup.targetRevenue;
 
     // Synchronize members if provided
     if (data.memberIds !== undefined) {
@@ -809,6 +828,35 @@ export async function updateCompetitionGroup(groupId: string, data: {
                     userId,
                     role
                 }
+            });
+        }
+
+        // Send notifications (In-app, Web Push, Email) to newly added members
+        const newlyAddedIds = memberIdArray.filter(uid => !oldMemberIds.has(uid));
+        if (newlyAddedIds.length > 0) {
+            await dispatchGroupMemberNotifications({
+                groupId,
+                groupName,
+                slogan: groupSlogan,
+                targetRevenue: groupTargetRevenue,
+                leaderId: data.leaderId,
+                targetUserIds: newlyAddedIds,
+                isNewlyCreated: false,
+                currentUser: { id: currentUser.id, name: currentUser.name }
+            });
+        }
+
+        // If leader changed and the new leader wasn't already in newlyAddedIds
+        if (data.leaderId && data.leaderId !== previousLeaderId && !newlyAddedIds.includes(data.leaderId)) {
+            await dispatchGroupMemberNotifications({
+                groupId,
+                groupName,
+                slogan: groupSlogan,
+                targetRevenue: groupTargetRevenue,
+                leaderId: data.leaderId,
+                targetUserIds: [data.leaderId],
+                isNewlyCreated: false,
+                currentUser: { id: currentUser.id, name: currentUser.name }
             });
         }
     }
@@ -1157,88 +1205,19 @@ export async function createSocialPost(data: {
         throw new Error('Không thể tạo bài viết: ' + (e?.message || e));
     }
 
-    // Handle mentions
-    const mentionedIds = Array.from(new Set(data.mentionedUserIds || []));
-    if (mentionedIds.length > 0) {
-        await Promise.all(
-            mentionedIds.map(async (targetUserId) => {
-                if (targetUserId === currentUser.id) return;
-
-                const mentionId = genId();
-                try {
-                    await prisma.leaderboardMention.create({
-                        data: {
-                            id: mentionId,
-                            postId: newPost.id,
-                            mentionedUserId: targetUserId
-                        }
-                    });
-                } catch (e) {
-                    console.warn('Failed to record mention:', e);
-                }
-
-                // In-app Notification
-                await createNotification(
-                    targetUserId,
-                    '🎉 Bạn được nhắc đến trên Bảng Vinh Danh!',
-                    `${currentUser.name || 'Một đồng nghiệp'} vừa nhắc đến bạn trong bài viết trên Mạng xã hội thi đua.`,
-                    'SUCCESS',
-                    `/leaderboard?postId=${newPost.id}`
-                );
-
-                // Send email alert to mentioned user
-                try {
-                    const targetUser = await prisma.user.findUnique({
-                        where: { id: targetUserId },
-                        select: { email: true, name: true }
-                    });
-
-                    if (targetUser?.email) {
-                        const appUrl = process.env.NEXTAUTH_URL || 'https://inside.tsol.vn';
-                        const emailHtml = `
-                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-                                <div style="text-align: center; margin-bottom: 24px;">
-                                    <div style="display: inline-block; padding: 12px; background: #ecfdf5; border-radius: 50%; color: #059669; font-size: 32px;">🏆</div>
-                                    <h2 style="color: #0f172a; margin: 12px 0 4px 0; font-size: 20px;">Bạn vừa được nhắc đến trên Bảng Vinh Danh!</h2>
-                                    <p style="color: #64748b; font-size: 14px; margin: 0;">Mạng xã hội thi đua nội bộ công ty</p>
-                                </div>
-                                <div style="background: #f8fafc; border-radius: 12px; padding: 16px; border-left: 4px solid #10b981; margin-bottom: 20px;">
-                                    <div style="font-weight: bold; color: #1e293b; font-size: 14px; margin-bottom: 6px;">
-                                        ${currentUser.name || 'Đồng nghiệp'}:
-                                    </div>
-                                    <div style="color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">
-                                        ${data.content}
-                                    </div>
-                                </div>
-                                <div style="text-align: center; margin-top: 24px;">
-                                    <a href="${appUrl}/leaderboard" style="display: inline-block; padding: 12px 28px; background: #059669; color: #ffffff; font-weight: bold; font-size: 14px; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
-                                        👉 Xem Bài Viết & Giao Lưu Ngay
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-
-                        await sendEmailWithTracking({
-                            to: targetUser.email,
-                            subject: `🏆 ${currentUser.name || 'Đồng nghiệp'} vừa nhắc đến bạn trên Bảng Vinh Danh`,
-                            htmlBody: emailHtml,
-                            senderId: currentUser.id
-                        });
-                    }
-                } catch (emailErr) {
-                    console.error('Lỗi gửi email tag tên:', emailErr);
-                }
-            })
-        );
-    }
+    // Dispatch mentions and team announcements
+    await dispatchPostNotifications({
+        postId: newPost.id,
+        content: data.content,
+        groupId,
+        explicitMentionedUserIds: data.mentionedUserIds,
+        currentUser: { id: currentUser.id, name: currentUser.name, email: currentUser.email }
+    });
 
     revalidatePath('/leaderboard');
     return { success: true, post: newPost };
 }
 
-// =============================================================
-// 7. INTERACTIONS (REACTION, COMMENT, PIN, DELETE, SEARCH)
-// =============================================================
 export async function togglePostReaction(postId: string, emoji: ReactionEmoji) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) throw new Error('Vui lòng đăng nhập.');
@@ -1318,7 +1297,7 @@ export async function addPostComment(data: {
 
     const currentUser = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, name: true }
+        select: { id: true, name: true, email: true }
     });
     if (!currentUser) throw new Error('Tài khoản không hợp lệ.');
 
@@ -1344,50 +1323,19 @@ export async function addPostComment(data: {
         author: { id: currentUser.id, name: currentUser.name }
     };
 
-    const post = await prisma.leaderboardPost.findUnique({
-        where: { id: data.postId },
-        select: { authorId: true }
+    // Dispatch comprehensive relevant comment notifications:
+    // 1) Users mentioned in comment (@mentions)
+    // 2) Parent comment author (if this is a reply)
+    // 3) Post author
+    // 4) Other thread participants (previous commenters)
+    await dispatchCommentNotifications({
+        postId: data.postId,
+        commentId,
+        content: data.content,
+        parentId: data.parentId,
+        explicitMentionedUserIds: data.mentionedUserIds,
+        currentUser: { id: currentUser.id, name: currentUser.name, email: currentUser.email }
     });
-    const postAuthorId = post?.authorId;
-
-    if (postAuthorId && postAuthorId !== currentUser.id) {
-        await createNotification(
-            postAuthorId,
-            '💬 Bình luận mới trên bài viết của bạn',
-            `${currentUser.name || 'Đồng nghiệp'} vừa bình luận: "${data.content.slice(0, 80)}..."`,
-            'INFO',
-            `/leaderboard?postId=${data.postId}`
-        );
-    }
-
-    const mentionedIds = Array.from(new Set(data.mentionedUserIds || []));
-    if (mentionedIds.length > 0) {
-        await Promise.all(
-            mentionedIds.map(async (targetUserId) => {
-                if (targetUserId === currentUser.id) return;
-                const mentionId = genId();
-                try {
-                    await prisma.leaderboardMention.create({
-                        data: {
-                            id: mentionId,
-                            commentId,
-                            mentionedUserId: targetUserId
-                        }
-                    });
-                } catch (e) {
-                    console.warn('Failed to record comment mention:', e);
-                }
-
-                await createNotification(
-                    targetUserId,
-                    data.parentId ? '💬 Phản hồi bình luận của bạn' : '💬 Bạn được tag trong bình luận',
-                    `${currentUser.name || 'Đồng nghiệp'} vừa nhắc đến bạn trong bình luận: "${data.content.slice(0, 80)}"`,
-                    'INFO',
-                    `/leaderboard?postId=${data.postId}`
-                );
-            })
-        );
-    }
 
     revalidatePath('/leaderboard');
     return { success: true, comment: newComment };

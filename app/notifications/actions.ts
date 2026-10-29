@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { triggerPusherEvent } from '@/lib/pusher-server';
+import { sendWebPushNotification } from '@/lib/notifications/webPush';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 
@@ -55,6 +56,15 @@ export async function createNotification(userId: string, title: string, message:
             type
         });
 
+        // Send browser/mobile Web Push notification (fails gracefully if unconfigured or unallowed)
+        sendWebPushNotification(userId, {
+            title,
+            body: message,
+            url: link || '/'
+        }).catch(err => {
+            console.warn('Web push notification dispatch warning:', err?.message || err);
+        });
+
         return { success: true, data: notif };
     } catch (error: any) {
         console.error("Error creating notification:", error);
@@ -94,7 +104,7 @@ export async function createManyNotifications(notifications: { userId: string, t
 
         await prisma.notification.createMany({ data: sanitized });
 
-        // Trigger pusher for each
+        // Trigger pusher and web push for each
         for (const notif of sanitized) {
             await triggerPusherEvent(`user-${notif.userId}`, 'new-notification', {
                 title: notif.title,
@@ -102,6 +112,12 @@ export async function createManyNotifications(notifications: { userId: string, t
                 link: notif.link,
                 type: notif.type
             });
+
+            sendWebPushNotification(notif.userId, {
+                title: notif.title,
+                body: notif.message,
+                url: notif.link || '/'
+            }).catch(err => console.warn('Web push notification dispatch warning:', err?.message || err));
         }
 
         return { success: true };

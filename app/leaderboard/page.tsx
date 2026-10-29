@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -47,11 +47,13 @@ export default async function LeaderboardPage() {
     ]);
 
     return (
-        <LeaderboardClient
-            initialLeaderboard={initialLeaderboard}
-            initialFeed={initialFeed}
-            initialGroups={initialGroups}
-            currentUser={currentUser}
-        />
+        <Suspense fallback={<div className="p-12 text-center text-sm font-semibold text-slate-500">Đang tải Bảng Vinh Danh...</div>}>
+            <LeaderboardClient
+                initialLeaderboard={initialLeaderboard}
+                initialFeed={initialFeed}
+                initialGroups={initialGroups}
+                currentUser={currentUser}
+            />
+        </Suspense>
     );
 }

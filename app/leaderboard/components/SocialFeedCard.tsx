@@ -82,6 +82,18 @@ export function SocialFeedCard({
 
     const postImages: string[] = Array.isArray(post.images) ? post.images : [];
 
+    // Auto expand comments if URL targets this post or a comment within it
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const targetPostId = params.get('postId');
+            const targetCommentId = params.get('commentId');
+            if (targetPostId === post.id || (targetCommentId && post.comments?.some((c: any) => c.id === targetCommentId))) {
+                setShowComments(true);
+            }
+        }
+    }, [post.id, post.comments]);
+
     // Keyboard navigation for Lightbox Carousel
     useEffect(() => {
         if (lightboxIndex === null) return;
@@ -380,6 +392,7 @@ export function SocialFeedCard({
 
     return (
         <div
+            id={`post-${post.id}`}
             className="rounded-3xl p-4 sm:p-5 shadow-sm border transition-all hover:shadow-md relative space-y-3"
             style={{
                 background: post.isPinned ? '#fffdf7' : '#ffffff',
@@ -642,7 +655,7 @@ export function SocialFeedCard({
                             {rootComments.map((comment: any) => {
                                 const replies = repliesMap[comment.id] || [];
                                 return (
-                                    <div key={comment.id} className="space-y-2">
+                                    <div key={comment.id} id={`comment-${comment.id}`} className="space-y-2">
                                         {/* Root Comment */}
                                         <div className="flex items-start gap-2.5 text-xs">
                                             <img
@@ -687,7 +700,7 @@ export function SocialFeedCard({
                                         {replies.length > 0 && (
                                             <div className="ml-8 pl-3 border-l-2 border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
                                                 {replies.map((reply: any) => (
-                                                    <div key={reply.id} className="flex items-start gap-2 text-xs">
+                                                    <div key={reply.id} id={`comment-${reply.id}`} className="flex items-start gap-2 text-xs">
                                                         <img
                                                             src={reply.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author?.name || 'U')}&background=059669&color=fff&size=64`}
                                                             alt={reply.author?.name || 'User'}

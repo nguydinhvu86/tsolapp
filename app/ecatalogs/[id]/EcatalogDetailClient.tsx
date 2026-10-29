@@ -108,7 +108,7 @@ export default function EcatalogDetailClient({
                     imageUrl: item.imageUrl || '',
                     displayOrder: idx
                 }))
-            }, currentUserId);
+            }, currentUserId || '');
 
             if (res.success) {
                 toast.success("Đã lưu toàn bộ thay đổi thành công!");

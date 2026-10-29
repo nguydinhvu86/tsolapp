@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Trophy, Flame, Target, Users, DollarSign, FileText, TrendingUp, Sparkles, MessageSquare, Calendar, RefreshCw, Star, Award, ShieldCheck, Heart, PlusCircle, Shield, UserCheck, Columns2, LayoutGrid, Newspaper, Loader2, Zap, ChevronRight, Hash, ArrowUpRight } from 'lucide-react';
 import { CriteriaKey, TimeRangeKey, LeaderboardMode, getLeaderboardData, getGroupLeaderboardData, getSocialFeed, getCompetitionGroups } from './actions';
 import { LeaderboardPodium } from './components/LeaderboardPodium';
@@ -37,6 +38,7 @@ const TIME_TABS: { key: TimeRangeKey; label: string }[] = [
 ];
 
 export default function LeaderboardClient({ initialLeaderboard, initialFeed, initialGroups = [], currentUser }: Props) {
+    const searchParams = useSearchParams();
     const [mode, setMode] = useState<LeaderboardMode>('INDIVIDUAL');
     const [layoutView, setLayoutView] = useState<LayoutView>('SPLIT');
     const [criteria, setCriteria] = useState<CriteriaKey>(initialLeaderboard.criteria || 'REVENUE');
