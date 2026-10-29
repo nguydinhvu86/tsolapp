@@ -7,8 +7,13 @@ import PublicEcatalogClient from './PublicEcatalogClient';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-    const ecatalog = await prisma.ecatalog.findUnique({
-        where: { id: params.id },
+    const ecatalog = await prisma.ecatalog.findFirst({
+        where: {
+            OR: [
+                { id: params.id },
+                { code: params.id }
+            ]
+        },
         select: { name: true, description: true }
     });
 
@@ -19,8 +24,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function PublicEcatalogPage({ params }: { params: { id: string } }) {
-    const ecatalog = await prisma.ecatalog.findUnique({
-        where: { id: params.id },
+    const ecatalog = await prisma.ecatalog.findFirst({
+        where: {
+            OR: [
+                { id: params.id },
+                { code: params.id }
+            ]
+        },
         include: {
             creator: {
                 select: { name: true, email: true, avatar: true }
