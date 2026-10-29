@@ -149,7 +149,33 @@ export default function EcatalogClient({
 
     return (
         <div className="space-y-6">
-            {/* 1. Header & KPI Cards */}
+            {/* Header: Title & Action Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+                            Quản Lý E-Catalog Số (Product Catalogs)
+                        </h1>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-2xs">
+                            {stats.total}
+                        </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Bộ sưu tập giải pháp số, showroom sản phẩm trực quan và chia sẻ báo giá trực tuyến chuyên nghiệp
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    style={{ backgroundColor: '#059669', color: '#ffffff' }}
+                    className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
+                >
+                    <Plus size={16} strokeWidth={2.5} />
+                    <span>Tạo E-Catalog Mới</span>
+                </button>
+            </div>
+
+            {/* 1. KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Total Catalogs */}
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden group">
@@ -324,7 +350,8 @@ export default function EcatalogClient({
                     <button
                         type="button"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
+                        style={{ backgroundColor: '#059669', color: '#ffffff' }}
+                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
                     >
                         <Plus size={16} strokeWidth={2.5} />
                         <span>Tạo E-Catalog Mới</span>
@@ -358,6 +385,7 @@ export default function EcatalogClient({
                         <button
                             type="button"
                             onClick={() => setIsCreateModalOpen(true)}
+                            style={{ backgroundColor: '#059669', color: '#ffffff' }}
                             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
                         >
                             <Plus size={15} /> Tạo E-Catalog Ngay
@@ -723,6 +751,7 @@ export default function EcatalogClient({
                             <button
                                 type="button"
                                 onClick={() => handleCopyLink(qrModalCatalog)}
+                                style={{ backgroundColor: '#059669', color: '#ffffff' }}
                                 className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                                 <Copy size={14} />
@@ -850,6 +879,7 @@ export default function EcatalogClient({
                                 <button
                                     type="submit"
                                     disabled={isCreating}
+                                    style={{ backgroundColor: '#059669', color: '#ffffff' }}
                                     className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
                                 >
                                     {isCreating ? (

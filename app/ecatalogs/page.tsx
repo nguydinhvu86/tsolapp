@@ -27,9 +27,6 @@ export default async function EcatalogsPage({ searchParams }: { searchParams: { 
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">
-                Quản Lý E-Catalog Số (Product Catalogs)
-            </h1>
             <EcatalogClient
                 initialEcatalogs={ecatalogs}
                 products={products.filter((p: any) => p.isActive)}

@@ -293,7 +293,8 @@ export default function EcatalogDetailClient({
                     <button 
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-60"
+                        style={{ backgroundColor: '#10b981', color: '#020617' }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-60"
                     >
                         <Save size={16} />
                         <span>{isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi (Ctrl+S)'}</span>
@@ -473,7 +474,8 @@ export default function EcatalogDetailClient({
 
                                 <button 
                                     onClick={handleAddManualProduct}
-                                    className="flex items-center gap-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-3.5 py-2 rounded-xl shadow-md transition-all"
+                                    style={{ backgroundColor: '#10b981', color: '#020617' }}
+                                    className="flex items-center gap-1.5 text-xs font-black text-slate-950 bg-emerald-500 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-3.5 py-2 rounded-xl shadow-md transition-all"
                                 >
                                     <Plus size={14} /> Thêm Thủ Công
                                 </button>
