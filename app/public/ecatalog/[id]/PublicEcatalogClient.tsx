@@ -329,7 +329,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                             )}
                         </div>
 
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight" style={{ color: "#ffffff" }}>
                             {ecatalog.name}
                         </h1>
 
@@ -362,7 +362,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
 
                         <button 
                             onClick={() => setConsultantModalOpen(true)}
-                            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-lg shadow-emerald-500/20 shrink-0"
+                            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-lg shadow-emerald-500/20 shrink-0" style={{ background: "#10b981", color: "#020617", fontWeight: 800 }}
                         >
                             Liên hệ tư vấn
                         </button>
@@ -378,22 +378,16 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                         <div className="inline-flex p-1 bg-slate-900 border border-slate-800 rounded-xl shadow-inner">
                             <button
                                 onClick={() => setViewMode('FLIPBOOK')}
-                                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    viewMode === 'FLIPBOOK'
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
+                                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                style={viewMode === 'FLIPBOOK' ? { background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', color: '#020617', fontWeight: 800 } : { background: '#1e293b', color: '#cbd5e1' }}
                             >
                                 <BookOpen size={15} />
                                 <span>📖 Lật Mở Catalogue</span>
                             </button>
                             <button
                                 onClick={() => setViewMode('GRID')}
-                                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    viewMode === 'GRID'
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
+                                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                style={viewMode === 'GRID' ? { background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', color: '#020617', fontWeight: 800 } : { background: '#1e293b', color: '#cbd5e1' }}
                             >
                                 <LayoutGrid size={15} />
                                 <span>▦ Showroom Công Nghệ</span>
@@ -473,11 +467,8 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                         </span>
                         <button
                             onClick={() => setSelectedOrigin('ALL')}
-                            className={`px-2.5 py-1 rounded-lg font-semibold shrink-0 transition-all ${
-                                selectedOrigin === 'ALL'
-                                    ? 'bg-emerald-500 text-slate-950 font-bold'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                            }`}
+                            className="px-2.5 py-1 rounded-lg font-semibold shrink-0 transition-all cursor-pointer"
+                            style={selectedOrigin === 'ALL' ? { background: '#10b981', color: '#020617', fontWeight: 800 } : { background: '#0f172a', color: '#cbd5e1', border: '1px solid #334155' }}
                         >
                             Tất cả ({ecatalog.items.length})
                         </button>
@@ -487,11 +478,8 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                 <button
                                     key={orig}
                                     onClick={() => setSelectedOrigin(orig)}
-                                    className={`px-2.5 py-1 rounded-lg font-medium shrink-0 transition-all ${
-                                        selectedOrigin === orig
-                                            ? 'bg-emerald-500 text-slate-950 font-bold'
-                                            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                                    }`}
+                                    className="px-2.5 py-1 rounded-lg font-medium shrink-0 transition-all cursor-pointer"
+                                    style={selectedOrigin === orig ? { background: '#10b981', color: '#020617', fontWeight: 800 } : { background: '#0f172a', color: '#cbd5e1', border: '1px solid #334155' }}
                                 >
                                     {orig} ({count})
                                 </button>
@@ -593,7 +581,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                         <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">
                                             THÔNG SỐ & TÍNH NĂNG CHI TIẾT
                                         </span>
-                                        <h2 className="text-2xl sm:text-3xl font-black text-white mt-1 leading-snug tracking-tight">
+                                        <h2 className="text-2xl sm:text-3xl font-black text-white mt-1 leading-snug tracking-tight" style={{ color: '#ffffff' }}>
                                             {currentItem.customName || currentItem.product?.name}
                                         </h2>
                                     </div>
@@ -604,17 +592,17 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                                                 Giá Bán Lẻ Niêm Yết
                                             </span>
-                                            <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">
+                                            <span className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight" style={{ color: '#34d399' }}>
                                                 {formatCurrency(currentItem.customRetailPrice ?? currentItem.customPrice ?? currentItem.product?.salePrice)}
                                             </span>
                                         </div>
 
                                         {ecatalog.showDealerPrice && (currentItem.customDealerPrice ?? 0) > 0 && (
                                             <div className="border-l border-slate-800 pl-4">
-                                                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">
+                                                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1" style={{ color: '#fbbf24' }}>
                                                     Giá Đại Lý / Đối Tác
                                                 </span>
-                                                <span className="text-xl font-black text-amber-300">
+                                                <span className="text-xl font-black text-amber-300" style={{ color: '#fcd34d' }}>
                                                     {formatCurrency(currentItem.customDealerPrice)}
                                                 </span>
                                             </div>
@@ -623,7 +611,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
 
                                     {/* Key Features Highlights (Parsed from desc) */}
                                     <div className="space-y-2.5 mb-6">
-                                        <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                        <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#5eead4' }}>
                                             <Zap size={14} className="text-teal-400" /> Tính Năng Nổi Bật:
                                         </div>
 
@@ -640,14 +628,14 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                                              feat.iconType === 'wifi' ? <Wifi size={14} /> :
                                                              <Cpu size={14} />}
                                                         </div>
-                                                        <div className="text-xs text-slate-200 font-medium leading-relaxed">
+                                                        <div className="text-xs text-white font-medium leading-relaxed" style={{ color: '#f8fafc' }}>
                                                             {feat.desc}
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <p className="text-xs text-slate-400 italic line-clamp-3">
+                                            <p className="text-xs text-slate-200 bg-slate-950/70 p-3 rounded-xl border border-slate-800 leading-relaxed font-medium" style={{ color: '#e2e8f0' }}>
                                                 {currentItem.customDesc || currentItem.product?.description || 'Chi tiết tính năng sản phẩm đang được chuẩn bị.'}
                                             </p>
                                         )}
@@ -655,16 +643,16 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
 
                                     {/* Mini Spec Matrix Preview */}
                                     {currentSpecsAndFeatures.specs.length > 0 && (
-                                        <div className="mb-6 rounded-xl bg-slate-950/60 border border-slate-800/80 p-3 overflow-hidden">
-                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                                                <span className="flex items-center gap-1.5"><Layers size={12} /> Bảng Thông Số Rút Gọn</span>
-                                                <span className="text-[10px] text-emerald-400 font-normal">({currentSpecsAndFeatures.specs.length} thông số)</span>
+                                        <div className="mb-6 rounded-xl bg-slate-950/90 border border-slate-700/60 p-3.5 overflow-hidden shadow-inner">
+                                            <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                                <span className="flex items-center gap-1.5 text-slate-200" style={{ color: '#e2e8f0' }}><Layers size={13} className="text-emerald-400" /> Bảng Thông Số Rút Gọn</span>
+                                                <span className="text-[10px] text-emerald-400 font-bold" style={{ color: '#34d399' }}>({currentSpecsAndFeatures.specs.length} thông số)</span>
                                             </div>
                                             <div className="space-y-1.5">
                                                 {currentSpecsAndFeatures.specs.slice(0, 4).map((spec, sIdx) => (
-                                                    <div key={sIdx} className="flex items-baseline justify-between text-xs py-1 border-b border-slate-800/40 last:border-0">
-                                                        <span className="text-slate-400 font-medium">{spec.label}</span>
-                                                        <span className="text-slate-200 font-semibold text-right max-w-[60%] truncate">{spec.value}</span>
+                                                    <div key={sIdx} className="flex items-baseline justify-between text-xs py-1.5 border-b border-slate-800/60 last:border-0">
+                                                        <span className="text-slate-300 font-medium" style={{ color: '#cbd5e1' }}>{spec.label}</span>
+                                                        <span className="text-white font-bold text-right max-w-[60%] truncate" style={{ color: '#ffffff' }}>{spec.value}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -679,7 +667,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                             setDrawerItem(currentItem);
                                             setDrawerActiveTab('SPECS');
                                         }}
-                                        className="w-full sm:flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                                        className="w-full sm:flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer hover:brightness-110 active:scale-[0.99]" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', color: '#020617', fontWeight: 800 }}
                                     >
                                         <Sparkles size={16} />
                                         <span>Lật Mở Thông Số & Tính Năng</span>
@@ -689,7 +677,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                         href={`https://zalo.me/${cleanPhone}?text=${getConsultationMessage(currentItem)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-full sm:w-auto py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/80 transition-all flex items-center justify-center gap-2 shrink-0"
+                                        className="w-full sm:w-auto py-3 px-4 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-md hover:bg-slate-700" style={{ background: '#1e293b', color: '#ffffff' }}
                                     >
                                         <div className="w-5 h-5 rounded-md bg-blue-500 text-white flex items-center justify-center text-[10px] font-black">Z</div>
                                         <span>Nhận Báo Giá</span>
@@ -905,6 +893,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                                     setDrawerActiveTab('FEATURES');
                                                 }}
                                                 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug cursor-pointer mb-2"
+                                                style={{ color: '#ffffff' }}
                                             >
                                                 {name}
                                             </h3>
@@ -924,7 +913,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                                                         Giá bán lẻ
                                                     </span>
-                                                    <span className="text-lg font-black text-emerald-400">
+                                                    <span className="text-lg font-black text-emerald-400" style={{ color: '#34d399' }}>
                                                         {formatCurrency(retailPrice)}
                                                     </span>
                                                 </div>
@@ -934,7 +923,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                                         <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
                                                             Đại lý
                                                         </span>
-                                                        <span className="text-xs font-black text-amber-300">
+                                                        <span className="text-xs font-black text-amber-300" style={{ color: '#fcd34d' }}>
                                                             {formatCurrency(dealerPrice)}
                                                         </span>
                                                     </div>
@@ -997,7 +986,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight" style={{ color: '#ffffff' }}>
                                     {drawerItem.customName || drawerItem.product?.name}
                                 </h3>
                             </div>
@@ -1255,7 +1244,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                                     Giá bán lẻ
                                 </span>
-                                <span className="text-xl sm:text-2xl font-black text-emerald-400">
+                                <span className="text-xl sm:text-2xl font-black text-emerald-400" style={{ color: '#34d399' }}>
                                     {formatCurrency(drawerItem.customRetailPrice ?? drawerItem.customPrice ?? drawerItem.product?.salePrice)}
                                 </span>
                             </div>
@@ -1264,7 +1253,7 @@ export default function PublicEcatalogClient({ ecatalog, companyInfo }: PublicEc
                                 href={`https://zalo.me/${cleanPhone}?text=${getConsultationMessage(drawerItem)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs sm:text-sm font-black transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                                className="w-full sm:w-auto px-6 py-3 rounded-xl text-slate-950 text-xs sm:text-sm font-black transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110" style={{ background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', color: '#020617', fontWeight: 800 }}
                             >
                                 <div className="w-4 h-4 rounded-sm bg-blue-600 text-white flex items-center justify-center text-[8px] font-black">Z</div>
                                 <span>Tư Vấn Ngay Qua Zalo</span>

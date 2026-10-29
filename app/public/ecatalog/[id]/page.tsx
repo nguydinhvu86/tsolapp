@@ -61,7 +61,41 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 font-sans text-slate-100 pb-20 selection:bg-emerald-500 selection:text-white overflow-x-hidden relative">
+        <div 
+            className="ecatalog-public-wrapper w-full min-w-full flex-1 min-h-screen bg-slate-950 font-sans text-slate-100 pb-20 selection:bg-emerald-500 selection:text-white overflow-x-hidden relative flex flex-col"
+            style={{ width: '100%', minWidth: '100%', flex: '1 1 100%', backgroundColor: '#020617' }}
+        >
+            {/* Global reset override to ensure full screen width and avoid global white background */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                html, body {
+                    background-color: #020617 !important;
+                    width: 100% !important;
+                    min-width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    overflow-x: hidden !important;
+                }
+                .ecatalog-public-wrapper {
+                    width: 100% !important;
+                    min-width: 100% !important;
+                    flex: 1 1 100% !important;
+                    background-color: #020617 !important;
+                }
+                .ecatalog-public-wrapper h1,
+                .ecatalog-public-wrapper h2,
+                .ecatalog-public-wrapper h3,
+                .ecatalog-public-wrapper h4,
+                .ecatalog-public-wrapper h5,
+                .ecatalog-public-wrapper h6 {
+                    color: #ffffff;
+                }
+                .ecatalog-public-wrapper button {
+                    background-color: transparent;
+                }
+            ` }} />
+
             {/* Ambient Background Tech Glows */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
                 <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px]" />
@@ -78,8 +112,8 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </div>
 
             {/* Top Enterprise Header */}
-            <header className="relative z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 shadow-xl shadow-black/20">
-                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <header className="w-full relative z-40 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 shadow-xl shadow-black/20">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col sm:flex-row items-center justify-between py-3.5 gap-3">
                         {/* Brand Logo & Name */}
                         <div className="flex items-center gap-3.5">
@@ -92,12 +126,12 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                             )}
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h1 className="text-base font-extrabold text-white tracking-tight leading-none">{companyName}</h1>
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <h1 className="text-base font-extrabold text-white tracking-tight leading-none" style={{ color: '#ffffff' }}>{companyName}</h1>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                                         E-CATALOG v2.4
                                     </span>
                                 </div>
-                                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Digital Interactive Product Experience</p>
+                                <p className="text-[11px] text-slate-300 font-medium mt-0.5">Digital Interactive Product Experience</p>
                             </div>
                         </div>
 
@@ -106,7 +140,8 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                             {companyPhone && (
                                 <a 
                                     href={`tel:${companyPhone.replace(/\s+/g, '')}`}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-all shadow-sm"
+                                    style={{ color: '#e2e8f0' }}
                                 >
                                     <Phone size={13} className="text-emerald-400" />
                                     <span className="hidden sm:inline">{companyPhone}</span>
@@ -116,7 +151,8 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                             {companyEmail && (
                                 <a 
                                     href={`mailto:${companyEmail}`}
-                                    className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                    className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-all shadow-sm"
+                                    style={{ color: '#e2e8f0' }}
                                 >
                                     <Mail size={13} className="text-teal-400" />
                                     <span>{companyEmail}</span>
@@ -127,7 +163,8 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
                                     href={companyWebsite.startsWith('http') ? companyWebsite : `https://${companyWebsite}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all shadow-sm"
+                                    className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 transition-all shadow-sm"
+                                    style={{ color: '#e2e8f0' }}
                                 >
                                     <Globe size={13} className="text-cyan-400" />
                                     <span>Website</span>
@@ -139,7 +176,7 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </header>
 
             {/* Interactive Catalog Workspace (Client Component) */}
-            <main className="relative z-10">
+            <main className="w-full flex-1 flex flex-col relative z-10">
                 <PublicEcatalogClient 
                     ecatalog={ecatalog} 
                     companyInfo={companyInfo} 
@@ -147,12 +184,12 @@ export default async function PublicEcatalogPage({ params }: { params: { id: str
             </main>
 
             {/* Tech Footer */}
-            <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-slate-800/60 pt-8 relative z-10">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
-                    <p>&copy; {new Date().getFullYear()} <span className="text-slate-300 font-bold">{companyFullName}</span>. Tất cả quyền được bảo lưu.</p>
+            <footer className="w-full mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-slate-800/80 pt-8 relative z-10">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400 font-medium">
+                    <p>&copy; {new Date().getFullYear()} <span className="text-white font-bold">{companyFullName}</span>. Tất cả quyền được bảo lưu.</p>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <p className="text-slate-400">Hệ thống E-Catalog Trực Tuyến TsolApp 2.0</p>
+                        <p className="text-slate-300">Hệ thống E-Catalog Trực Tuyến TsolApp 2.0</p>
                     </div>
                 </div>
             </footer>

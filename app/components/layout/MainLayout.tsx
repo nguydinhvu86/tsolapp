@@ -13,7 +13,11 @@ export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     if (isAuthPage || isClientPortal) {
-        return <>{children}</>;
+        return (
+            <div className="w-full min-w-full flex-1 flex flex-col" style={{ width: "100%", minWidth: "100%", flex: "1 1 100%" }}>
+                {children}
+            </div>
+        );
     }
 
     return (

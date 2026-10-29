@@ -111,7 +111,7 @@ a {
 }
 
 button {
-    background: none;
+    background-color: transparent;
     border: none;
     cursor: pointer;
     font-family: inherit;
