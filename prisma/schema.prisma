@@ -1887,6 +1887,12 @@ model DocumentCategory {
   parent      DocumentCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
   children    DocumentCategory[] @relation("CategoryHierarchy")
 
+  // Enhanced security & workspace fields
+  securityLevel    String   @default("PUBLIC") // PUBLIC, DEPARTMENT, CONFIDENTIAL
+  targetDepartment String?
+  icon             String?
+  color            String?
+
   documents Document[]
 
   createdAt DateTime @default(now())
@@ -1903,6 +1909,12 @@ model Document {
   size        Int? // Kích thước byte
   isPublic    Boolean @default(true) // true: Ai cũng xem được
 
+  // Enhanced security & DMS metadata
+  securityLevel  String   @default("INHERIT") // INHERIT, PUBLIC, CONFIDENTIAL
+  isDownloadable Boolean  @default(true)
+  isStarred      Boolean  @default(false)
+  version        String   @default("1.0")
+
   categoryId String?
   category   DocumentCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
@@ -1910,10 +1922,21 @@ model Document {
   creator   User   @relation("DocumentCreator", fields: [creatorId], references: [id])
 
   comments DocumentComment[]
-  notes    DocumentNote[]
+  notes      DocumentNote[]
+  accessLogs DocumentAccessLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DocumentAccessLog {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  action     String   // VIEW, DOWNLOAD
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 }
 
 model DocumentComment {

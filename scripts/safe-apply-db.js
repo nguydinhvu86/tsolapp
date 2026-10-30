@@ -571,11 +571,15 @@ async function main() {
         console.log(`Tìm thấy ${existingCustomers.length} khách hàng chưa có mã. Đang tạo mã KH-xxxx...`);
         for (let i = 0; i < existingCustomers.length; i++) {
             const cust = existingCustomers[i];
-            const newCode = `KH-${(i + 1).toString().padStart(4, '0')}`;
-            await prisma.customer.update({
-                where: { id: cust.id },
-                data: { code: newCode }
-            });
+            const newCode = `KH-${Date.now().toString().slice(-5)}${i + 1}`;
+            try {
+                await prisma.customer.update({
+                    where: { id: cust.id },
+                    data: { code: newCode }
+                });
+            } catch (cErr) {
+                // ignore
+            }
         }
     }
 
@@ -842,6 +846,37 @@ async function main() {
         console.log('✅ Đã khởi tạo danh mục mẫu tin Zalo ZNS tiêu chuẩn.');
     } catch (znsErr) {
         console.warn('⚠️ Chú ý khi seed ZNS templates:', znsErr.message);
+    }
+
+    // 9b. Enhanced Document Management & Executive Vault
+    console.log('\n--- Kiểm tra cấu trúc Quản lý Tài Liệu & Kho Lưu Trữ Mật (DMS & Vault) ---');
+    await addColumnIfNotExists('DocumentCategory', 'securityLevel', "VARCHAR(50) NOT NULL DEFAULT 'PUBLIC'");
+    await addColumnIfNotExists('DocumentCategory', 'targetDepartment', "VARCHAR(100) NULL");
+    await addColumnIfNotExists('DocumentCategory', 'icon', "VARCHAR(50) NULL");
+    await addColumnIfNotExists('DocumentCategory', 'color', "VARCHAR(50) NULL");
+
+    await addColumnIfNotExists('Document', 'securityLevel', "VARCHAR(50) NOT NULL DEFAULT 'INHERIT'");
+    await addColumnIfNotExists('Document', 'isDownloadable', "TINYINT(1) NOT NULL DEFAULT 1");
+    await addColumnIfNotExists('Document', 'isStarred', "TINYINT(1) NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Document', 'version', "VARCHAR(20) NOT NULL DEFAULT '1.0'");
+
+    try {
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS \`DocumentAccessLog\` (
+                \`id\` VARCHAR(191) NOT NULL,
+                \`documentId\` VARCHAR(191) NOT NULL,
+                \`userId\` VARCHAR(191) NOT NULL,
+                \`action\` VARCHAR(50) NOT NULL,
+                \`ipAddress\` VARCHAR(100) NULL,
+                \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                PRIMARY KEY (\`id\`),
+                INDEX \`DocumentAccessLog_documentId_idx\` (\`documentId\`),
+                INDEX \`DocumentAccessLog_userId_idx\` (\`userId\`)
+            ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        `);
+        console.log('✅ Đã kiểm tra/khởi tạo bảng DocumentAccessLog thành công.');
+    } catch (logErr) {
+        console.warn('⚠️ Chú ý về DocumentAccessLog:', logErr.message);
     }
 
     // 10. Verification and record counts

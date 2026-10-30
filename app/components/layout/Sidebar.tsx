@@ -35,7 +35,7 @@ const mainNavItems: any[] = [
     { name: 'Bảng Vinh Danh', nameKey: 'sidebar.leaderboard', href: '/leaderboard', icon: Trophy, permission: 'VIEW_DASHBOARD' },
     { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
     { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
-    { name: 'Thư Viện & Đào Tạo', nameKey: 'sidebar.library', href: '/library', icon: BookOpen, permission: 'TASKS_VIEW' },
+    { name: 'T-Drive & Tài Liệu', nameKey: 'sidebar.library', href: '/library', icon: HardDrive, permission: 'TASKS_VIEW' },
     {
         name: 'Quản Lý Văn Thư', nameKey: 'sidebar.documents',
         icon: FileStack,
