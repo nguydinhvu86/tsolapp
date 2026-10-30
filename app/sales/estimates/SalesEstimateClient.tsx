@@ -15,6 +15,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, FileText, Search, FileSearch, Calendar, FolderClock, LayoutList, CheckCircle2, XCircle, Eye, Link as LinkIcon, Download, ChevronUp, ChevronDown, Check, ArrowRightLeft, ShoppingCart, Copy, ArrowUpDown, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
 import { SalesEstimateAnalyticsBar } from './SalesEstimateAnalyticsBar';
 import { SalesEstimateQuickViewDrawer } from './SalesEstimateQuickViewDrawer';
+import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 import { submitSalesEstimate, updateSalesEstimateStatus, deleteSalesEstimate, updateSalesEstimate, convertEstimateToInvoice, convertEstimateToOrder, getSalesEstimateById } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -55,6 +56,47 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    const cleanUrlActionParams = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('action') || url.searchParams.has('edit') || url.searchParams.has('customerId') || url.searchParams.has('leadId') || url.searchParams.has('projectId')) {
+                url.searchParams.delete('action');
+                url.searchParams.delete('edit');
+                url.searchParams.delete('customerId');
+                url.searchParams.delete('leadId');
+                url.searchParams.delete('projectId');
+                const newSearch = url.searchParams.toString();
+                window.history.replaceState({}, '', url.pathname + (newSearch ? '?' + newSearch : ''));
+            }
+        } catch (e) {
+            console.error('Failed to clean URL params:', e);
+        }
+    };
+
+    // Strip ?action=new immediately on mount so browser reload (F5) doesn't re-trigger modal
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                cleanUrlActionParams();
+            }
+        }
+    }, []);
+
+    // Failsafe scroll lock release
+    useEffect(() => {
+        if (!isFormOpen && !actionModal && !quickViewEstimate && !convertModalId && !convertOrderModalId) {
+            forceUnlockScroll();
+        }
+    }, [isFormOpen, actionModal, quickViewEstimate, convertModalId, convertOrderModalId]);
+
+    useEffect(() => {
+        return () => {
+            forceUnlockScroll();
+        };
+    }, []);
 
     // Filters & Sort
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -490,6 +532,8 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             } else {
                 setEstimates((prev: any[]) => [res.data, ...prev]);
             }
+            cleanUrlActionParams();
+            forceUnlockScroll();
             setIsFormOpen(false);
             router.refresh();
         } else {
@@ -1060,7 +1104,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                 <Pagination {...paginationProps} />
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? t('estimates.modalEditTitle') : t('estimates.modalCreateTitle')} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} title={formData.id ? t('estimates.modalEditTitle') : t('estimates.modalCreateTitle')} maxWidth="1000px">
                 <div className="flex flex-col gap-4 py-1">
                     <div>
                         <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{t('estimates.generalInfo')}</h3>
@@ -1444,7 +1488,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                     </div>
 
                     <div className="flex flex-col sm:flex-row justify-start gap-2.5 mt-2">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">{t('estimates.btnCancel')}</Button>
+                        <Button onClick={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} variant="secondary" className="w-full sm:w-auto px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">{t('estimates.btnCancel')}</Button>
                         <Button onClick={handleSave} className="w-full sm:w-auto flex justify-center items-center gap-1.5 px-6 h-[34px] text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all text-white rounded-lg">
                             <Save size={14} /> <span>{t('estimates.btnSave')}</span>
                         </Button>

@@ -2,7 +2,8 @@
 
 
 import { toast } from '@/app/components/providers/ToastProvider';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Search, Filter, Wallet, Calendar, ArrowUpDown, Receipt, MoreVertical, Trash2, CheckCircle2, Upload, FileText, Eye, X, XCircle, RefreshCw } from 'lucide-react';
@@ -26,6 +27,44 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    const cleanUrlActionParams = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('action') || url.searchParams.has('customerId')) {
+                url.searchParams.delete('action');
+                url.searchParams.delete('customerId');
+                const newSearch = url.searchParams.toString();
+                window.history.replaceState({}, '', url.pathname + (newSearch ? '?' + newSearch : ''));
+            }
+        } catch (e) {
+            console.error('Failed to clean URL params:', e);
+        }
+    };
+
+    // Strip ?action=new immediately on mount so browser reload (F5) doesn't re-trigger modal
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                cleanUrlActionParams();
+            }
+        }
+    }, []);
+
+    // Failsafe scroll lock release
+    useEffect(() => {
+        if (!isCreateModalOpen && !actionModal && !viewingPayment) {
+            forceUnlockScroll();
+        }
+    }, [isCreateModalOpen, actionModal, viewingPayment]);
+
+    useEffect(() => {
+        return () => {
+            forceUnlockScroll();
+        };
+    }, []);
 
     // Handle timezone offset to get correct local date string (YYYY-MM-DD)
     const getLocalDateStr = (d: Date) => {
@@ -207,6 +246,8 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                 attachment: ''
             });
             setAllocations({});
+            cleanUrlActionParams();
+            forceUnlockScroll();
             setIsCreateModalOpen(false);
             router.refresh();
         } catch (error: any) {
@@ -460,7 +501,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                     <Wallet className="text-green-500" /> Tạo Phiếu Thu Khách Hàng
                                 </h2>
-                                <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600">×</button>
+                                <button onClick={() => { setIsCreateModalOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} className="text-gray-400 hover:text-gray-600">×</button>
                             </div>
 
                             <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
@@ -624,7 +665,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                                 </form>
                             </div>
                             <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3 mt-auto">
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</button>
+                                <button type="button" onClick={() => { setIsCreateModalOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</button>
                                 <button
                                     type="submit"
                                     form="paymentForm"

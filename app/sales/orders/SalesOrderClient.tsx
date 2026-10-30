@@ -16,6 +16,7 @@ import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount 
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import Link from 'next/link';
+import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager, projects }: any) {
     const router = useRouter();
@@ -41,6 +42,45 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     // Generic Action Modal State
     const [actionModal, setActionModal] = useState<{ isOpen: boolean, title: string, message: React.ReactNode, action: () => Promise<void> } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    const cleanUrlActionParams = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('action') || url.searchParams.has('edit') || url.searchParams.has('customerId')) {
+                url.searchParams.delete('action');
+                url.searchParams.delete('edit');
+                url.searchParams.delete('customerId');
+                const newSearch = url.searchParams.toString();
+                window.history.replaceState({}, '', url.pathname + (newSearch ? '?' + newSearch : ''));
+            }
+        } catch (e) {
+            console.error('Failed to clean URL params:', e);
+        }
+    };
+
+    // Strip ?action=new immediately on mount so browser reload (F5) doesn't re-trigger modal
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                cleanUrlActionParams();
+            }
+        }
+    }, []);
+
+    // Failsafe scroll lock release
+    useEffect(() => {
+        if (!isFormOpen && !actionModal && !convertModalId) {
+            forceUnlockScroll();
+        }
+    }, [isFormOpen, actionModal, convertModalId]);
+
+    useEffect(() => {
+        return () => {
+            forceUnlockScroll();
+        };
+    }, []);
 
     // Filters & Sort
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -360,6 +400,8 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
         if (res.success) {
             toast.success('Lưu thành công!');
+            cleanUrlActionParams();
+            forceUnlockScroll();
             setIsFormOpen(false);
             router.refresh();
         } else {
@@ -723,7 +765,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                 <Pagination {...paginationProps} />
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} title={formData.id ? "Sửa Đơn Đặt Hàng" : "Tạo Đơn Đặt Hàng Mới"} maxWidth="1000px">
                 <div className="flex flex-col gap-4 py-1">
                     <div>
                         <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Thông tin chung</h3>
@@ -1013,7 +1055,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                     </div>
 
                     <div className="flex justify-start gap-2.5 mt-2">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">Hủy</Button>
+                        <Button onClick={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} variant="secondary" className="px-4 h-[34px] text-xs border-slate-200 shadow-2xs text-slate-700 font-semibold bg-white hover:bg-slate-50 flex justify-center items-center">Hủy</Button>
                         <Button onClick={handleSave} className="flex items-center justify-center gap-1.5 px-6 h-[34px] text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all text-white rounded-lg">
                             <Save size={14} /> Lưu Đơn Hàng
                         </Button>

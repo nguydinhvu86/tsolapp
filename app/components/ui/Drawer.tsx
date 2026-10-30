@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { lockScroll, unlockScroll } from '@/lib/utils/scrollLock';
 
 interface DrawerProps {
     isOpen: boolean;
@@ -37,23 +38,22 @@ export function Drawer({
     width = 'lg',
     className = '',
 }: DrawerProps) {
-    // Handle ESC key press
+    // Handle ESC key press and scroll locking
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key === 'Escape') {
                 onClose();
             }
         };
 
-        if (isOpen) {
-            window.addEventListener('keydown', handleKeyDown);
-            // Prevent body scroll when drawer is open
-            document.body.style.overflow = 'hidden';
-        }
+        window.addEventListener('keydown', handleKeyDown);
+        lockScroll();
 
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = '';
+            unlockScroll();
         };
     }, [isOpen, onClose]);
 

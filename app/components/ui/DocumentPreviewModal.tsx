@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Download, X, FileText, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import DocxViewer from './DocxViewer';
 import XlsxViewer from './XlsxViewer';
+import { lockScroll, unlockScroll } from '@/lib/utils/scrollLock';
 
 interface DocumentPreviewModalProps {
     isOpen: boolean;
@@ -18,14 +19,11 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, fileName }: Doc
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setIsLoading(true);
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        } else {
-            document.body.style.overflow = '';
-        }
+        if (!isOpen) return;
+        setIsLoading(true);
+        lockScroll();
         return () => {
-            document.body.style.overflow = '';
+            unlockScroll();
         };
     }, [isOpen]);
 

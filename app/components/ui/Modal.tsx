@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { lockScroll, unlockScroll } from '@/lib/utils/scrollLock';
 
 export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, maxWidth?: string }) {
     const [mounted, setMounted] = useState(false);
@@ -11,10 +12,9 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
 
     useEffect(() => {
         if (!isOpen) return;
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
+        lockScroll();
         return () => {
-            document.body.style.overflow = originalOverflow;
+            unlockScroll();
         };
     }, [isOpen]);
 

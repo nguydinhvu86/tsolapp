@@ -20,6 +20,7 @@ import { useTranslation } from '@/app/i18n/LanguageContext';
 import { AvatarImage } from '@/app/components/ui/AvatarImage';
 import { SalesInvoiceAnalyticsBar } from './SalesInvoiceAnalyticsBar';
 import { SalesInvoiceQuickViewDrawer } from './SalesInvoiceQuickViewDrawer';
+import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const { t } = useTranslation();
@@ -41,6 +42,45 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         confirmVariant?: 'primary' | 'danger' | 'warning' | 'success'
     } | null>(null);
     const [isActioning, setIsActioning] = useState(false);
+
+    const cleanUrlActionParams = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('action') || url.searchParams.has('edit') || url.searchParams.has('customerId')) {
+                url.searchParams.delete('action');
+                url.searchParams.delete('edit');
+                url.searchParams.delete('customerId');
+                const newSearch = url.searchParams.toString();
+                window.history.replaceState({}, '', url.pathname + (newSearch ? '?' + newSearch : ''));
+            }
+        } catch (e) {
+            console.error('Failed to clean URL params:', e);
+        }
+    };
+
+    // Strip ?action=new immediately on mount so browser reload (F5) doesn't re-trigger modal
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                cleanUrlActionParams();
+            }
+        }
+    }, []);
+
+    // Failsafe scroll lock release
+    useEffect(() => {
+        if (!isFormOpen && !actionModal && !quickViewInvoice) {
+            forceUnlockScroll();
+        }
+    }, [isFormOpen, actionModal, quickViewInvoice]);
+
+    useEffect(() => {
+        return () => {
+            forceUnlockScroll();
+        };
+    }, []);
 
     // Tags Inline Edit State
     const [editingTagsInvoiceId, setEditingTagsInvoiceId] = useState<string | null>(null);
@@ -606,6 +646,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     : [res.data, ...invoices];
                 setInvoices(newInvoices);
             }
+            cleanUrlActionParams();
+            forceUnlockScroll();
             setIsFormOpen(false);
             router.refresh();
         } else {
@@ -663,8 +705,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                 : [approveRes.data, ...invoices];
                             setInvoices(newInvoices);
                         }
-                        setIsFormOpen(false);
-                        router.refresh();
+                        cleanUrlActionParams();
+            forceUnlockScroll();
+            setIsFormOpen(false);
+            router.refresh();
                     } else {
                         toast.error(t('invoices.alertErrorSaveDuyet') + approveRes.error);
                     }
@@ -1135,7 +1179,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 </div>
             </div>
 
-            <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={formData.id ? (formData.status !== 'DRAFT' ? 'Điều Chỉnh Hóa Đơn Bán Hàng' : t('invoices.editInvoice')) : t('invoices.createInvoiceModal')} maxWidth="1000px">
+            <Modal isOpen={isFormOpen} onClose={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} title={formData.id ? (formData.status !== 'DRAFT' ? 'Điều Chỉnh Hóa Đơn Bán Hàng' : t('invoices.editInvoice')) : t('invoices.createInvoiceModal')} maxWidth="1000px">
                 <div className="flex flex-col gap-4 py-1">
                     {formData.id && formData.status && formData.status !== 'DRAFT' && (
                         <div className="p-3 mb-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2 shadow-2xs">
@@ -1637,7 +1681,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     )}
 
                     <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-3 border-t border-slate-200 mt-2">
-                        <Button onClick={() => setIsFormOpen(false)} variant="secondary" className="w-full sm:w-auto h-[34px] px-4 text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs rounded-lg">
+                        <Button onClick={() => { setIsFormOpen(false); cleanUrlActionParams(); forceUnlockScroll(); }} variant="secondary" className="w-full sm:w-auto h-[34px] px-4 text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs rounded-lg">
                             {t('invoices.cancel')}
                         </Button>
                         <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto flex justify-center items-center gap-1.5 h-[34px] px-4 text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs rounded-lg">
