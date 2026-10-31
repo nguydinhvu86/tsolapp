@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
     ResponsiveContainer,
@@ -26,12 +26,20 @@ import {
     Sparkles
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import {
+    DashboardPeriodFilter,
+    PeriodFilterState,
+    getDefaultPeriodFilter,
+    isItemInPeriod
+} from './DashboardPeriodFilter';
 
 interface SalesPipelineFunnelProps {
     leads?: any[];
     quotes?: any[];
     invoices?: any[];
     paymentsThisMonth?: number;
+    periodFilter?: PeriodFilterState;
+    onPeriodFilterChange?: (period: PeriodFilterState) => void;
 }
 
 export function SalesPipelineFunnelWidget({
@@ -39,20 +47,46 @@ export function SalesPipelineFunnelWidget({
     quotes = [],
     invoices = [],
     paymentsThisMonth = 0,
+    periodFilter,
+    onPeriodFilterChange
 }: SalesPipelineFunnelProps) {
+    const [internalPeriod, setInternalPeriod] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+
+    const activePeriod = periodFilter !== undefined ? periodFilter : internalPeriod;
+    const handlePeriodChange = (newPeriod: PeriodFilterState) => {
+        if (onPeriodFilterChange) {
+            onPeriodFilterChange(newPeriod);
+        } else {
+            setInternalPeriod(newPeriod);
+        }
+    };
+
+    // Filter leads, quotes, invoices by selected period
+    const filteredLeads = useMemo(() => {
+        return leads.filter(l => isItemInPeriod(l.createdAt, activePeriod));
+    }, [leads, activePeriod]);
+
+    const filteredQuotes = useMemo(() => {
+        return quotes.filter(q => isItemInPeriod(q.date || q.createdAt, activePeriod));
+    }, [quotes, activePeriod]);
+
+    const filteredInvoices = useMemo(() => {
+        return invoices.filter(inv => isItemInPeriod(inv.date || inv.createdAt, activePeriod));
+    }, [invoices, activePeriod]);
+
     // 1. Leads metrics
-    const totalLeadsCount = leads.length;
-    const totalLeadsValue = leads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
-    const wonLeadsCount = leads.filter(l => l.status === 'WON').length;
+    const totalLeadsCount = filteredLeads.length;
+    const totalLeadsValue = filteredLeads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
+    const wonLeadsCount = filteredLeads.filter(l => l.status === 'WON').length;
 
     // 2. Quotes / Estimates metrics
-    const totalQuotesCount = quotes.length;
-    const totalQuotesValue = quotes.reduce((sum, q) => sum + (q.totalAmount || 0), 0);
-    const acceptedQuotes = quotes.filter(q => q.status === 'ACCEPTED');
+    const totalQuotesCount = filteredQuotes.length;
+    const totalQuotesValue = filteredQuotes.reduce((sum, q) => sum + (q.totalAmount || 0), 0);
+    const acceptedQuotes = filteredQuotes.filter(q => q.status === 'ACCEPTED');
     const acceptedQuotesCount = acceptedQuotes.length;
 
     // 3. Invoices metrics
-    const issuedInvoices = invoices.filter(inv => inv.status !== 'DRAFT' && inv.status !== 'CANCELLED');
+    const issuedInvoices = filteredInvoices.filter(inv => inv.status !== 'DRAFT' && inv.status !== 'CANCELLED');
     const totalInvoicesCount = issuedInvoices.length;
     const totalInvoicesValue = issuedInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
     const totalCollected = issuedInvoices.reduce((sum, inv) => sum + (inv.paidAmount || 0), 0);
@@ -139,7 +173,7 @@ export function SalesPipelineFunnelWidget({
                         <Filter size={20} strokeWidth={2.2} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
                                 Phễu Chuyển Đổi & Doanh Số Bán Hàng (Sales Funnel)
                             </h3>
@@ -148,18 +182,27 @@ export function SalesPipelineFunnelWidget({
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-medium leading-none mt-1">
-                            Trực quan hóa dòng chảy giá trị: Khách tiềm năng ➔ Báo giá ➔ Hóa đơn ➔ Thu tiền
+                            Trực quan hóa dòng chảy giá trị theo {activePeriod.label}: Khách tiềm năng ➔ Báo giá ➔ Hóa đơn ➔ Thu tiền
                         </p>
                     </div>
                 </div>
 
-                <Link
-                    href="/sales/estimates"
-                    className="text-xs text-purple-700 hover:text-purple-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-purple-50 hover:bg-purple-100/70 border border-purple-200/60 self-start sm:self-auto"
-                >
-                    <span>Quản lý Báo giá</span>
-                    <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
-                </Link>
+                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                    {/* Time Period Filter */}
+                    <DashboardPeriodFilter
+                        value={activePeriod}
+                        onChange={handlePeriodChange}
+                        align="right"
+                    />
+
+                    <Link
+                        href="/sales/estimates"
+                        className="text-xs text-purple-700 hover:text-purple-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-purple-50 hover:bg-purple-100/70 border border-purple-200/60"
+                    >
+                        <span>Quản lý Báo giá</span>
+                        <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
+                    </Link>
+                </div>
             </div>
 
             {/* 3 Top Highlight Badges */}

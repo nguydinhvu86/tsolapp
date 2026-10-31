@@ -7,12 +7,7 @@ import {
     PieChart,
     Pie,
     Cell,
-    Tooltip,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid
+    Tooltip
 } from 'recharts';
 import {
     Receipt,
@@ -27,13 +22,35 @@ import {
     Check
 } from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import {
+    DashboardPeriodFilter,
+    PeriodFilterState,
+    getDefaultPeriodFilter,
+    isItemInPeriod
+} from './DashboardPeriodFilter';
 
 interface InvoiceStatusProps {
     invoices?: any[];
+    periodFilter?: PeriodFilterState;
+    onPeriodFilterChange?: (period: PeriodFilterState) => void;
 }
 
-export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatusProps) {
+export function InvoiceStatusDistributionWidget({
+    invoices = [],
+    periodFilter,
+    onPeriodFilterChange
+}: InvoiceStatusProps) {
     const [activeTab, setActiveTab] = useState<'OVERDUE' | 'DUE_SOON' | 'PAID'>('OVERDUE');
+    const [internalPeriod, setInternalPeriod] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+
+    const activePeriod = periodFilter !== undefined ? periodFilter : internalPeriod;
+    const handlePeriodChange = (newPeriod: PeriodFilterState) => {
+        if (onPeriodFilterChange) {
+            onPeriodFilterChange(newPeriod);
+        } else {
+            setInternalPeriod(newPeriod);
+        }
+    };
 
     // Start of today normalized
     const now = useMemo(() => {
@@ -42,10 +59,14 @@ export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatus
         return d;
     }, []);
 
-    // Filter valid invoices (exclude DRAFT and CANCELLED)
+    // Filter valid invoices (exclude DRAFT and CANCELLED) and within active period
     const validInvoices = useMemo(() => {
-        return invoices.filter(inv => inv.status !== 'DRAFT' && inv.status !== 'CANCELLED');
-    }, [invoices]);
+        return invoices.filter(inv => {
+            if (inv.status === 'DRAFT' || inv.status === 'CANCELLED') return false;
+            const invDate = inv.date || inv.createdAt;
+            return isItemInPeriod(invDate, activePeriod);
+        });
+    }, [invoices, activePeriod]);
 
     // Categorize invoices
     const {
@@ -167,7 +188,7 @@ export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatus
                         <Receipt size={20} strokeWidth={2.2} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
                                 Cơ Cấu Hóa Đơn & Đôn Đốc Công Nợ
                             </h3>
@@ -176,18 +197,27 @@ export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatus
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-medium leading-none mt-1">
-                            Biểu đồ tỷ lệ thu hồi công nợ và danh sách đôn đốc hóa đơn tới hạn
+                            Biểu đồ tỷ lệ thu hồi công nợ và danh sách đôn đốc theo {activePeriod.label}
                         </p>
                     </div>
                 </div>
 
-                <Link
-                    href={`/sales/invoices?filter=${activeTab}`}
-                    className="text-xs text-rose-700 hover:text-rose-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-rose-50 hover:bg-rose-100/70 border border-rose-200/60 self-start sm:self-auto"
-                >
-                    <span>Xem tất cả Hóa đơn</span>
-                    <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
-                </Link>
+                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                    {/* Time Period Filter */}
+                    <DashboardPeriodFilter
+                        value={activePeriod}
+                        onChange={handlePeriodChange}
+                        align="right"
+                    />
+
+                    <Link
+                        href={`/sales/invoices?filter=${activeTab}`}
+                        className="text-xs text-rose-700 hover:text-rose-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-rose-50 hover:bg-rose-100/70 border border-rose-200/60"
+                    >
+                        <span>Xem tất cả Hóa đơn</span>
+                        <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
+                    </Link>
+                </div>
             </div>
 
             {/* Split View: Recharts Donut & Summary (Left 55%) + Actionable Debt List (Right 45%) */}
@@ -205,8 +235,10 @@ export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatus
                     </div>
 
                     {donutData.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center text-xs text-slate-400 py-12">
-                            Chưa có dữ liệu hóa đơn phát hành.
+                        <div className="flex-1 flex flex-col items-center justify-center text-xs text-slate-400 py-12">
+                            <AlertCircle size={28} className="text-slate-300 mb-2" />
+                            <span className="font-semibold text-slate-600">Chưa có hóa đơn phát hành trong giai đoạn {activePeriod.label}.</span>
+                            <span className="text-[11px] text-slate-400 mt-0.5">Vui lòng chọn giai đoạn khác (tháng, quý, năm) để xem số liệu.</span>
                         </div>
                     ) : (
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-1 my-2">
@@ -348,54 +380,59 @@ export function InvoiceStatusDistributionWidget({ invoices = [] }: InvoiceStatus
                             <div className="flex flex-col items-center justify-center py-8 text-slate-400 text-xs h-full">
                                 <CheckCircle2 size={24} className="mb-2 text-emerald-500" />
                                 <span className="font-semibold text-slate-600">
-                                    {activeTab === 'OVERDUE'
-                                        ? 'Không có hóa đơn quá hạn cần thu hồi!'
-                                        : activeTab === 'DUE_SOON'
-                                        ? 'Không có hóa đơn sắp tới hạn.'
-                                        : 'Chưa có hóa đơn tất toán.'}
+                                    Không có hóa đơn mục &quot;{activeTab === 'OVERDUE' ? 'Quá hạn' : activeTab === 'DUE_SOON' ? 'Trong hạn' : 'Đã thu'}&quot;
                                 </span>
+                                <span className="text-[11px] text-slate-400 mt-0.5">trong giai đoạn {activePeriod.label}.</span>
                             </div>
                         ) : (
-                            displayList.slice(0, 15).map(inv => {
-                                const remaining = inv.totalAmount - (inv.paidAmount || 0);
+                            displayList.map(inv => {
+                                const tot = inv.totalAmount || 0;
+                                const pd = inv.paidAmount || 0;
+                                const remaining = Math.max(0, tot - pd);
                                 const isOverdue = activeTab === 'OVERDUE';
+                                const isPaid = activeTab === 'PAID';
+
                                 return (
                                     <div
                                         key={inv.id}
-                                        className="group p-2.5 rounded-xl border border-slate-200/80 bg-white hover:border-slate-400 hover:shadow-2xs transition-all duration-150 flex flex-col gap-1.5"
+                                        className="p-3 bg-white rounded-xl border border-slate-200/80 hover:border-slate-300 transition-all shadow-2xs hover:shadow-xs flex items-center justify-between gap-3"
                                     >
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Link
-                                                href={`/sales/invoices/${inv.id}`}
-                                                className="font-mono font-bold text-xs text-slate-900 group-hover:text-primary transition-colors flex items-center gap-1.5 truncate"
-                                                title={inv.code}
-                                            >
-                                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                                    isOverdue ? 'bg-rose-500' : activeTab === 'DUE_SOON' ? 'bg-blue-500' : 'bg-emerald-500'
-                                                }`} />
-                                                {inv.code}
-                                            </Link>
-                                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border shrink-0 ${
-                                                isOverdue
-                                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                                    : activeTab === 'DUE_SOON'
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            }`}>
-                                                <Clock size={10} />
-                                                {formatDate(new Date(inv.dueDate || inv.createdAt))}
-                                            </span>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono font-bold text-xs text-slate-900 truncate">
+                                                    {inv.code}
+                                                </span>
+                                                {inv.customer?.name && (
+                                                    <span className="text-[11px] text-slate-500 font-medium truncate max-w-[140px]" title={inv.customer.name}>
+                                                        · {inv.customer.name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5 text-[11px]">
+                                                {inv.dueDate && (
+                                                    <span className={`font-medium ${isOverdue ? 'text-rose-600 font-bold' : 'text-slate-400'}`}>
+                                                        Hạn: {formatDate(inv.dueDate)}
+                                                    </span>
+                                                )}
+                                                {inv.date && (
+                                                    <span className="text-slate-400">
+                                                        (Lập: {formatDate(inv.date)})
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                                            <span className="text-[11px] text-slate-500 truncate max-w-[150px]" title={inv.customer?.name}>
-                                                {inv.customer?.name || 'Khách lẻ'}
-                                            </span>
-                                            <span className={`font-mono font-black text-xs ${
-                                                isOverdue ? 'text-rose-600' : activeTab === 'DUE_SOON' ? 'text-blue-700' : 'text-emerald-700'
+                                        <div className="text-right shrink-0">
+                                            <span className={`text-xs font-mono font-black block ${
+                                                isOverdue ? 'text-rose-600' : isPaid ? 'text-emerald-600' : 'text-blue-600'
                                             }`}>
-                                                {activeTab === 'PAID' ? formatMoney(inv.totalAmount) : formatMoney(remaining)}
+                                                {formatMoney(isPaid ? tot : remaining)}
                                             </span>
+                                            {!isPaid && pd > 0 && (
+                                                <span className="text-[10px] text-slate-400 block font-medium">
+                                                    Đã trả {formatMoney(pd)}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 );

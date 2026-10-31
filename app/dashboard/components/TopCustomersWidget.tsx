@@ -22,13 +22,44 @@ import {
     Crown
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import {
+    DashboardPeriodFilter,
+    PeriodFilterState,
+    getDefaultPeriodFilter,
+    isItemInPeriod
+} from './DashboardPeriodFilter';
 
 interface TopCustomersProps {
     invoices?: any[];
+    periodFilter?: PeriodFilterState;
+    onPeriodFilterChange?: (period: PeriodFilterState) => void;
 }
 
-export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
+export function TopCustomersWidget({
+    invoices = [],
+    periodFilter,
+    onPeriodFilterChange
+}: TopCustomersProps) {
     const [activeTab, setActiveTab] = useState<'REVENUE' | 'DEBT'>('REVENUE');
+    const [internalPeriod, setInternalPeriod] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+
+    const activePeriod = periodFilter !== undefined ? periodFilter : internalPeriod;
+    const handlePeriodChange = (newPeriod: PeriodFilterState) => {
+        if (onPeriodFilterChange) {
+            onPeriodFilterChange(newPeriod);
+        } else {
+            setInternalPeriod(newPeriod);
+        }
+    };
+
+    // Filter invoices by selected period
+    const filteredInvoices = useMemo(() => {
+        return invoices.filter(inv => {
+            if (inv.status === 'DRAFT' || inv.status === 'CANCELLED') return false;
+            const invDate = inv.date || inv.createdAt;
+            return isItemInPeriod(invDate, activePeriod);
+        });
+    }, [invoices, activePeriod]);
 
     // Aggregate by customer
     const { topRevenue, topDebt, totalRevenueAll, totalDebtAll } = useMemo(() => {
@@ -44,41 +75,39 @@ export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
         let totalRev = 0;
         let totalDbt = 0;
 
-        invoices.forEach(inv => {
-            if (inv.status !== 'DRAFT' && inv.status !== 'CANCELLED') {
-                const custName = inv.customer?.name || 'Khách lẻ / Khác';
-                const custId = inv.customerId || custName;
+        filteredInvoices.forEach(inv => {
+            const custName = inv.customer?.name || 'Khách lẻ / Khác';
+            const custId = inv.customerId || custName;
 
-                // Create clean short name for chart labels
-                let shortName = custName;
-                shortName = shortName.replace(/^CÔNG TY (TNHH (MTV )?|CỔ PHẦN |CP )?/i, '').trim();
-                if (shortName.length > 20) {
-                    shortName = shortName.substring(0, 18) + '...';
-                }
-
-                if (!customerMap.has(custId)) {
-                    customerMap.set(custId, {
-                        id: custId,
-                        name: custName,
-                        shortName: shortName || custName,
-                        totalRevenue: 0,
-                        totalDebt: 0,
-                        invoiceCount: 0,
-                    });
-                }
-
-                const entry = customerMap.get(custId)!;
-                const rev = inv.totalAmount || 0;
-                const paid = inv.paidAmount || 0;
-                const debt = Math.max(0, rev - paid);
-
-                entry.totalRevenue += rev;
-                entry.totalDebt += debt;
-                entry.invoiceCount += 1;
-
-                totalRev += rev;
-                totalDbt += debt;
+            // Create clean short name for chart labels
+            let shortName = custName;
+            shortName = shortName.replace(/^CÔNG TY (TNHH (MTV )?|CỔ PHẦN |CP )?/i, '').trim();
+            if (shortName.length > 20) {
+                shortName = shortName.substring(0, 18) + '...';
             }
+
+            if (!customerMap.has(custId)) {
+                customerMap.set(custId, {
+                    id: custId,
+                    name: custName,
+                    shortName: shortName || custName,
+                    totalRevenue: 0,
+                    totalDebt: 0,
+                    invoiceCount: 0,
+                });
+            }
+
+            const entry = customerMap.get(custId)!;
+            const rev = inv.totalAmount || 0;
+            const paid = inv.paidAmount || 0;
+            const debt = Math.max(0, rev - paid);
+
+            entry.totalRevenue += rev;
+            entry.totalDebt += debt;
+            entry.invoiceCount += 1;
+
+            totalRev += rev;
+            totalDbt += debt;
         });
 
         const list = Array.from(customerMap.values());
@@ -91,7 +120,7 @@ export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
             totalRevenueAll: totalRev,
             totalDebtAll: totalDbt,
         };
-    }, [invoices]);
+    }, [filteredInvoices]);
 
     const displayList = activeTab === 'REVENUE' ? topRevenue : topDebt;
     const totalBase = activeTab === 'REVENUE' ? totalRevenueAll : totalDebtAll;
@@ -140,7 +169,7 @@ export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
                         <Building2 size={20} strokeWidth={2.2} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
                                 Top Khách Hàng Trọng Điểm & Công Nợ
                             </h3>
@@ -149,18 +178,27 @@ export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 font-medium leading-none mt-1">
-                            Phân tích khách hàng có đóng góp doanh số cao nhất và dư nợ cần ưu tiên đôn đốc
+                            Phân tích khách hàng có doanh số và dư nợ cần ưu tiên theo {activePeriod.label}
                         </p>
                     </div>
                 </div>
 
-                <Link
-                    href="/customers"
-                    className="text-xs text-blue-700 hover:text-blue-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-blue-50 hover:bg-blue-100/70 border border-blue-200/60 self-start sm:self-auto"
-                >
-                    <span>Xem danh bạ KH</span>
-                    <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
-                </Link>
+                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                    {/* Time Period Filter */}
+                    <DashboardPeriodFilter
+                        value={activePeriod}
+                        onChange={handlePeriodChange}
+                        align="right"
+                    />
+
+                    <Link
+                        href="/customers"
+                        className="text-xs text-blue-700 hover:text-blue-900 font-semibold flex items-center gap-1 group/link transition-colors py-1.5 px-3 rounded-lg bg-blue-50 hover:bg-blue-100/70 border border-blue-200/60"
+                    >
+                        <span>Xem danh bạ KH</span>
+                        <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
+                    </Link>
+                </div>
             </div>
 
             {/* Segmented Switch Tabs */}
@@ -200,7 +238,8 @@ export function TopCustomersWidget({ invoices = [] }: TopCustomersProps) {
             {displayList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-xs flex-1">
                     <Users size={32} className="mb-2 text-slate-300" />
-                    <span>Chưa có dữ liệu khách hàng thỏa mãn tiêu chí.</span>
+                    <span className="font-semibold text-slate-600">Không có dữ liệu khách hàng thỏa mãn tiêu chí trong giai đoạn {activePeriod.label}.</span>
+                    <span className="text-[11px] text-slate-400 mt-1">Hãy thử đổi bộ lọc giai đoạn sang Quý, Năm hoặc khoảng ngày khác.</span>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">

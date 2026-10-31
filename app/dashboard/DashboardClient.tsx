@@ -32,6 +32,11 @@ import {
     WIDGET_REGISTRY,
     normalizeLayoutConfig
 } from './components/DashboardTypes';
+import {
+    DashboardPeriodFilter,
+    PeriodFilterState,
+    getDefaultPeriodFilter
+} from './components/DashboardPeriodFilter';
 import { DashboardCustomizeModal } from './components/DashboardCustomizeModal';
 import { KPICardsWidget } from './components/KPICardsWidget';
 import { SalesPipelineFunnelWidget } from './components/SalesPipelineFunnelWidget';
@@ -82,6 +87,20 @@ export function DashboardClient({
     const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
     const [isDragReorderMode, setIsDragReorderMode] = useState(false);
     const [isSavingLayout, setIsSavingLayout] = useState(false);
+
+    // Period filters for widgets (Default to Current Month)
+    const [globalPeriodFilter, setGlobalPeriodFilter] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+    const [funnelPeriodFilter, setFunnelPeriodFilter] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+    const [topCustPeriodFilter, setTopCustPeriodFilter] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+    const [invoicePeriodFilter, setInvoicePeriodFilter] = useState<PeriodFilterState>(getDefaultPeriodFilter);
+
+    // Synchronize all 3 widgets when changing global period filter
+    const handleGlobalPeriodChange = (newPeriod: PeriodFilterState) => {
+        setGlobalPeriodFilter(newPeriod);
+        setFunnelPeriodFilter(newPeriod);
+        setTopCustPeriodFilter(newPeriod);
+        setInvoicePeriodFilter(newPeriod);
+    };
 
     // Calendar selection states
     const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
@@ -238,6 +257,17 @@ export function DashboardClient({
                             </div>
                         )}
 
+                        {/* Global Period Filter: Synchronizes Funnel, Top Customers, and Invoices widgets */}
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                            <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Thời gian:</span>
+                            <DashboardPeriodFilter
+                                value={globalPeriodFilter}
+                                onChange={handleGlobalPeriodChange}
+                                align="right"
+                                buttonClassName="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold"
+                            />
+                        </div>
+
                         {/* Mode Toggle: In-place Drag Reordering */}
                         <button
                             type="button"
@@ -358,6 +388,8 @@ export function DashboardClient({
                                                                 quotes={quotes}
                                                                 invoices={invoices}
                                                                 paymentsThisMonth={kpiData?.paymentsThisMonth || 0}
+                                                                periodFilter={funnelPeriodFilter}
+                                                                onPeriodFilterChange={setFunnelPeriodFilter}
                                                             />
                                                         )}
 
@@ -372,6 +404,8 @@ export function DashboardClient({
                                                         {item.id === 'top_customers_chart' && (
                                                             <TopCustomersWidget
                                                                 invoices={invoices}
+                                                                periodFilter={topCustPeriodFilter}
+                                                                onPeriodFilterChange={setTopCustPeriodFilter}
                                                             />
                                                         )}
 
@@ -389,6 +423,8 @@ export function DashboardClient({
                                                         {item.id === 'invoice_status_distribution' && (
                                                             <InvoiceStatusDistributionWidget
                                                                 invoices={invoices}
+                                                                periodFilter={invoicePeriodFilter}
+                                                                onPeriodFilterChange={setInvoicePeriodFilter}
                                                             />
                                                         )}
 

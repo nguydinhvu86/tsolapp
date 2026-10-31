@@ -58,7 +58,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
                 select: { id: true, status: true, validUntil: true, date: true, createdAt: true, customer: { select: { id: true, name: true } }, code: true, totalAmount: true, creatorId: true, salespersonId: true, creator: { select: { id: true, name: true, avatar: true } }, salesperson: { select: { id: true, name: true, avatar: true } } },
                 where: { AND: [estFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
-                take: 500
+                take: 2000
             }),
             conFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.contract.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: conFilter as any, orderBy: { createdAt: 'desc' }, take: 200 }),
             hanFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.handover.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: hanFilter as any, orderBy: { createdAt: 'desc' }, take: 100 }),
@@ -67,12 +67,12 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
             disFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.dispatch.findMany({ select: { id: true, status: true, createdAt: true, customer: { select: { name: true } }, title: true }, where: disFilter as any, orderBy: { createdAt: 'desc' }, take: 100 }),
             cusFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.customer.findMany({ select: { id: true, name: true, createdAt: true, taxCode: true, phone: true }, where: cusFilter as any, orderBy: { createdAt: 'desc' }, take: 10 }),
             userId ? prisma.task.findMany({ where: { OR: [{ assignees: { some: { userId: userId } } }, { creatorId: userId }, { observers: { some: { userId: userId } } }], status: { not: 'COMPLETED' } }, orderBy: { dueDate: 'asc' }, take: 10, select: { id: true, title: true, dueDate: true, priority: true } }) : Promise.resolve([]),
-            poFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, where: poFilter as any, orderBy: { createdAt: 'desc' }, take: 500 }),
+            poFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.purchaseOrder.findMany({ select: { id: true, status: true, totalAmount: true, createdAt: true, supplier: { select: { name: true } } }, where: poFilter as any, orderBy: { createdAt: 'desc' }, take: 2000 }),
             invFilter.id === 'UNAUTHORIZED_NO_ACCESS' ? Promise.resolve([]) : prisma.salesInvoice.findMany({
                 select: { id: true, status: true, totalAmount: true, paidAmount: true, createdAt: true, date: true, dueDate: true, code: true, customerId: true, customer: { select: { id: true, name: true } }, creatorId: true, salespersonId: true, creator: { select: { id: true, name: true, avatar: true } }, salesperson: { select: { id: true, name: true, avatar: true } } },
                 where: { AND: [invFilter as any, employeeId ? { OR: [{ creatorId: employeeId }, { salespersonId: employeeId }, { managers: { some: { id: employeeId } } }] } : {}] },
                 orderBy: { createdAt: 'desc' },
-                take: 1000
+                take: 2500
             }),
             prisma.lead.findMany({
                 select: { id: true, code: true, name: true, company: true, contactName: true, status: true, estimatedValue: true, createdAt: true, assignedToId: true, assignedTo: { select: { id: true, name: true, avatar: true } }, creatorId: true, creator: { select: { id: true, name: true, avatar: true } } },
@@ -84,7 +84,7 @@ export async function getDashboardStats(userId?: string, employeeId?: string) {
                     ]
                 } : leadFilter,
                 orderBy: { createdAt: 'desc' },
-                take: 1000
+                take: 2500
             })
         ]);
 
