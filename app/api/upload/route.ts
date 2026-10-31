@@ -22,7 +22,14 @@ export async function POST(req: NextRequest) {
         const rawExt = path.extname(file.name).toLowerCase();
         
         // Strict File Extension Whitelist
-        const allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.ppt', '.pptx', '.txt', '.zip', '.rar', '.mp4', '.webm'];
+        const allowedExtensions = [
+            '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', 
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.ppt', '.pptx', '.txt', 
+            '.zip', '.rar', '.7z', '.tar', '.gz', 
+            '.mp4', '.webm', '.mov', '.avi', '.mkv',
+            '.mp3', '.wav', '.m4a',
+            '.json', '.xml'
+        ];
         if (!allowedExtensions.includes(rawExt)) {
             return NextResponse.json({ error: `File type ${rawExt} is not allowed for security reasons.` }, { status: 415 });
         }

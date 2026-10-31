@@ -21,24 +21,38 @@ export async function getLibraryCategories() {
     const { isLeadership, user } = await getLeadershipStatus();
     if (!user) throw new Error('Unauthorized');
 
-    const whereClause: any = {};
-    // If not leadership, hide all confidential folders
-    if (!isLeadership) {
-        whereClause.securityLevel = { not: 'CONFIDENTIAL' };
-    }
-
-    return await (prisma as any).documentCategory.findMany({
-        where: whereClause,
+    const categories = await (prisma as any).documentCategory.findMany({
         include: {
-            children: {
-                where: !isLeadership ? { securityLevel: { not: 'CONFIDENTIAL' } } : undefined
-            },
+            children: true,
             _count: {
                 select: { documents: true }
             }
         },
         orderBy: { name: 'asc' }
     });
+
+    if (!isLeadership) {
+        // Collect all confidential category IDs and cascade down
+        const confidentialIds = new Set<string>();
+        for (const cat of categories) {
+            if (cat.securityLevel === 'CONFIDENTIAL') {
+                confidentialIds.add(cat.id);
+            }
+        }
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const cat of categories) {
+                if (cat.parentId && confidentialIds.has(cat.parentId) && !confidentialIds.has(cat.id)) {
+                    confidentialIds.add(cat.id);
+                    changed = true;
+                }
+            }
+        }
+        return categories.filter((c: any) => !confidentialIds.has(c.id));
+    }
+
+    return categories;
 }
 
 export async function createLibraryCategory(data: {
@@ -55,24 +69,113 @@ export async function createLibraryCategory(data: {
 
     await verifyActionPermission('LIBRARY_CREATE');
 
-    if (data.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
+    let effectiveSec = data.securityLevel || 'PUBLIC';
+    let effectiveDept = data.targetDepartment || null;
+
+    if (data.parentId) {
+        const parent = await (prisma as any).documentCategory.findUnique({ where: { id: data.parentId } });
+        if (parent) {
+            if (parent.securityLevel === 'CONFIDENTIAL') {
+                effectiveSec = 'CONFIDENTIAL';
+            } else if (parent.securityLevel === 'DEPARTMENT' && effectiveSec === 'PUBLIC') {
+                effectiveSec = 'DEPARTMENT';
+                effectiveDept = parent.targetDepartment || effectiveDept;
+            }
+        }
+    }
+
+    if (effectiveSec === 'CONFIDENTIAL' && !isLeadership) {
         throw new Error('Chỉ có cấp Lãnh đạo hoặc Quản trị viên mới được tạo thư mục Mật');
     }
 
     const category = await (prisma as any).documentCategory.create({
         data: {
-            name: data.name,
-            description: data.description,
+            name: data.name.trim(),
+            description: data.description?.trim() || null,
             parentId: data.parentId || null,
-            securityLevel: data.securityLevel || 'PUBLIC',
-            targetDepartment: data.targetDepartment || null,
+            securityLevel: effectiveSec,
+            targetDepartment: effectiveDept,
             icon: data.icon || null,
-            color: data.color || null,
+            color: data.color || (effectiveSec === 'CONFIDENTIAL' ? 'rose' : effectiveSec === 'DEPARTMENT' ? 'amber' : 'indigo'),
         }
     });
 
     revalidatePath('/library');
     return category;
+}
+
+export async function renameLibraryCategory(id: string, name: string) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_EDIT');
+
+    if (!name || !name.trim()) throw new Error('Tên thư mục không được để trống');
+
+    const cat = await (prisma as any).documentCategory.findUnique({ where: { id } });
+    if (!cat) throw new Error('Không tìm thấy thư mục');
+    if (cat.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
+        throw new Error('Chỉ Lãnh đạo mới có quyền đổi tên thư mục Mật');
+    }
+
+    const updated = await (prisma as any).documentCategory.update({
+        where: { id },
+        data: { name: name.trim() }
+    });
+
+    revalidatePath('/library');
+    return updated;
+}
+
+export async function getOrCreateCategoryPath(
+    pathSegments: string[],
+    rootParentId?: string,
+    securityLevel?: 'PUBLIC' | 'DEPARTMENT' | 'CONFIDENTIAL'
+) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_CREATE');
+
+    let currentParentId = rootParentId || null;
+
+    for (const segment of pathSegments) {
+        const trimmed = segment.trim();
+        if (!trimmed) continue;
+
+        let folder = await (prisma as any).documentCategory.findFirst({
+            where: {
+                name: trimmed,
+                parentId: currentParentId
+            }
+        });
+
+        if (!folder) {
+            let effectiveSec = securityLevel || 'PUBLIC';
+            if (currentParentId) {
+                const parentCat = await (prisma as any).documentCategory.findUnique({ where: { id: currentParentId } });
+                if (parentCat && parentCat.securityLevel === 'CONFIDENTIAL') {
+                    effectiveSec = 'CONFIDENTIAL';
+                }
+            }
+
+            if (effectiveSec === 'CONFIDENTIAL' && !isLeadership) {
+                throw new Error('Không có quyền tạo thư mục Mật');
+            }
+
+            folder = await (prisma as any).documentCategory.create({
+                data: {
+                    name: trimmed,
+                    parentId: currentParentId,
+                    securityLevel: effectiveSec,
+                    color: effectiveSec === 'CONFIDENTIAL' ? 'rose' : 'indigo'
+                }
+            });
+        }
+
+        currentParentId = folder.id;
+    }
+
+    revalidatePath('/library');
+    return currentParentId;
 }
 
 export async function updateCategorySecurity(categoryId: string, data: {
@@ -107,8 +210,8 @@ export async function deleteLibraryCategory(id: string) {
     if (category.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
         throw new Error('Chỉ Lãnh đạo mới có quyền xóa thư mục Mật');
     }
-    if (category.children.length > 0) throw new Error('Không thể xóa thư mục đang có thư mục con');
-    if (category._count.documents > 0) throw new Error('Hãy chuyển file sang nơi khác trước khi xóa thư mục này');
+    if (category.children.length > 0) throw new Error('Không thể xóa thư mục đang có thư mục con. Hãy xóa hoặc di chuyển các thư mục con trước');
+    if (category._count.documents > 0) throw new Error('Hãy chuyển hoặc xóa các file trước khi xóa thư mục này');
 
     await (prisma as any).documentCategory.delete({ where: { id } });
     revalidatePath('/library');
@@ -259,6 +362,54 @@ export async function createLibraryDocument(data: {
     revalidatePath('/library');
     if (data.categoryId) revalidatePath(`/library?category=${data.categoryId}`);
     return document;
+}
+
+export async function createBatchLibraryDocuments(items: Array<{
+    title: string;
+    description?: string;
+    fileUrl?: string;
+    fileType?: string;
+    thumbnail?: string;
+    size?: number;
+    categoryId?: string;
+    securityLevel?: 'INHERIT' | 'PUBLIC' | 'CONFIDENTIAL';
+    isDownloadable?: boolean;
+    version?: string;
+}>) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_CREATE');
+
+    const created = [];
+    const touchedCategoryIds = new Set<string>();
+
+    for (const data of items) {
+        if (data.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
+            continue;
+        }
+
+        const doc = await (prisma as any).document.create({
+            data: {
+                title: data.title,
+                description: data.description,
+                fileUrl: data.fileUrl,
+                fileType: data.fileType,
+                thumbnail: data.thumbnail,
+                size: data.size,
+                categoryId: data.categoryId || null,
+                securityLevel: data.securityLevel || 'INHERIT',
+                isDownloadable: data.isDownloadable ?? true,
+                version: data.version || '1.0',
+                creatorId: user.id
+            }
+        });
+        created.push(doc);
+        if (data.categoryId) touchedCategoryIds.add(data.categoryId);
+    }
+
+    revalidatePath('/library');
+    touchedCategoryIds.forEach(id => revalidatePath(`/library?category=${id}`));
+    return created;
 }
 
 export async function toggleStarDocument(documentId: string) {
