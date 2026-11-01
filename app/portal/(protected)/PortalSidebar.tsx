@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, ShoppingCart, Receipt, CreditCard, Folder, LogOut, FileSignature, Menu, X, Building2, History, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, FileText, ShoppingCart, Receipt, CreditCard, Folder, LogOut, FileSignature, Menu, X, Building2, History, FileSpreadsheet, ShieldCheck } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 interface SidebarProps {
@@ -21,6 +21,7 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
         { name: 'Báo giá', href: '/portal/quotes', icon: FileSignature },
         { name: 'Đơn hàng', href: '/portal/sales-orders', icon: ShoppingCart },
         { name: 'Hóa đơn', href: '/portal/invoices', icon: Receipt },
+        { name: 'Tra cứu bảo hành', href: '/portal/warranty', icon: ShieldCheck },
         { name: 'Thanh toán', href: '/portal/payments', icon: CreditCard },
         { name: 'Sao kê công nợ', href: '/portal/statement', icon: FileSpreadsheet },
         { name: 'Tài liệu', href: '/portal/documents', icon: Folder },
@@ -100,19 +101,13 @@ export default function PortalSidebar({ customerName, avatar }: SidebarProps) {
                 <div className="p-4 border-t border-slate-800">
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md transition-colors font-medium text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl transition-colors font-semibold text-sm text-slate-400 hover:bg-slate-800 hover:text-rose-400"
                     >
                         <LogOut size={18} />
                         <span>Đăng xuất</span>
                     </button>
-                    <div className="mt-4 text-center">
-                        <p className="text-xs text-slate-600">&copy; 2026 TSOL APP</p>
-                    </div>
                 </div>
             </aside>
-            
-            {/* Top padding on mobile to account for the fixed header */}
-            <div className="md:hidden pt-16"></div>
         </>
     );
 }

@@ -3,7 +3,7 @@
 
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle, X, Clock, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Barcode, Search, Eye, Trash2, Calendar, FileText, FileDown, CheckCircle, ArrowUpDown, Edit2, XCircle, AlertTriangle, X, Clock, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseBill, approvePurchaseBill, deletePurchaseBill, updatePurchaseBill, cancelPurchaseBill } from '@/app/purchasing/actions';
@@ -15,6 +15,7 @@ import { useTranslation } from '@/app/i18n/LanguageContext';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { PurchaseBillAnalyticsBar } from './PurchaseBillAnalyticsBar';
+import SerialInputModal from '@/app/components/inventory/SerialInputModal';
 
 export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses, products, projects }: { initialBills: any[], suppliers: any[], orders: any[], warehouses: any[], products: any[], projects?: any[] }) {
     const { t } = useTranslation();
@@ -52,7 +53,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         tags: '',
         attachments: [] as { url: string, name: string, uploadedAt: string }[]
     });
-    const [billItems, setBillItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string, saveToInventory?: boolean }>>([]);
+    const [billItems, setBillItems] = useState<Array<{ productId: string, productName?: string, quantity: number, unitPrice: number, taxRate: number, description?: string, unit?: string, customName?: string, saveToInventory?: boolean, serials?: string[] }>>([]);
     const [approveWarehouseId, setApproveWarehouseId] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +70,31 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const [customDescription, setCustomDescription] = useState('');
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
+    const [serialModalOpen, setSerialModalOpen] = useState(false);
+    const [currentSerials, setCurrentSerials] = useState<string[]>([]);
+    const [editingItemSerialIndex, setEditingItemSerialIndex] = useState<number | null>(null);
+
+    const handleOpenItemSerials = (index: number) => {
+        setEditingItemSerialIndex(index);
+        setSerialModalOpen(true);
+    };
+
+    const handleSaveSerials = (savedSerials: string[]) => {
+        if (editingItemSerialIndex !== null) {
+            setBillItems(prev => {
+                const next = [...prev];
+                next[editingItemSerialIndex] = {
+                    ...next[editingItemSerialIndex],
+                    serials: savedSerials
+                };
+                return next;
+            });
+            toast.success(`Đã cập nhật ${savedSerials.length} số serial.`);
+        } else {
+            setCurrentSerials(savedSerials);
+            toast.success(`Đã gán ${savedSerials.length} số serial.`);
+        }
+    };
 
     const searchParams = useSearchParams();
     const hasOpenedFromUrl = React.useRef(false);
@@ -312,6 +338,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
     const handleProductSelect = (productId: string) => {
         setIsCustomProduct(false);
         setSelectedProduct(productId);
+        setCurrentSerials([]);
         const product = products.find((p: any) => p.id === productId);
         if (product) {
             setPrice(product.importPrice || 0);
@@ -370,7 +397,8 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             customName: pName,
             productId: pId,
             unit: pUnit,
-            saveToInventory: isCustomProduct ? saveToInventory : true
+            saveToInventory: isCustomProduct ? saveToInventory : true,
+            serials: currentSerials
         };
 
         setBillItems(prev => [...prev, newItem]);
@@ -384,6 +412,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         setPrice(0);
         setSaveToInventory(true);
         setIsPriceInclusiveVat(false);
+        setCurrentSerials([]);
     };
 
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -520,6 +549,15 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             return;
         }
 
+        for (let i = 0; i < billItems.length; i++) {
+            const it = billItems[i];
+            if (it.serials && it.serials.length > 0) {
+                if (it.serials.length !== it.quantity) {
+                    toast.error(`Sản phẩm "${it.productName || it.customName}" yêu cầu ${it.quantity} cái nhưng danh sách serial đang có ${it.serials.length} mã. Vui lòng nhập đúng số lượng mã serial hoặc bấm "Bỏ Serial" nếu không cần quản lý serial cho dòng này!`);
+                    return;
+                }
+            }
+        }
         for (let i = 0; i < billItems.length; i++) {
             if (billItems[i].productId === 'EXTERNAL' && !billItems[i].productName?.trim()) {
                 toast.info(t('purchaseBills.pleaseEnterProductName').replace('{{line}}', String(i + 1)));
@@ -1238,6 +1276,41 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('purchaseBills.qtyLabel')}</label>
                                                 <input type="number" step="any" min="0.0001" className="w-full h-[34px] border border-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-center text-slate-900 bg-white" value={qty} onChange={e => setQty(parseFloat(e.target.value) || 0)} />
                                             </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => {
+                                                    setEditingItemSerialIndex(null);
+                                                    setSerialModalOpen(true);
+                                                }}
+                                                className={`h-[34px] px-3 border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                                                    currentSerials.length > 0 && currentSerials.length === qty
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                        : currentSerials.length > 0
+                                                            ? 'bg-amber-50 text-amber-700 border-amber-300'
+                                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                                }`}
+                                                title="Nhập số Serial / IMEI cho sản phẩm này"
+                                            >
+                                                <Barcode size={14} className="text-emerald-600" />
+                                                {currentSerials.length > 0 ? (
+                                                    <span>Serial ({currentSerials.length}/{qty})</span>
+                                                ) : (
+                                                    <span>+ Quét Serial (Tùy chọn)</span>
+                                                )}
+                                            </button>
+                                            {currentSerials.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCurrentSerials([]);
+                                                        toast.info("Đã bỏ chọn serial. Sản phẩm sẽ được nhập kho bình thường không kèm serial.");
+                                                    }}
+                                                    className="h-[34px] px-2 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg text-xs transition-colors shrink-0 cursor-pointer"
+                                                    title="Bỏ chọn serial (không bắt buộc)"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                             <button type="button" onClick={handleAddItem} className="h-[34px] px-5 border border-primary/40 text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all text-xs font-semibold rounded-lg shrink-0">{t('purchaseBills.addItemBtn')}</button>
                                         </div>
 
@@ -1349,6 +1422,52 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                                                                         )}
                                                                     </div>
                                                                     {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                                        {item.serials && item.serials.length > 0 && (
+                                                                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                                                    <Barcode size={12} className="text-emerald-600" />
+                                                                                    {item.serials.length} Serial: {item.serials.slice(0, 3).join(', ')}{item.serials.length > 3 ? ` (+ ${item.serials.length - 3})` : ''}
+                                                                                </span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenItemSerials(i)}
+                                                                                    className="text-[10px] text-blue-600 hover:underline cursor-pointer font-semibold"
+                                                                                >
+                                                                                    Sửa Serial
+                                                                                </button>
+                                                                                <span className="text-slate-300">|</span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setBillItems((prev: any) => {
+                                                                                            const next = [...prev];
+                                                                                            next[i] = {
+                                                                                                ...next[i],
+                                                                                                serials: null
+                                                                                            };
+                                                                                            return next;
+                                                                                        });
+                                                                                        toast.info(`Đã gỡ bỏ serial cho "${item.productName || item.customName}". Mặt hàng này nhập kho không theo dõi serial.`);
+                                                                                    }}
+                                                                                    className="text-[10px] text-slate-400 hover:text-rose-600 hover:underline cursor-pointer font-medium"
+                                                                                    title="Bỏ quản lý serial cho dòng này (không bắt buộc)"
+                                                                                >
+                                                                                    Bỏ Serial
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                        {(!item.serials || item.serials.length === 0) && item.productId && item.productId !== 'EXTERNAL' && (
+                                                                            <div className="mt-1">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenItemSerials(i)}
+                                                                                    className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-emerald-700 hover:underline cursor-pointer"
+                                                                                >
+                                                                                    <Barcode size={12} className="text-slate-400" />
+                                                                                    + Nhập {item.quantity} Serial/IMEI
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
                                                                 </td>
                                                                 <td className="p-2.5 text-center text-slate-800">
                                                                     {item.quantity} <span className="text-[11px] text-slate-500 ml-1">{item.unit}</span>
@@ -1398,6 +1517,29 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
                     </div>
                 </div>
             )}
+            <SerialInputModal
+                isOpen={serialModalOpen}
+                onClose={() => {
+                    setSerialModalOpen(false);
+                    setEditingItemSerialIndex(null);
+                }}
+                productName={
+                    editingItemSerialIndex !== null
+                        ? (billItems[editingItemSerialIndex]?.productName || billItems[editingItemSerialIndex]?.customName || 'Sản phẩm')
+                        : (isCustomProduct ? customName : (products.find((p: any) => p.id === selectedProduct)?.name || 'Sản phẩm'))
+                }
+                requiredQuantity={
+                    editingItemSerialIndex !== null
+                        ? (billItems[editingItemSerialIndex]?.quantity || 1)
+                        : qty
+                }
+                initialSerials={
+                    editingItemSerialIndex !== null
+                        ? (billItems[editingItemSerialIndex]?.serials || [])
+                        : currentSerials
+                }
+                onSave={handleSaveSerials}
+            />
         </div>
     );
 }

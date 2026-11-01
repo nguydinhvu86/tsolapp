@@ -10,7 +10,7 @@ import {
     PackageCheck, Activity, Edit2, Edit, Building, Building2, Mail, UserCheck, Calendar,
     CreditCard, DollarSign, Sparkles, Check, Phone, MapPin, Receipt, ShieldAlert,
     ChevronRight, CornerDownRight, Percent, Eye, FileDown, CalendarClock, BellRing,
-    GripVertical, ChevronUp, ChevronDown, Loader2
+    GripVertical, ChevronUp, ChevronDown, Loader2, Barcode
 } from 'lucide-react';
 import Link from 'next/link';
 import ExcelJS from 'exceljs';
@@ -507,6 +507,283 @@ export default function SalesInvoiceDetailClient({
         saveAs(new Blob([buffer]), `Hoa_Don_${invoice.code}.xlsx`);
     };
 
+    const handleExportSerialsExcel = async () => {
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'TSOL ERP';
+        wb.lastModifiedBy = 'TSOL ERP';
+        wb.created = new Date();
+        wb.modified = new Date();
+
+        const ws = wb.addWorksheet('BienBanBanGiao', {
+            views: [{ showGridLines: true }],
+            pageSetup: {
+                paperSize: 9,
+                orientation: 'landscape',
+                fitToPage: true,
+                fitToWidth: 1,
+                fitToHeight: 0
+            }
+        });
+
+        // 7 Columns without any price or unit cost
+        const colCount = 7;
+        ws.columns = [
+            { key: 'col1', width: 6 },
+            { key: 'col2', width: 36 },
+            { key: 'col3', width: 16 },
+            { key: 'col4', width: 10 },
+            { key: 'col5', width: 12 },
+            { key: 'col6', width: 50 },
+            { key: 'col7', width: 22 }
+        ];
+
+        const thinBorder = {
+            top: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            bottom: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } }
+        };
+
+        const companyName = (settings?.COMPANY_FULL_NAME || settings?.COMPANY_NAME || settings?.COMPANY_DISPLAY_NAME || 'CÔNG TY TNHH GIẢI PHÁP ĐÀO TẠO TRỊNH GIA').toUpperCase();
+        const companyAddress = settings?.COMPANY_ADDRESS || '';
+        const companyPhone = settings?.COMPANY_PHONE || '';
+        const companyEmail = settings?.COMPANY_EMAIL || '';
+        const companyWebsite = settings?.COMPANY_WEBSITE || '';
+
+        // Row 1: Company Name
+        ws.mergeCells(1, 1, 1, colCount);
+        const cellA1 = ws.getCell('A1');
+        cellA1.value = companyName;
+        cellA1.font = { bold: true, size: 12, color: { argb: 'FF0F172A' }, name: 'Arial' };
+        cellA1.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(1).height = 24;
+
+        // Row 2: Address & Contact
+        ws.mergeCells(2, 1, 2, colCount);
+        const cellA2 = ws.getCell('A2');
+        const contactLine = [
+            companyAddress ? `Địa chỉ: ${companyAddress}` : '',
+            companyPhone ? `Hotline: ${companyPhone}` : '',
+            companyEmail ? `Email: ${companyEmail}` : '',
+            companyWebsite ? `Website: ${companyWebsite}` : ''
+        ].filter(Boolean).join('   |   ');
+        cellA2.value = contactLine;
+        cellA2.font = { size: 9.5, color: { argb: 'FF475569' }, name: 'Arial' };
+        cellA2.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(2).height = 20;
+
+        // Row 3: Empty space
+        ws.addRow([]);
+        ws.getRow(3).height = 10;
+
+        // Row 4: Main Document Title
+        const titleRowNumber = 4;
+        ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
+        const titleCell = ws.getCell(`A${titleRowNumber}`);
+        titleCell.value = 'BIÊN BẢN BÀN GIAO THIẾT BỊ & BẢNG KÊ SERIAL / IMEI';
+        titleCell.font = { bold: true, size: 15, color: { argb: 'FF1E293B' }, name: 'Arial' };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(titleRowNumber).height = 28;
+
+        // Row 5: Subtitle
+        const subTitleRowNumber = 5;
+        ws.mergeCells(subTitleRowNumber, 1, subTitleRowNumber, colCount);
+        const subTitleCell = ws.getCell(`A${subTitleRowNumber}`);
+        subTitleCell.value = `(Kèm theo Hóa đơn bán hàng số: ${invoice.code} - Ngày lập: ${formatDate(invoice.date || invoice.createdAt)})`;
+        subTitleCell.font = { italic: true, size: 10, color: { argb: 'FF64748B' }, name: 'Arial' };
+        subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(subTitleRowNumber).height = 20;
+
+        // Row 6: Empty
+        ws.addRow([]);
+        ws.getRow(6).height = 10;
+
+        // Helper for meta rows
+        const addMetaRow = (label: string, value: string, isBold: boolean = false) => {
+            const row = ws.addRow([]);
+            const rowNum = row.number;
+            row.height = 20;
+
+            ws.mergeCells(rowNum, 1, rowNum, 2);
+            const lbl = row.getCell(1);
+            lbl.value = label;
+            lbl.font = { bold: true, size: 9.5, color: { argb: 'FF334155' }, name: 'Arial' };
+            lbl.alignment = { horizontal: 'left', vertical: 'middle' };
+
+            ws.mergeCells(rowNum, 3, rowNum, colCount);
+            const val = row.getCell(3);
+            val.value = value || '-';
+            val.font = { bold: isBold, size: 9.5, color: { argb: 'FF0F172A' }, name: 'Arial' };
+            val.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            return row;
+        };
+
+        // Customer Info Block
+        addMetaRow('Đơn vị nhận bàn giao:', invoice.customer?.name || '', true);
+        const customerAddress = invoice.customer?.address || invoice.customer?.billingAddress || invoice.customer?.shippingAddress;
+        if (customerAddress) addMetaRow('Địa chỉ giao hàng:', customerAddress);
+        const contactName = invoice.customer?.contactName || invoice.customer?.contacts?.[0]?.name;
+        const contactPhone = invoice.customer?.phone || invoice.customer?.contacts?.[0]?.phone;
+        const contactStr = [contactName ? `Người nhận: ${contactName}` : '', contactPhone ? `SĐT: ${contactPhone}` : ''].filter(Boolean).join('    -    ');
+        if (contactStr) addMetaRow('Thông tin liên hệ:', contactStr);
+        if (invoice.order?.code) addMetaRow('Đơn hàng tham chiếu:', invoice.order.code);
+        addMetaRow('Thời gian bàn giao:', formatDate(new Date()));
+
+        // Empty row
+        const emptyRow = ws.addRow([]);
+        emptyRow.height = 10;
+
+        // Table Header (NO PRICES / NO MONETARY VALUES)
+        const headers = ['STT', 'Tên Thiết Bị / Hàng Hóa', 'Mã SKU', 'ĐVT', 'Số Lượng', 'Danh Sách Số Serial / IMEI Bàn Giao', 'Tình Trạng & Bảo Hành'];
+        const headerRow = ws.addRow(headers);
+        headerRow.height = 26;
+        headerRow.font = { bold: true, size: 9.5, color: { argb: 'FFFFFFFF' }, name: 'Arial' };
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+        for (let i = 1; i <= colCount; i++) {
+            const cell = headerRow.getCell(i);
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF1E40AF' }
+            };
+            cell.border = thinBorder;
+        }
+
+        // Table Rows
+        let totalItemsCount = 0;
+        let totalSerialsCount = 0;
+
+        (invoice.items || []).forEach((item: any, idx: number) => {
+            let serialsList: string[] = [];
+            if (item.serials) {
+                try {
+                    const parsed = JSON.parse(item.serials);
+                    if (Array.isArray(parsed)) serialsList = parsed;
+                } catch {
+                    serialsList = [];
+                }
+            }
+
+            totalItemsCount += Number(item.quantity) || 0;
+            totalSerialsCount += serialsList.length;
+
+            const serialText = serialsList.length > 0 
+                ? serialsList.join('\n') 
+                : (item.productId ? 'Không yêu cầu Serial' : '-');
+
+            const lineCount = Math.max(1, serialsList.length);
+            const rowHeight = Math.max(26, lineCount * 17);
+
+            const row = ws.addRow([
+                idx + 1,
+                item.productName || item.customName || item.product?.name || 'Sản phẩm',
+                item.product?.sku || '-',
+                item.unit || item.product?.unit || 'Cái',
+                Number(item.quantity) || 1,
+                serialText,
+                serialsList.length > 0 ? 'Mới 100% - Bảo hành điện tử' : 'Mới 100%'
+            ]);
+
+            row.height = rowHeight;
+            row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(3).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
+            row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(5).font = { name: 'Arial', size: 10, bold: true };
+            row.getCell(6).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            row.getCell(6).font = { name: 'Courier New', size: 9.5, bold: true, color: { argb: 'FF1E40AF' } };
+            row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            row.getCell(7).font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF475569' } };
+
+            for (let c = 1; c <= colCount; c++) {
+                row.getCell(c).border = thinBorder;
+            }
+        });
+
+        // Summary Row
+        const summaryRow = ws.addRow([
+            '',
+            'TỔNG CỘNG THIẾT BỊ BÀN GIAO:',
+            '',
+            '',
+            totalItemsCount,
+            `Tổng cộng: ${totalSerialsCount} mã Serial/IMEI đã bàn giao`,
+            ''
+        ]);
+        summaryRow.height = 24;
+        summaryRow.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+        summaryRow.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
+        summaryRow.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+        summaryRow.getCell(6).alignment = { horizontal: 'left', vertical: 'middle' };
+
+        for (let c = 1; c <= colCount; c++) {
+            summaryRow.getCell(c).border = thinBorder;
+            summaryRow.getCell(c).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFF1F5F9' }
+            };
+        }
+
+        // Terms
+        ws.addRow([]);
+        const noteRow = ws.addRow(['XÁC NHẬN BÀN GIAO & BẢO HÀNH:']);
+        ws.mergeCells(noteRow.number, 1, noteRow.number, colCount);
+        noteRow.getCell(1).font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+
+        const term1 = ws.addRow(['1. Hai bên cùng tiến hành nghiệm thu, kiểm tra số lượng và số Serial/IMEI thực tế của toàn bộ thiết bị nêu trên.']);
+        ws.mergeCells(term1.number, 1, term1.number, colCount);
+        term1.getCell(1).font = { size: 9, name: 'Arial', color: { argb: 'FF334155' } };
+
+        const term2 = ws.addRow(['2. Bên nhận xác nhận toàn bộ thiết bị nguyên vẹn, đúng chủng loại, đúng mã Serial/IMEI và hoạt động bình thường theo tiêu chuẩn.']);
+        ws.mergeCells(term2.number, 1, term2.number, colCount);
+        term2.getCell(1).font = { size: 9, name: 'Arial', color: { argb: 'FF334155' } };
+
+        ws.addRow([]);
+
+        // Signatures
+        const sigRow = ws.addRow([]);
+        sigRow.height = 22;
+        const mid = Math.floor(colCount / 2);
+
+        ws.mergeCells(sigRow.number, 1, sigRow.number, mid);
+        const khCell = sigRow.getCell(1);
+        khCell.value = 'ĐẠI DIỆN BÊN NHẬN (KHÁCH HÀNG)';
+        khCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF0F172A' } };
+        khCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws.mergeCells(sigRow.number, mid + 1, sigRow.number, colCount);
+        const ctCell = sigRow.getCell(mid + 1);
+        ctCell.value = 'ĐẠI DIỆN BÊN GIAO (KỸ THUẬT / GIAO HÀNG)';
+        ctCell.font = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF0F172A' } };
+        ctCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const subSigRow = ws.addRow([]);
+        subSigRow.height = 18;
+        ws.mergeCells(subSigRow.number, 1, subSigRow.number, mid);
+        const subKh = subSigRow.getCell(1);
+        subKh.value = '(Ký, ghi rõ họ tên)';
+        subKh.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subKh.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws.mergeCells(subSigRow.number, mid + 1, subSigRow.number, colCount);
+        const subCt = subSigRow.getCell(mid + 1);
+        subCt.value = '(Ký, ghi rõ họ tên)';
+        subCt.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subCt.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws.addRow([]);
+        ws.addRow([]);
+
+        const buffer = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Bien_Ban_Ban_Giao_Serial_${invoice.code}.xlsx`);
+        toast.success(`Đã xuất file Biên bản bàn giao thiết bị & bảng kê Serial (${invoice.code}) thành công!`);
+    };
+
+
     const handleApprove = async () => {
         setActionModal({
             isOpen: true,
@@ -732,6 +1009,15 @@ export default function SalesInvoiceDetailClient({
                     >
                         <FileDown size={14} />
                         <span>Xuất Excel</span>
+                    </button>
+
+                    <button
+                        onClick={handleExportSerialsExcel}
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial không hiển thị đơn giá"
+                    >
+                        <Barcode size={14} className="text-purple-600" />
+                        <span>Xuất Serials</span>
                     </button>
 
                     <button
@@ -1142,6 +1428,28 @@ export default function SalesInvoiceDetailClient({
                                                                                 {item.description}
                                                                             </div>
                                                                         )}
+                                                                        {(() => {
+                                                                            try {
+                                                                                const sList = item.serials ? JSON.parse(item.serials) : [];
+                                                                                if (Array.isArray(sList) && sList.length > 0) {
+                                                                                    return (
+                                                                                        <div className="mt-2 p-2 bg-blue-50/60 border border-blue-200/60 rounded-lg">
+                                                                                            <span className="text-[11px] font-bold text-blue-800 block mb-1">
+                                                                                                🏷️ Số Serial / IMEI xuất bán ({sList.length}):
+                                                                                            </span>
+                                                                                            <div className="flex flex-wrap gap-1">
+                                                                                                {sList.map((sn: string, sIdx: number) => (
+                                                                                                    <span key={sIdx} className="font-mono text-[10px] px-1.5 py-0.5 bg-white border border-blue-200 rounded text-blue-900 font-medium">
+                                                                                                        {sn}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                            } catch(e) {}
+                                                                            return null;
+                                                                        })()}
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -1194,6 +1502,123 @@ export default function SalesInvoiceDetailClient({
                                     </div>
                                 </div>
                             )}
+
+                                                                {/* KHUNG THÔNG TIN QUẢN LÝ SỐ SERIAL / IMEI THIẾT BỊ XUẤT BÁN */}
+                                    {(() => {
+                                        const serialItems = (invoice.items || []).filter((it: any) => {
+                                            try {
+                                                const arr = it.serials ? JSON.parse(it.serials) : [];
+                                                return Array.isArray(arr) && arr.length > 0;
+                                            } catch { return false; }
+                                        });
+                                        if (serialItems.length === 0) return null;
+
+                                        const totalSerials = serialItems.reduce((acc: number, it: any) => {
+                                            try {
+                                                const arr = JSON.parse(it.serials);
+                                                return acc + (Array.isArray(arr) ? arr.length : 0);
+                                            } catch { return acc; }
+                                        }, 0);
+
+                                        return (
+                                            <div className="mt-6 p-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                                                            <Barcode size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                                Bảng Kê Số Serial / IMEI Thiết Bị Bàn Giao
+                                                                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold">
+                                                                    {totalSerials} thiết bị
+                                                                </span>
+                                                            </h3>
+                                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                                Danh sách mã định danh đã gán cho khách hàng theo hóa đơn này (Dùng bàn giao kỹ thuật & bảo hành)
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2.5">
+                                                        <button
+                                                            onClick={handleExportSerialsExcel}
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+                                                            title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial không hiển thị đơn giá"
+                                                        >
+                                                            <Barcode size={14} />
+                                                            <span>Xuất Serials (File Bàn Giao)</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left text-xs border-collapse">
+                                                        <thead>
+                                                            <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                                                                <th className="py-2.5 px-3 text-center w-12">STT</th>
+                                                                <th className="py-2.5 px-3">Sản Phẩm & Mã SKU</th>
+                                                                <th className="py-2.5 px-3 text-center w-24">Số Lượng</th>
+                                                                <th className="py-2.5 px-3">Danh Sách Số Serial / IMEI Bàn Giao</th>
+                                                                <th className="py-2.5 px-3 text-center w-36">Bảo Hành Điện Tử</th>
+                                                                <th className="py-2.5 px-3 text-center w-28">Trạng Thái</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100">
+                                                            {serialItems.map((item: any, sIdx: number) => {
+                                                                let snList: string[] = [];
+                                                                try {
+                                                                    snList = JSON.parse(item.serials);
+                                                                } catch {}
+
+                                                                return (
+                                                                    <tr key={item.id || sIdx} className="hover:bg-slate-50/60">
+                                                                        <td className="py-3 px-3 text-center font-mono text-slate-400 font-semibold">{sIdx + 1}</td>
+                                                                        <td className="py-3 px-3">
+                                                                            <p className="font-bold text-slate-900">
+                                                                                {item.productName || item.customName || item.product?.name}
+                                                                            </p>
+                                                                            {item.product?.sku && (
+                                                                                <span className="text-[11px] text-slate-400 font-mono">SKU: {item.product.sku}</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center font-mono font-bold text-slate-800">
+                                                                            {snList.length} <span className="text-[10px] font-normal text-slate-400">{item.unit || 'Cái'}</span>
+                                                                        </td>
+                                                                        <td className="py-3 px-3">
+                                                                            <div className="flex flex-wrap gap-1.5 max-w-xl">
+                                                                                {snList.map((sn: string, idx: number) => (
+                                                                                    <span 
+                                                                                        key={idx}
+                                                                                        className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-800 font-medium"
+                                                                                    >
+                                                                                        {sn}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center">
+                                                                            <span className="text-xs font-semibold text-emerald-600 block">
+                                                                                12 tháng
+                                                                            </span>
+                                                                            <span className="text-[10px] text-slate-400">
+                                                                                Kể từ ngày xuất bán
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center">
+                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                                                                Đã xuất bán (SOLD)
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
 
                             {activeTab === 'emailLogs' && (
                                 <EmailLogTable emailLogs={invoice.emailLogs || []} />

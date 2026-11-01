@@ -6,7 +6,7 @@ import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity, GripVertical, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Barcode, Calendar, FileText, ShoppingCart, CheckSquare, Building, CreditCard, Clock, Plus, Trash2, FileDown, ExternalLink, Copy, XCircle, AlertTriangle, Edit2, Activity, GripVertical, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { TaskPanel } from '@/app/components/tasks/TaskPanel';
 import Link from 'next/link';
 import { uploadPurchaseBillDocument, cancelPurchaseBill, updatePurchaseBillNotes, approvePurchaseBill, payPurchaseBill, reorderPurchaseBillItems } from '@/app/purchasing/actions';
@@ -515,6 +515,28 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                                                     {item.product?.name || item.productName || item.customName || 'Sản phẩm không xác định'}
                                                                     {item.product?.sku && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>SKU: {item.product.sku}</div>}
                                                                     {item.description && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{item.description}</div>}
+                                                                    {(() => {
+                                                                        try {
+                                                                            const sList = item.serials ? JSON.parse(item.serials) : [];
+                                                                            if (Array.isArray(sList) && sList.length > 0) {
+                                                                                return (
+                                                                                    <div className="mt-2 p-2 bg-emerald-50/60 border border-emerald-200/60 rounded-lg">
+                                                                                        <span className="text-[11px] font-bold text-emerald-800 block mb-1">
+                                                                                            📦 Số Serial / IMEI nhập kho ({sList.length}):
+                                                                                        </span>
+                                                                                        <div className="flex flex-wrap gap-1">
+                                                                                            {sList.map((sn: string, sIdx: number) => (
+                                                                                                <span key={sIdx} className="font-mono text-[10px] px-1.5 py-0.5 bg-white border border-emerald-200 rounded text-emerald-900 font-medium">
+                                                                                                    {sn}
+                                                                                                </span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        } catch(e) {}
+                                                                        return null;
+                                                                    })()}
                                                                 </td>
                                                                 <td style={{ padding: '1rem', textAlign: 'center', color: '#475569' }}>{item.quantity} {item.unit || item.product?.unit || ''}</td>
                                                                 <td style={{ padding: '1rem', textAlign: 'right', color: '#475569' }}>{formatMoney(item.unitPrice)}</td>
@@ -547,6 +569,103 @@ export function PurchaseBillDetailClient({ bill, tasks, users, warehouses }: { b
                                     </div>
                                 </div>
                             )}
+
+                                                                {/* KHUNG THÔNG TIN QUẢN LÝ SỐ SERIAL / IMEI ĐÃ GHI NHẬN CHO HÓA ĐƠN NÀY */}
+                                    {(() => {
+                                        const serialItems = (localBill.items || []).filter((it: any) => {
+                                            try {
+                                                const arr = it.serials ? JSON.parse(it.serials) : [];
+                                                return Array.isArray(arr) && arr.length > 0;
+                                            } catch { return false; }
+                                        });
+                                        if (serialItems.length === 0) return null;
+
+                                        const totalSerials = serialItems.reduce((acc: number, it: any) => {
+                                            try {
+                                                const arr = JSON.parse(it.serials);
+                                                return acc + (Array.isArray(arr) ? arr.length : 0);
+                                            } catch { return acc; }
+                                        }, 0);
+
+                                        return (
+                                            <div className="mt-6 p-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                                                            <Barcode size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                                Bảng Kê Định Danh Serial / IMEI Nhập Kho
+                                                                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                                                                    {totalSerials} thiết bị
+                                                                </span>
+                                                            </h3>
+                                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                                Tổng hợp toàn bộ các mã định danh đã được liên kết và quản lý cho hóa đơn mua hàng này
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left text-xs border-collapse">
+                                                        <thead>
+                                                            <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                                                                <th className="py-2.5 px-3 text-center w-12">STT</th>
+                                                                <th className="py-2.5 px-3">Sản Phẩm & Mã SKU</th>
+                                                                <th className="py-2.5 px-3 text-center w-24">Số Lượng</th>
+                                                                <th className="py-2.5 px-3">Danh Sách Số Serial / IMEI Đã Ghi Nhận</th>
+                                                                <th className="py-2.5 px-3 text-center w-32">Trạng Thái Kho</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100">
+                                                            {serialItems.map((item: any, sIdx: number) => {
+                                                                let snList: string[] = [];
+                                                                try {
+                                                                    snList = JSON.parse(item.serials);
+                                                                } catch {}
+
+                                                                return (
+                                                                    <tr key={item.id || sIdx} className="hover:bg-slate-50/60">
+                                                                        <td className="py-3 px-3 text-center font-mono text-slate-400 font-semibold">{sIdx + 1}</td>
+                                                                        <td className="py-3 px-3">
+                                                                            <p className="font-bold text-slate-900">
+                                                                                {item.product?.name || item.productName || item.customName}
+                                                                            </p>
+                                                                            {item.product?.sku && (
+                                                                                <span className="text-[11px] text-slate-400 font-mono">SKU: {item.product.sku}</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center font-mono font-bold text-slate-800">
+                                                                            {snList.length} <span className="text-[10px] font-normal text-slate-400">{item.unit || 'Cái'}</span>
+                                                                        </td>
+                                                                        <td className="py-3 px-3">
+                                                                            <div className="flex flex-wrap gap-1.5 max-w-xl">
+                                                                                {snList.map((sn: string, idx: number) => (
+                                                                                    <span 
+                                                                                        key={idx}
+                                                                                        className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium"
+                                                                                    >
+                                                                                        {sn}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-center">
+                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                                                Tồn kho (IN_STOCK)
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
 
                             {activeTab === 'payments' && (
                                 <div>

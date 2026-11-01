@@ -6,11 +6,15 @@ export default withAuth(
         if (req.nextUrl.pathname.startsWith('/portal/login')) {
             return NextResponse.next();
         }
+        if (req.nextUrl.pathname.startsWith('/warranty') || req.nextUrl.pathname.startsWith('/public')) {
+            return NextResponse.next();
+        }
     },
     {
         callbacks: {
             authorized: ({ req, token }) => {
                 if (req.nextUrl.pathname.startsWith('/portal/login')) return true;
+                if (req.nextUrl.pathname.startsWith('/warranty') || req.nextUrl.pathname.startsWith('/public')) return true;
                 return !!token;
             },
         },
@@ -19,7 +23,6 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/((?!api/auth|api/callcenter|api/og-image|api/files|og-image\\.(?:png|jpg|jpeg|webp)|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$|login|forgot-password|reset-password|public|uploads|portal/login).*)"
+        "/((?!api/auth|api/callcenter|api/og-image|api/files|og-image\\.(?:png|jpg|jpeg|webp)|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$|login|forgot-password|reset-password|public|warranty|uploads|portal/login).*)"
     ]
 };
-

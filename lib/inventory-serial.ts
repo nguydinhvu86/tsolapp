@@ -10,7 +10,7 @@ export interface ReceiveSerialsInput {
 
 export interface DispatchSerialsInput {
     serialNumbers: string[];
-    salesInvoiceId: string;
+    salesInvoiceId?: string;
     customerId: string;
     warrantyMonths?: number;
 }
@@ -48,24 +48,37 @@ export async function receiveProductSerials(input: ReceiveSerialsInput) {
 }
 
 /**
- * Xuất kho số Serial/IMEI khi bán hàng cho khách và tự động tính hạn bảo hành
+ * Xuất kho số Serial/IMEI khi bán hàng cho khách và tự động tính hạn bảo hành theo cài đặt của từng sản phẩm
  */
 export async function dispatchProductSerials(input: DispatchSerialsInput) {
-    const warrantyMonths = input.warrantyMonths || 12; // Mặc định bảo hành 12 tháng
-    const warrantyEndDate = new Date();
-    warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyMonths);
-
+    const now = new Date();
     const updated = [];
     for (const serial of input.serialNumbers) {
         const trimmed = serial.trim();
         if (!trimmed) continue;
 
+        const existing = await prisma.productSerial.findUnique({
+            where: { serialNumber: trimmed },
+            include: { product: true }
+        });
+
+        const warrantyMonths = input.warrantyMonths !== undefined 
+            ? input.warrantyMonths 
+            : (existing?.product?.warrantyMonths ?? 12);
+
+        let warrantyEndDate: Date | null = null;
+        if (warrantyMonths > 0) {
+            warrantyEndDate = new Date(now);
+            warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyMonths);
+        }
+
         const res = await prisma.productSerial.update({
             where: { serialNumber: trimmed },
             data: {
                 status: 'SOLD',
-                salesInvoiceId: input.salesInvoiceId,
+                salesInvoiceId: input.salesInvoiceId || null,
                 customerId: input.customerId,
+                warrantyStartDate: now,
                 warrantyEndDate,
             }
         });
@@ -83,7 +96,7 @@ export async function lookupSerialWarranty(serialNumber: string) {
         where: { serialNumber: cleanSerial },
         include: {
             product: {
-                select: { id: true, name: true, sku: true, unit: true }
+                select: { id: true, name: true, sku: true, unit: true, warrantyMonths: true }
             },
             customer: {
                 select: { id: true, name: true, phone: true, email: true }
@@ -102,13 +115,36 @@ export async function lookupSerialWarranty(serialNumber: string) {
 
     if (!record) return null;
 
-    const isWarrantyValid = record.warrantyEndDate ? new Date() <= new Date(record.warrantyEndDate) : false;
+    const warrantyMonths = record.product?.warrantyMonths ?? 12;
+    const isNoWarranty = warrantyMonths === 0;
+
+    const startDate = record.warrantyStartDate || record.salesInvoice?.date || (record.status === 'SOLD' ? record.updatedAt : null);
+    const endDate = record.warrantyEndDate;
+
+    const now = new Date();
+    const isWarrantyValid = !isNoWarranty && !!endDate && now <= new Date(endDate);
+    const isExpired = !isNoWarranty && !!endDate && now > new Date(endDate);
+
+    let daysRemaining = 0;
+    let daysExpired = 0;
+    if (endDate && !isNoWarranty) {
+        const diffDays = Math.ceil((new Date(endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0) {
+            daysRemaining = diffDays;
+        } else {
+            daysExpired = Math.abs(diffDays);
+        }
+    }
 
     return {
         ...record,
+        warrantyMonths,
+        isNoWarranty,
+        warrantyStartDate: startDate,
+        warrantyEndDate: endDate,
         isWarrantyValid,
-        daysRemaining: record.warrantyEndDate 
-            ? Math.max(0, Math.ceil((new Date(record.warrantyEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-            : 0
+        isExpired,
+        daysRemaining,
+        daysExpired
     };
 }

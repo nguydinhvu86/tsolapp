@@ -68,17 +68,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return (
         <ToastContext.Provider value={{ showToast, success, error, warning, info }}>
             {children}
-            {/* Fixed Toast Container */}
+            {/* Fixed Toast Container - Floating Above ALL Popups & Modals */}
             <div
                 style={{
                     position: 'fixed',
-                    bottom: '24px',
+                    top: '24px',
                     right: '24px',
-                    zIndex: 99999,
+                    zIndex: 2147483647,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '10px',
-                    maxWidth: '420px',
+                    maxWidth: '460px',
                     width: 'calc(100vw - 48px)',
                     pointerEvents: 'none',
                 }}
@@ -89,19 +89,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     const isWarning = t.type === 'warning';
 
                     const borderClass = isSuccess
-                        ? 'border-emerald-500/30 bg-white/95 text-slate-800 shadow-emerald-500/10'
+                        ? 'border-emerald-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-emerald-500/20'
                         : isError
-                        ? 'border-rose-500/30 bg-white/95 text-slate-800 shadow-rose-500/10'
+                        ? 'border-rose-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-rose-500/20'
                         : isWarning
-                        ? 'border-amber-500/30 bg-white/95 text-slate-800 shadow-amber-500/10'
-                        : 'border-blue-500/30 bg-white/95 text-slate-800 shadow-blue-500/10';
+                        ? 'border-amber-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-amber-500/20'
+                        : 'border-blue-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-blue-500/20';
 
                     return (
                         <div
                             key={t.id}
-                            className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl border shadow-lg backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${borderClass}`}
+                            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border-2 shadow-2xl backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-3 ${borderClass}`}
                             style={{
-                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+                                boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.25), 0 10px 15px -5px rgba(0, 0, 0, 0.1)',
                             }}
                         >
                             <div className="shrink-0 pt-0.5">

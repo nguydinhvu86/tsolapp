@@ -122,6 +122,7 @@ export async function createProduct(data: {
     description?: string;
     notes?: string;
     minStockLevel?: number;
+    warrantyMonths?: number;
     isActive?: boolean;
     groupId?: string | null;
 }) {
@@ -147,6 +148,7 @@ export async function updateProduct(id: string, data: Partial<{
     description: string;
     notes: string;
     minStockLevel: number;
+    warrantyMonths?: number;
     isActive: boolean;
     groupId: string | null;
 }>) {

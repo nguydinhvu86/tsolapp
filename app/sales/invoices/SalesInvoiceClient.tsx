@@ -11,7 +11,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
+import { Plus, Barcode, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -21,6 +21,7 @@ import { AvatarImage } from '@/app/components/ui/AvatarImage';
 import { SalesInvoiceAnalyticsBar } from './SalesInvoiceAnalyticsBar';
 import { SalesInvoiceQuickViewDrawer } from './SalesInvoiceQuickViewDrawer';
 import { forceUnlockScroll } from '@/lib/utils/scrollLock';
+import SerialSelectModal from '@/app/components/inventory/SerialSelectModal';
 
 export default function SalesInvoiceClient({ initialInvoices, customers, products, orders, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager }: any) {
     const { t } = useTranslation();
@@ -137,6 +138,48 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const [useInventoryDescription, setUseInventoryDescription] = useState(true);
     const [isSubItem, setIsSubItem] = useState(false);
     const [isPriceInclusiveVat, setIsPriceInclusiveVat] = useState(false);
+    const [serialModalOpen, setSerialModalOpen] = useState(false);
+    const [currentSerials, setCurrentSerials] = useState<string[]>([]);
+    const [editingItemSerialIndex, setEditingItemSerialIndex] = useState<number | null>(null);
+
+    const handleOpenItemSerials = (index: number) => {
+        setEditingItemSerialIndex(index);
+        setSerialModalOpen(true);
+    };
+
+    const handleSaveSerials = (savedSerials: string[]) => {
+        if (editingItemSerialIndex !== null) {
+            setFormData((prev: any) => {
+                const next = [...prev.items];
+                next[editingItemSerialIndex] = {
+                    ...next[editingItemSerialIndex],
+                    serials: savedSerials
+                };
+                return { ...prev, items: next };
+            });
+            setEditingItemSerialIndex(null);
+            toast.success(`Đã chọn ${savedSerials.length} số serial xuất bán.`);
+        } else {
+            setCurrentSerials(savedSerials);
+            toast.success(`Đã chọn ${savedSerials.length} số serial xuất bán.`);
+        }
+    };
+
+    // Tất cả các số serial đã gán cho các dòng khác trong hóa đơn (tránh chọn trùng cho 2 sản phẩm)
+    const otherSelectedSerials = useMemo(() => {
+        const list: string[] = [];
+        (formData.items || []).forEach((it: any, idx: number) => {
+            if (idx !== editingItemSerialIndex && it.serials) {
+                try {
+                    const arr = Array.isArray(it.serials) ? it.serials : JSON.parse(it.serials);
+                    if (Array.isArray(arr)) {
+                        list.push(...arr);
+                    }
+                } catch {}
+            }
+        });
+        return list;
+    }, [formData.items, editingItemSerialIndex]);
 
     // Due Date Suggestion State
     const [dueTermDays, setDueTermDays] = useState<number | 'custom'>(7);
@@ -251,12 +294,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+                                        setCurrentSerials([]);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
         setCustomTaxRate(0);
         setIsSubItem(false);
         setIsPriceInclusiveVat(false);
+        setCurrentSerials([]);
         setDueTermDays(7);
         setCustomDueDays(7);
         setIsRecurring(false);
@@ -305,6 +350,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+                                        setCurrentSerials([]);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -376,6 +422,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setPrice(0);
         setSelectedProduct('');
         setIsCustomProduct(false);
+                                        setCurrentSerials([]);
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
@@ -420,6 +467,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     const handleProductSelect = (pid: string) => {
         const prod = products.find((p: any) => p.id === pid);
         setSelectedProduct(pid);
+        setCurrentSerials([]); // Reset serial khi chuyển đổi sản phẩm
         setPrice(prod ? prod.salePrice : 0);
         setCustomTaxRate(prod ? (prod.taxRate !== undefined ? prod.taxRate : 0) : 0);
         if (useInventoryDescription) {
@@ -476,7 +524,8 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                 taxAmount: taxItemAmount,
                 totalPrice: total,
                 isSubItem: isSubItem,
-                saveToInventory: isCustomProduct ? saveToInventory : true
+                saveToInventory: isCustomProduct ? saveToInventory : true,
+                serials: currentSerials
             }];
 
             const calcSubTotal = newItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
@@ -496,6 +545,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setCustomName('');
         setCustomDescription('');
         setCustomUnit('Cái');
+        setCurrentSerials([]); // Reset serial sau khi thêm dòng
         setQty(1);
         setPrice(0);
         setIsSubItem(false);
@@ -526,6 +576,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         const item = formData.items[index];
         if (item.productId) {
             setIsCustomProduct(false);
+                                        setCurrentSerials([]);
             setSelectedProduct(item.productId);
             setCustomName('');
             setCustomUnit('Cái');
@@ -540,6 +591,7 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             setCustomDescription(item.description || '');
         } else {
             setIsCustomProduct(true);
+                                        setCurrentSerials([]);
             setSelectedProduct('');
             setCustomName(item.customName || item.productName || '');
             setCustomUnit(item.unit || '');
@@ -551,6 +603,13 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         setPrice(item.unitPrice);
         setQty(item.quantity);
         setIsSubItem(item.isSubItem || false);
+        let itemSerials: string[] = [];
+        if (item.serials) {
+            try {
+                itemSerials = Array.isArray(item.serials) ? item.serials : JSON.parse(item.serials);
+            } catch {}
+        }
+        setCurrentSerials(itemSerials);
 
         handleRemoveItem(index);
     };
@@ -615,6 +674,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     };
 
     const handleSave = async () => {
+        for (let i = 0; i < formData.items.length; i++) {
+            const it = formData.items[i];
+            if (it.serials && it.serials.length > 0) {
+                if (it.serials.length !== it.quantity) {
+                    toast.error(`Sản phẩm "${it.productName || it.customName}" có số lượng bán là ${it.quantity} nhưng mới chọn ${it.serials.length} mã serial. Vui lòng chọn đúng ${it.quantity} mã serial hoặc bấm "Bỏ Serial" nếu không muốn gắn serial cho mặt hàng này!`);
+                    return;
+                }
+            }
+        }
         if (!formData.customerId || formData.items.length === 0) {
             toast.info(t('invoices.alertSelectCustomer'));
             return;
@@ -656,6 +724,15 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     };
 
     const handleSaveAndApprove = async () => {
+        for (let i = 0; i < formData.items.length; i++) {
+            const it = formData.items[i];
+            if (it.serials && it.serials.length > 0) {
+                if (it.serials.length !== it.quantity) {
+                    toast.error(`Sản phẩm "${it.productName || it.customName}" có số lượng bán là ${it.quantity} nhưng mới chọn ${it.serials.length} mã serial. Vui lòng chọn đúng ${it.quantity} mã serial hoặc bấm "Bỏ Serial" nếu không muốn gắn serial cho mặt hàng này!`);
+                    return;
+                }
+            }
+        }
         if (!formData.customerId || formData.items.length === 0) {
             toast.info(t('invoices.alertSelectCustomer'));
             return;
@@ -674,8 +751,10 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             confirmLabel: t('invoices.alertSaveDuyetConfirm'),
             confirmVariant: 'primary',
             action: async () => {
+                const isAlreadyIssued = formData.id && formData.status && formData.status !== 'DRAFT';
                 const payload = {
                     ...formData,
+                    status: formData.id ? formData.status : 'DRAFT',
                     recurrence: !formData.id && isRecurring ? {
                         isRecurring: true,
                         frequencyMonths: recurrencePeriod === -1 ? (customRecurrenceMonths || 1) : recurrencePeriod,
@@ -692,25 +771,35 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
                 if (res.success) {
                     const invoiceId = formData.id || (res as any).data.id;
-                    const approveRes = await approveSalesInvoice(invoiceId, 'system');
 
-                    if (approveRes.success) {
-                        toast.success(t('invoices.alertSuccessSaveDuyet'));
-                        if (formData.id) {
-                            setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
-                        } else {
-                            const recInvs = (res as any).recurringInvoices;
-                            const newInvoices = recInvs && recInvs.length > 0 
-                                ? [approveRes.data, ...recInvs, ...invoices]
-                                : [approveRes.data, ...invoices];
-                            setInvoices(newInvoices);
-                        }
+                    if (isAlreadyIssued) {
+                        toast.success('Cập nhật hóa đơn và đồng bộ kho thành công!');
+                        setInvoices(invoices.map((inv: any) => inv.id === formData.id ? res.data : inv));
                         cleanUrlActionParams();
-            forceUnlockScroll();
-            setIsFormOpen(false);
-            router.refresh();
+                        forceUnlockScroll();
+                        setIsFormOpen(false);
+                        router.refresh();
                     } else {
-                        toast.error(t('invoices.alertErrorSaveDuyet') + approveRes.error);
+                        const approveRes = await approveSalesInvoice(invoiceId, 'system');
+
+                        if (approveRes.success) {
+                            toast.success(t('invoices.alertSuccessSaveDuyet'));
+                            if (formData.id) {
+                                setInvoices(invoices.map((inv: any) => inv.id === formData.id ? approveRes.data : inv));
+                            } else {
+                                const recInvs = (res as any).recurringInvoices;
+                                const newInvoices = recInvs && recInvs.length > 0 
+                                    ? [approveRes.data, ...recInvs, ...invoices]
+                                    : [approveRes.data, ...invoices];
+                                setInvoices(newInvoices);
+                            }
+                            cleanUrlActionParams();
+                            forceUnlockScroll();
+                            setIsFormOpen(false);
+                            router.refresh();
+                        } else {
+                            toast.error(t('invoices.alertErrorSaveDuyet') + approveRes.error);
+                        }
                     }
                 } else {
                     toast.error(t('invoices.alertErrorSave') + res.error);
@@ -1529,6 +1618,45 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                         <input type="checkbox" className="w-4 h-4 outline-none cursor-pointer accent-emerald-600 rounded" checked={isSubItem} onChange={e => setIsSubItem(e.target.checked)} />
                                     </div>
                                 </div>
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        if (!selectedProduct && !isCustomProduct && !customName) {
+                                            toast.warning("Vui lòng chọn sản phẩm trước khi quét/chọn số Serial!");
+                                            return;
+                                        }
+                                        setEditingItemSerialIndex(null);
+                                        setSerialModalOpen(true);
+                                    }}
+                                    className={`w-full md:w-auto h-[34px] px-3 border rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                                        currentSerials.length > 0 && currentSerials.length === qty
+                                            ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                            : currentSerials.length > 0
+                                                ? 'bg-amber-50 text-amber-700 border-amber-300'
+                                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                    }`}
+                                    title="Chọn số Serial / IMEI xuất bán"
+                                >
+                                    <Barcode size={14} className="text-blue-600" />
+                                    {currentSerials.length > 0 ? (
+                                        <span>Serial ({currentSerials.length}/{qty})</span>
+                                    ) : (
+                                        <span>+ Quét Serial (Tùy chọn)</span>
+                                    )}
+                                </button>
+                                {currentSerials.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCurrentSerials([]);
+                                            toast.info("Đã bỏ chọn serial. Sản phẩm sẽ được thêm bình thường không kèm serial.");
+                                        }}
+                                        className="h-[34px] px-2 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg text-xs transition-colors shrink-0 cursor-pointer"
+                                        title="Bỏ chọn serial (không bắt buộc)"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
                                 <Button onClick={handleAddItem} variant="secondary" className="w-full md:w-auto shrink-0 h-[34px] px-4 border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 shadow-2xs font-semibold text-xs rounded-lg flex items-center justify-center">{t('invoices.addButton')}</Button>
                             </div>
 
@@ -1620,6 +1748,52 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                                         )}
                                                     </div>
                                                     {item.description && <div className="text-[11px] text-slate-500 mt-0.5 max-w-sm whitespace-pre-wrap">{item.description}</div>}
+                                                                        {item.serials && item.serials.length > 0 && (
+                                                                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
+                                                                                    <Barcode size={12} className="text-blue-600" />
+                                                                                    {item.serials.length} Serial xuất: {item.serials.slice(0, 3).join(', ')}{item.serials.length > 3 ? ` (+ ${item.serials.length - 3})` : ''}
+                                                                                </span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenItemSerials(i)}
+                                                                                    className="text-[10px] text-blue-600 hover:underline cursor-pointer font-semibold"
+                                                                                >
+                                                                                    Đổi Serial
+                                                                                </button>
+                                                                                <span className="text-slate-300">|</span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setFormData((prev: any) => {
+                                                                                            const next = [...prev.items];
+                                                                                            next[i] = {
+                                                                                                ...next[i],
+                                                                                                serials: null
+                                                                                            };
+                                                                                            return { ...prev, items: next };
+                                                                                        });
+                                                                                        toast.info(`Đã gỡ bỏ serial cho "${item.productName || item.customName}". Mặt hàng này xuất bán không theo dõi serial.`);
+                                                                                    }}
+                                                                                    className="text-[10px] text-slate-400 hover:text-rose-600 hover:underline cursor-pointer font-medium"
+                                                                                    title="Bỏ quản lý serial cho dòng này (không bắt buộc)"
+                                                                                >
+                                                                                    Bỏ Serial
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                        {(!item.serials || item.serials.length === 0) && item.productId && item.productId !== 'EXTERNAL' && (
+                                                                            <div className="mt-1">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenItemSerials(i)}
+                                                                                    className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                                                                                >
+                                                                                    <Barcode size={12} className="text-blue-500" />
+                                                                                    + Chọn / Quét Serial ({item.quantity} cái)
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
                                                 </td>
                                                 <td className="p-2.5 text-center text-slate-800 font-mono">
                                                     {item.quantity} <span className="text-[11px] text-slate-500 ml-0.5">{item.unit}</span>
@@ -1983,6 +2157,35 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                     </div>
                 </div>
             </Modal>
+            <SerialSelectModal
+                isOpen={serialModalOpen}
+                onClose={() => {
+                    setSerialModalOpen(false);
+                    setEditingItemSerialIndex(null);
+                }}
+                alreadySelectedSerials={otherSelectedSerials}
+                productId={
+                    editingItemSerialIndex !== null
+                        ? formData.items[editingItemSerialIndex]?.productId
+                        : selectedProduct
+                }
+                productName={
+                    editingItemSerialIndex !== null
+                        ? (formData.items[editingItemSerialIndex]?.productName || formData.items[editingItemSerialIndex]?.customName || 'Sản phẩm')
+                        : (isCustomProduct ? customName : (products.find((p: any) => p.id === selectedProduct)?.name || 'Sản phẩm'))
+                }
+                requiredQuantity={
+                    editingItemSerialIndex !== null
+                        ? (formData.items[editingItemSerialIndex]?.quantity || 1)
+                        : qty
+                }
+                initialSelectedSerials={
+                    editingItemSerialIndex !== null
+                        ? (formData.items[editingItemSerialIndex]?.serials || [])
+                        : currentSerials
+                }
+                onSave={handleSaveSerials}
+            />
         </div>
     );
 }

@@ -478,6 +478,10 @@ async function main() {
     console.log('✅ Các bảng Storage Vault, WMS, Accounting, Workflow & Omni-Channel CRM đã sẵn sàng.');
 
     // 3. Customer fields
+    await addColumnIfNotExists('PurchaseBillItem', 'serials', 'LONGTEXT NULL');
+    await addColumnIfNotExists('SalesInvoiceItem', 'serials', 'LONGTEXT NULL');
+    await addColumnIfNotExists('Product', 'warrantyMonths', 'INT DEFAULT 12');
+    await addColumnIfNotExists('ProductSerial', 'warrantyStartDate', 'DATETIME NULL');
     await addColumnIfNotExists('Customer', 'code', 'VARCHAR(191) NULL');
     await addColumnIfNotExists('Customer', 'shortName', 'VARCHAR(191) NULL');
     await addColumnIfNotExists('Customer', 'internationalName', 'VARCHAR(191) NULL');

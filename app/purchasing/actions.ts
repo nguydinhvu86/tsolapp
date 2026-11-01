@@ -450,6 +450,8 @@ export async function getPurchaseOrder(id: string) {
 export async function createPurchaseOrder(data: any) {
     const user = await verifyActionPermission('PURCHASE_ORDERS_CREATE');
 
+
+
     let code = (data.code || '').trim();
     if (!code) {
         const count = await prisma.purchaseOrder.count();
@@ -491,7 +493,8 @@ export async function createPurchaseOrder(data: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         taxAmount: lineTaxAmount,
-                        totalPrice: lineSubTotal + lineTaxAmount
+                        totalPrice: lineSubTotal + lineTaxAmount,
+            serials: Array.isArray(item.serials) && item.serials.length > 0 ? JSON.stringify(item.serials.map((x: any) => String(x).trim()).filter(Boolean)) : (typeof item.serials === 'string' && item.serials.trim() ? item.serials : null)
                     };
                 })
             }
@@ -847,6 +850,36 @@ export async function createPurchaseBill(data: any) {
         }
     });
 
+    // Tự động phân bổ và gán số Serial/IMEI vào quản lý ProductSerial
+    for (const item of (data.items || [])) {
+        if (item.productId && item.productId !== 'EXTERNAL' && item.serials) {
+            try {
+                const raw = Array.isArray(item.serials) ? item.serials : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
+                const clean = Array.from(new Set(raw.map((s: any) => String(s).trim()).filter(Boolean)));
+                for (const sn of (clean as string[])) {
+                    await prisma.productSerial.upsert({
+                        where: { serialNumber: sn },
+                        update: {
+                            productId: item.productId,
+                            purchaseBillId: bill.id,
+                            status: 'IN_STOCK',
+                            notes: `Nhập từ HĐ mua hàng ${bill.code}`
+                        },
+                        create: {
+                            productId: item.productId,
+                            serialNumber: sn,
+                            purchaseBillId: bill.id,
+                            status: 'IN_STOCK',
+                            notes: `Nhập từ HĐ mua hàng ${bill.code}`
+                        }
+                    });
+                }
+            } catch (serErr) {
+                console.error('Lỗi đồng bộ ProductSerial cho PurchaseBill:', serErr);
+            }
+        }
+    }
+
     if (data.attachment) {
         try {
             const { saveAttachment, parseAttachmentString } = await import('@/lib/storage-vault');
@@ -954,6 +987,46 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
                             quantity: item.quantity
                         }
                     });
+                }
+            }
+        }
+
+        // 3.5. Đồng bộ phân bổ kho cho toàn bộ số Serial của Hóa đơn mua hàng này
+        await tx.productSerial.updateMany({
+            where: { purchaseBillId: bill.id },
+            data: {
+                warehouseId: toWarehouseId,
+                status: 'IN_STOCK'
+            }
+        });
+        for (const item of (bill.items || [])) {
+            if (item.productId && item.serials) {
+                try {
+                    const raw = JSON.parse(item.serials);
+                    if (Array.isArray(raw) && raw.length > 0) {
+                        for (const sn of (raw as string[])) {
+                            await tx.productSerial.upsert({
+                                where: { serialNumber: sn.trim() },
+                                update: {
+                                    productId: item.productId,
+                                    purchaseBillId: bill.id,
+                                    warehouseId: toWarehouseId,
+                                    status: 'IN_STOCK',
+                                    notes: `Nhập kho từ HĐ mua hàng ${bill.code}`
+                                },
+                                create: {
+                                    productId: item.productId,
+                                    serialNumber: sn.trim(),
+                                    purchaseBillId: bill.id,
+                                    warehouseId: toWarehouseId,
+                                    status: 'IN_STOCK',
+                                    notes: `Nhập kho từ HĐ mua hàng ${bill.code}`
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Lỗi phân bổ serial khi duyệt kho PB:', e);
                 }
             }
         }
