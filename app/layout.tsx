@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({
+const fontSans = Plus_Jakarta_Sans({
     subsets: ['latin', 'vietnamese'],
+    weight: ['300', '400', '500', '600', '700', '800'],
     display: 'swap',
     variable: '--font-sans',
 })
@@ -87,11 +88,11 @@ export default async function RootLayout({
     const locale = getCurrentLocale();
 
     return (
-        <html lang={locale} className={inter.variable}>
+        <html lang={locale} className={fontSans.variable}>
             <head>
                 <meta name="mobile-web-app-capable" content="yes" />
             </head>
-            <body className={`${inter.className} ${inter.variable}`} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
+            <body className={`${fontSans.className} ${fontSans.variable}`} style={{ minHeight: '100vh', backgroundColor: 'var(--background)', margin: 0 }}>
                 <NextAuthProvider>
                     <LanguageProvider dictionary={dictionary} locale={locale}>
                         <ToastProvider>

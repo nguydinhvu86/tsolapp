@@ -161,7 +161,14 @@ const mainNavItems: any[] = [
 ];
 
 function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, toggleSubMenu, onClose, t }: any) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.name });
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: item.name });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -187,33 +194,33 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         const isOpen = openSubMenus[item.name] !== undefined ? openSubMenus[item.name] : isChildActive;
 
         return (
-            <div ref={setNodeRef} style={style} className="flex flex-col group/item mb-0.5">
+            <div ref={setNodeRef} style={style} className="flex flex-col group/item mb-1">
                 <div className="flex items-center w-full">
                     <div 
                         {...attributes} 
                         {...listeners} 
-                        className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1"
+                        className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1.5"
                         title="Kéo để sắp xếp vị trí"
                     >
-                        <GripVertical size={12} />
+                        <GripVertical size={13} />
                     </div>
                     <button
                         onClick={() => toggleSubMenu(item.name)}
-                        className={`flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all text-[12.5px] outline-none ${
+                        className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-[13px] outline-none ${
                             isChildActive 
-                                ? 'bg-slate-800 text-white font-semibold shadow-2xs' 
+                                ? 'bg-slate-800/90 text-white font-semibold shadow-xs border border-slate-700/60' 
                                 : isOpen 
-                                    ? 'bg-slate-800/40 text-slate-200 font-medium' 
-                                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50 font-medium'
+                                    ? 'bg-slate-800/50 text-slate-100 font-medium border border-slate-700/30' 
+                                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:translate-x-0.5 font-medium border border-transparent'
                         }`}
                     >
                         <div className="flex items-center gap-2.5 min-w-0">
                             {item.icon && (
                                 <item.icon 
-                                    size={16} 
+                                    size={17} 
                                     strokeWidth={1.8}
                                     className={`flex-shrink-0 transition-colors ${
-                                        isChildActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
+                                        isChildActive ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : 'text-slate-400 group-hover/item:text-emerald-400'
                                     }`} 
                                 />
                             )}
@@ -221,14 +228,14 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                 {t(item.nameKey) !== item.nameKey ? t(item.nameKey) : item.name}
                             </span>
                         </div>
-                        <div className="text-slate-400 ml-1 flex-shrink-0">
-                            {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                        <div className={`text-slate-400 ml-1.5 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-400' : ''}`}>
+                            <ChevronDown size={14} />
                         </div>
                     </button>
                 </div>
 
                 {isOpen && (
-                    <div className="flex flex-col gap-0.5 ml-5 pl-2.5 my-1 border-l border-slate-700/60">
+                    <div className="flex flex-col gap-1 ml-4.5 pl-3 my-1.5 border-l-2 border-slate-700/50">
                         {visibleChildren.map((child: any) => {
                             if (child.children) {
                                 const isGrandChildActive = child.children.some((gChild: any) => pathname?.startsWith(gChild.href) || pathname === gChild.href);
@@ -237,20 +244,22 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     <div key={child.name} className="flex flex-col my-0.5">
                                         <button
                                             onClick={() => toggleSubMenu(child.name)}
-                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[12px] transition-all ${
+                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] transition-all ${
                                                 isGrandChildActive 
-                                                    ? 'text-white font-semibold bg-slate-800/60' 
-                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
+                                                    ? 'text-white font-semibold bg-slate-800/70 border border-slate-700/40' 
+                                                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40 font-normal'
                                             }`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                {child.icon ? <child.icon size={13} className="text-slate-400 shrink-0" /> : <FileCode size={13} className="text-slate-400 shrink-0" />}
+                                                {child.icon ? <child.icon size={14} className="text-slate-400 shrink-0" /> : <FileCode size={14} className="text-slate-400 shrink-0" />}
                                                 <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                             </div>
-                                            {isChildOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                            <div className={`text-slate-400 ml-1 flex-shrink-0 transition-transform duration-200 ${isChildOpen ? 'rotate-180' : ''}`}>
+                                                <ChevronDown size={13} />
+                                            </div>
                                         </button>
                                         {isChildOpen && (
-                                            <div className="flex flex-col gap-0.5 ml-3 pl-2 my-0.5 border-l border-slate-700/40">
+                                            <div className="flex flex-col gap-0.5 ml-3 pl-2.5 my-1 border-l border-slate-700/40">
                                                 {child.children.map((gChild: any) => {
                                                     const isActive = pathname?.startsWith(gChild.href) || pathname === gChild.href;
                                                     return (
@@ -258,9 +267,9 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                                             key={gChild.name}
                                                             href={gChild.href}
                                                             onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                                            className={`px-2 py-1 rounded text-[11.5px] transition-all block truncate ${
+                                                            className={`px-2.5 py-1.5 rounded-md text-[12px] transition-all block truncate ${
                                                                 isActive 
-                                                                    ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/20' 
+                                                                    ? 'bg-emerald-500/15 text-emerald-300 font-medium border border-emerald-500/25' 
                                                                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
                                                             }`}
                                                         >
@@ -281,13 +290,19 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
                                     key={child.name}
                                     href={child.href}
                                     onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] transition-all truncate ${
+                                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] transition-all duration-200 truncate ${
                                         isChildMenuActive 
-                                            ? 'bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/25 shadow-2xs' 
-                                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 font-normal'
+                                            ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 shadow-xs' 
+                                            : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:translate-x-0.5 font-normal'
                                     }`}
                                 >
-                                    {ChildIcon && <ChildIcon size={13} className={`shrink-0 ${isChildMenuActive ? 'text-emerald-400' : 'text-slate-400'}`} />}
+                                    {ChildIcon ? (
+                                        <ChildIcon size={14} className={`shrink-0 ${isChildMenuActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                                    ) : (
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                                            isChildMenuActive ? 'bg-emerald-400 shadow-[0_0_6px_#10b981]' : 'bg-slate-500/60'
+                                        }`} />
+                                    )}
                                     <span className="truncate">{t(child.nameKey) !== child.nameKey ? t(child.nameKey) : child.name}</span>
                                 </Link>
                             );
@@ -300,29 +315,29 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
 
     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item mb-0.5">
+        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item mb-1">
             <div 
                 {...attributes} 
                 {...listeners} 
-                className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1"
+                className="cursor-grab p-1 text-slate-500/30 hover:text-slate-300 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 -ml-1.5"
                 title="Kéo để sắp xếp vị trí"
             >
-                <GripVertical size={12} />
+                <GripVertical size={13} />
             </div>
             <Link
                 href={item.href}
                 onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                className={`flex-1 flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all text-[12.5px] outline-none ${
+                className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 text-[13px] outline-none ${
                     isActive 
-                        ? 'bg-slate-800 text-white font-semibold shadow-2xs' 
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50 font-medium'
+                        ? 'bg-slate-800/90 text-white font-semibold shadow-xs border border-slate-700/60' 
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:translate-x-0.5 font-medium border border-transparent'
                 }`}
             >
                 <item.icon 
-                    size={16} 
+                    size={17} 
                     strokeWidth={1.8}
                     className={`flex-shrink-0 transition-colors ${
-                        isActive ? 'text-emerald-400' : 'text-slate-400 group-hover/item:text-slate-200'
+                        isActive ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : 'text-slate-400 group-hover/item:text-emerald-400'
                     }`} 
                 />
                 <span className="truncate tracking-normal font-inherit">
@@ -332,7 +347,6 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
         </div>
     );
 }
-
 
 export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, onClose, initialSidebarOrder = [] }: { brandName?: string, logoUrl?: string | null, isOpen?: boolean, onClose?: () => void, initialSidebarOrder?: string[] }) {
     const pathname = usePathname();
@@ -557,7 +571,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
                     )}
                 </div>
             </>
-            <nav className="p-2 flex flex-col gap-0.5 flex-1 overflow-y-auto custom-scrollbar">
+            <nav className="px-2.5 py-3 flex flex-col gap-1.5 flex-1 overflow-y-auto custom-scrollbar">
                 {isClient && (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={navItems.map(i => i.name)} strategy={verticalListSortingStrategy}>
@@ -582,7 +596,7 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
             {/* Online Users Widget */}
             {
                 isClient && onlineUsers.length > 0 && (
-                    <div className="p-2.5 px-3 border-t border-slate-800/80 mt-auto bg-slate-900/60">
+                    <div className="p-3 px-3.5 border-t border-slate-800/90 mt-auto bg-slate-900/80">
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                 Đang Online ({onlineUsers.length})
