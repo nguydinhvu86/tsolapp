@@ -2,7 +2,7 @@ import React from 'react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { getDocumentById, getDocumentComments, getMyDocumentNotes, getLibraryCategories } from '../../actions';
-import { ArrowLeft, Clock, Download, File, Video, MessageSquare, BookOpen, Share2, Shield, Lock, EyeOff } from 'lucide-react';
+import { ArrowLeft, Clock, Download, File, Video, MessageSquare, BookOpen, Share2, Shield, Lock, EyeOff, Edit3, Globe, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import DocumentSidebar from './DocumentSidebar';
@@ -36,6 +36,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
     const canDownload = document.isDownloadable !== false;
 
     // Determine viewer type
+    const isOnlineDoc = document.fileType === 'DOC_ONLINE';
     const isVideo = document.fileType === 'VIDEO' || document.fileUrl?.includes('youtube') || document.fileUrl?.includes('mp4');
     const isPDF = document.fileType === 'PDF' || document.fileUrl?.endsWith('.pdf');
     const isImage = document.fileType === 'IMAGE' || document.fileUrl?.match(/\.(jpeg|jpg|gif|png|webp)$/) != null;
@@ -70,6 +71,26 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {isOnlineDoc && canManage && (
+                            <Link 
+                                href={`/library/editor/${document.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', fontSize: '0.875rem', fontWeight: 600, padding: '0 0.875rem', background: '#059669', color: '#ffffff', border: 'none', borderRadius: '8px', textDecoration: 'none' }}
+                                title="Chỉnh sửa nội dung văn bản này"
+                            >
+                                <Edit3 size={15} /> Sửa văn bản
+                            </Link>
+                        )}
+                        {document.isShareable && document.shareToken && (
+                            <a
+                                href={`/public/docs/${document.shareToken}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', fontSize: '0.875rem', fontWeight: 600, padding: '0 0.875rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', borderRadius: '8px', textDecoration: 'none' }}
+                                title="Mở trang xem công khai của khách hàng"
+                            >
+                                <Globe size={14} /> Link Khách
+                            </a>
+                        )}
                         {canManage && (
                             <>
                                 <MoveDocumentButton documentId={document.id} currentCategoryId={document.categoryId} categories={categories} />
@@ -81,11 +102,11 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
                             <a href={document.fileUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', fontSize: '0.875rem', fontWeight: 500, padding: '0 1rem', background: '#3b82f6', color: '#ffffff', border: 'none', borderRadius: '8px', textDecoration: 'none' }}>
                                 <Download size={15} /> Tải về
                             </a>
-                        ) : (
+                        ) : !isOnlineDoc ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', fontSize: '0.75rem', fontWeight: 600, padding: '0 0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px' }}>
                                 <EyeOff size={14} /> Chế độ chỉ xem
                             </span>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
@@ -128,7 +149,25 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
 
                     {/* Viewer Container */}
                     <div className={styles.viewerContent}>
-                        {isVideo ? (
+                        {isOnlineDoc ? (
+                            <div style={{ maxWidth: '900px', width: '100%', margin: '0 auto', background: '#ffffff', borderRadius: '16px', padding: '2.5rem 3rem', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', color: '#0f172a', overflow: 'hidden' }}>
+                                <style>{`
+                                    .online-doc-preview { font-family: inherit; font-size: 0.95rem; line-height: 1.8; color: #0f172a; }
+                                    .online-doc-preview h1 { font-size: 1.85rem; font-weight: 800; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #0f172a; }
+                                    .online-doc-preview h2 { font-size: 1.4rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: #1e293b; }
+                                    .online-doc-preview h3 { font-size: 1.15rem; font-weight: 600; margin-top: 0.85rem; margin-bottom: 0.4rem; color: #334155; }
+                                    .online-doc-preview blockquote { border-left: 4px solid #10b981; padding-left: 1rem; color: #475569; font-style: italic; background: #f0fdf4; padding: 0.5rem 1rem; border-radius: 0 8px 8px 0; }
+                                    .online-doc-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+                                    .online-doc-preview th, .online-doc-preview td { border: 1px solid #cbd5e1; padding: 0.5rem 0.75rem; text-align: left; }
+                                    .online-doc-preview th { background-color: #f1f5f9; font-weight: 700; }
+                                    .online-doc-preview img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
+                                `}</style>
+                                <div
+                                    className="online-doc-preview"
+                                    dangerouslySetInnerHTML={{ __html: document.content || '<p style="color:#94a3b8; font-style:italic">Văn bản này chưa có nội dung.</p>' }}
+                                />
+                            </div>
+                        ) : isVideo ? (
                             <div className={styles.viewerBoxVideo}>
                                 {document.fileUrl?.includes('youtube.com/watch?v=') ? (
                                     <iframe

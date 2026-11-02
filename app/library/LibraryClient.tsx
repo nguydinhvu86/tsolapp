@@ -35,7 +35,9 @@ import {
     FolderPlus,
     FolderUp,
     MoreVertical,
-    CornerLeftUp
+    CornerLeftUp,
+    Edit3,
+    Copy
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -77,6 +79,7 @@ const formatDate = (dateString?: string) => {
 
 const getFileIcon = (type: string, size = 36) => {
     switch (type) {
+        case 'DOC_ONLINE': return <FileText size={size} className="text-emerald-600" />;
         case 'VIDEO': return <PlayCircle size={size} className="text-rose-500" />;
         case 'PDF': return <FileText size={size} className="text-red-500" />;
         case 'WORD': return <FileText size={size} className="text-blue-600" />;
@@ -90,6 +93,7 @@ const getFileIcon = (type: string, size = 36) => {
 
 const getTypeBadge = (type: string) => {
     switch (type) {
+        case 'DOC_ONLINE': return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 font-bold';
         case 'VIDEO': return 'bg-rose-50 text-rose-700 border-rose-200/60';
         case 'PDF': return 'bg-red-50 text-red-700 border-red-200/60';
         case 'WORD': return 'bg-blue-50 text-blue-700 border-blue-200/60';
@@ -782,6 +786,12 @@ export default function LibraryClient({
                             </p>
                             {canManage && (
                                 <div className="flex flex-wrap items-center justify-center gap-2.5">
+                                    <Link
+                                        href={currentCategoryId ? `/library/editor?category=${currentCategoryId}` : '/library/editor'}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+                                    >
+                                        <Edit3 size={15} /> + Soạn Thảo Văn Bản
+                                    </Link>
                                     <button
                                         type="button"
                                         onClick={() => triggerUploadFiles(currentCategoryId)}
@@ -837,6 +847,12 @@ export default function LibraryClient({
                                             {isConfidential && (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white shadow-2xs uppercase tracking-wider">
                                                     <Lock className="w-2.5 h-2.5" /> MẬT
+                                                </span>
+                                            )}
+
+                                            {doc.isShareable && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white shadow-2xs uppercase tracking-wider" title="Đang chia sẻ cho khách ngoài qua liên kết">
+                                                    <Globe className="w-2.5 h-2.5" /> CHIA SẺ
                                                 </span>
                                             )}
                                         </div>
@@ -900,6 +916,32 @@ export default function LibraryClient({
                                                         <MessageSquare className="w-3 h-3" />
                                                         <span>{doc._count?.comments || 0}</span>
                                                     </div>
+
+                                                    {doc.fileType === 'DOC_ONLINE' && canManage && (
+                                                        <Link
+                                                            href={`/library/editor/${doc.id}`}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                                            title="Chỉnh sửa nội dung văn bản"
+                                                        >
+                                                            <Edit3 size={14} />
+                                                        </Link>
+                                                    )}
+
+                                                    {doc.isShareable && doc.shareToken && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={async (e) => {
+                                                                e.preventDefault(); e.stopPropagation();
+                                                                const url = `${window.location.origin}/public/docs/${doc.shareToken}`;
+                                                                await navigator.clipboard.writeText(url);
+                                                                toast.success('Đã sao chép liên kết chia sẻ cho khách!');
+                                                            }}
+                                                            className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                                            title="Sao chép link gửi khách hàng"
+                                                        >
+                                                            <Copy size={13} />
+                                                        </button>
+                                                    )}
 
                                                     {canManage && (
                                                         <>
@@ -967,9 +1009,13 @@ export default function LibraryClient({
                                                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                                                 <Lock className="w-2.5 h-2.5" /> MẬT LÃNH ĐẠO
                                                             </span>
+                                                        ) : doc.isShareable ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                <Globe className="w-2.5 h-2.5 text-emerald-600" /> Đang chia sẻ
+                                                            </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600">
-                                                                <Globe className="w-2.5 h-2.5" /> Dùng chung
+                                                                <Lock className="w-2.5 h-2.5" /> Nội bộ
                                                             </span>
                                                         )}
                                                     </td>
@@ -997,6 +1043,29 @@ export default function LibraryClient({
                                                             >
                                                                 <Eye className="w-3.5 h-3.5" />
                                                             </Link>
+                                                            {doc.fileType === 'DOC_ONLINE' && canManage && (
+                                                                <Link
+                                                                    href={`/library/editor/${doc.id}`}
+                                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                                                    title="Chỉnh sửa văn bản"
+                                                                >
+                                                                    <Edit3 className="w-3.5 h-3.5" />
+                                                                </Link>
+                                                            )}
+                                                            {doc.isShareable && doc.shareToken && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        const url = `${window.location.origin}/public/docs/${doc.shareToken}`;
+                                                                        await navigator.clipboard.writeText(url);
+                                                                        toast.success('Đã sao chép link chia sẻ cho khách!');
+                                                                    }}
+                                                                    className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                                                    title="Sao chép link gửi khách hàng"
+                                                                >
+                                                                    <Copy className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
                                                             {canManage && (
                                                                 <>
                                                                     <MoveDocumentButton documentId={doc.id} currentCategoryId={doc.categoryId} categories={categories} isIconOnly />

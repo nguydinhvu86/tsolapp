@@ -143,6 +143,14 @@ export function LibraryContextMenu({
 
                     {canManage && (
                         <>
+                            <a
+                                href={currentCategoryId ? `/library/editor?category=${currentCategoryId}` : '/library/editor'}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left font-medium"
+                            >
+                                <Edit3 size={15} className="text-indigo-600" />
+                                <span>Soạn thảo văn bản mới</span>
+                            </a>
+
                             <button
                                 onClick={() => { onClose(); onOpenCreateFolder(currentCategoryId); }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left"
@@ -208,6 +216,14 @@ export function LibraryContextMenu({
 
                     {canManage && (
                         <>
+                            <a
+                                href={`/library/editor?category=${menu.data.id}`}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left font-medium"
+                            >
+                                <Edit3 size={15} className="text-indigo-600" />
+                                <span>Soạn văn bản tại đây</span>
+                            </a>
+
                             <button
                                 onClick={() => { onClose(); onOpenCreateFolder(menu.data.id); }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left"
@@ -280,6 +296,16 @@ export function LibraryContextMenu({
                         <Eye size={15} className="text-indigo-600" />
                         <span>Xem chi tiết</span>
                     </a>
+
+                    {menu.data.fileType === 'DOC_ONLINE' && canManage && (
+                        <a
+                            href={`/library/editor/${menu.data.id}`}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left font-medium"
+                        >
+                            <Edit3 size={15} className="text-emerald-600" />
+                            <span>Chỉnh sửa văn bản</span>
+                        </a>
+                    )}
 
                     {menu.data.fileUrl && menu.data.isDownloadable && (
                         <a

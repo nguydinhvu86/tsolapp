@@ -907,6 +907,13 @@ async function main() {
     await addColumnIfNotExists('Document', 'isDownloadable', "TINYINT(1) NOT NULL DEFAULT 1");
     await addColumnIfNotExists('Document', 'isStarred', "TINYINT(1) NOT NULL DEFAULT 0");
     await addColumnIfNotExists('Document', 'version', "VARCHAR(20) NOT NULL DEFAULT '1.0'");
+    await addColumnIfNotExists('Document', 'content', "LONGTEXT NULL");
+    await addColumnIfNotExists('Document', 'shareToken', "VARCHAR(191) NULL UNIQUE");
+    await addColumnIfNotExists('Document', 'isShareable', "TINYINT(1) NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Document', 'sharePassword', "VARCHAR(191) NULL");
+    await addColumnIfNotExists('Document', 'shareExpiresAt', "DATETIME NULL");
+    await addColumnIfNotExists('Document', 'viewCount', "INT NOT NULL DEFAULT 0");
+    await addColumnIfNotExists('Document', 'allowDownload', "TINYINT(1) NOT NULL DEFAULT 1");
 
     try {
         await prisma.$executeRawUnsafe(`

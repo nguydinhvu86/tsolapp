@@ -1930,6 +1930,15 @@ model Document {
   isStarred      Boolean  @default(false)
   version        String   @default("1.0")
 
+  // Online Rich Text & Public Sharing
+  content        String?   @db.LongText
+  shareToken     String?   @unique
+  isShareable    Boolean   @default(false)
+  sharePassword  String?
+  shareExpiresAt DateTime?
+  viewCount      Int       @default(0)
+  allowDownload  Boolean   @default(true)
+
   categoryId String?
   category   DocumentCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 

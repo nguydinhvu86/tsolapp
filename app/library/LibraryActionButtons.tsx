@@ -31,6 +31,7 @@ import {
     updateCategorySecurity
 } from './actions';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export function detectFileType(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase();
@@ -115,6 +116,15 @@ export function LibraryActionButtons({
 
     return (
         <div className="flex items-center gap-2.5">
+            <Link
+                href={currentCategoryId ? `/library/editor?category=${currentCategoryId}` : '/library/editor'}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 font-semibold text-xs sm:text-sm shadow-xs transition-all duration-200 active:scale-[0.98]"
+                title="Tạo mới và soạn thảo văn bản trực tuyến"
+            >
+                <Edit3 size={16} className="text-indigo-600" />
+                <span>+ Soạn Thảo Văn Bản</span>
+            </Link>
+
             <button
                 onClick={() => setIsCategoryModalOpen(true)}
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm shadow-xs hover:border-slate-300 transition-all duration-200"

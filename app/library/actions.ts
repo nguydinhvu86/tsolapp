@@ -1,10 +1,12 @@
 'use server';
 
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { verifyActionPermission } from '@/lib/permissions';
 import { revalidatePath } from 'next/cache';
+import { getLayoutSettings } from '@/app/components/layout/actions';
 
 // Helper to determine if the user has leadership privileges
 export async function getLeadershipStatus() {
@@ -528,4 +530,218 @@ export async function deleteDocumentNote(id: string) {
     if (!note || note.userId !== session.user.id) throw new Error('Unauthorized');
     await (prisma as any).documentNote.delete({ where: { id } });
     revalidatePath(`/library/document/${note.documentId}`);
+}
+
+// -- ONLINE RICH TEXT DOCUMENT & PUBLIC SHARING ACTIONS --
+
+export async function createOnlineDocument(data: {
+    title: string;
+    description?: string;
+    content: string;
+    categoryId?: string;
+    securityLevel?: 'INHERIT' | 'PUBLIC' | 'CONFIDENTIAL';
+    isShareable?: boolean;
+    sharePassword?: string;
+    shareExpiresAt?: string | null;
+    allowDownload?: boolean;
+}) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_CREATE');
+
+    if (data.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
+        throw new Error('Chỉ cấp Lãnh đạo mới có quyền tạo văn bản ở mức Mật');
+    }
+
+    const shareToken = 'doc_' + crypto.randomBytes(12).toString('hex');
+    const contentText = data.content || '';
+    const byteSize = Buffer.byteLength(contentText, 'utf8');
+
+    const document = await (prisma as any).document.create({
+        data: {
+            title: data.title.trim() || 'Văn bản không tiêu đề',
+            description: data.description?.trim() || null,
+            content: contentText,
+            fileType: 'DOC_ONLINE',
+            fileUrl: null,
+            size: byteSize,
+            categoryId: data.categoryId || null,
+            securityLevel: data.securityLevel || 'INHERIT',
+            isShareable: !!data.isShareable,
+            shareToken,
+            sharePassword: data.sharePassword?.trim() || null,
+            shareExpiresAt: data.shareExpiresAt ? new Date(data.shareExpiresAt) : null,
+            allowDownload: data.allowDownload ?? true,
+            version: '1.0',
+            creatorId: user.id
+        }
+    });
+
+    revalidatePath('/library');
+    if (data.categoryId) revalidatePath(`/library?category=${data.categoryId}`);
+    return document;
+}
+
+export async function updateOnlineDocument(id: string, data: {
+    title: string;
+    description?: string;
+    content: string;
+    categoryId?: string;
+    securityLevel?: 'INHERIT' | 'PUBLIC' | 'CONFIDENTIAL';
+    isShareable?: boolean;
+    sharePassword?: string;
+    shareExpiresAt?: string | null;
+    allowDownload?: boolean;
+}) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_EDIT');
+
+    const existing = await (prisma as any).document.findUnique({ where: { id } });
+    if (!existing) throw new Error('Không tìm thấy tài liệu');
+
+    // Check confidentiality permissions
+    if (existing.securityLevel === 'CONFIDENTIAL' && !isLeadership) {
+        throw new Error('Chỉ Lãnh đạo mới có quyền chỉnh sửa tài liệu Mật');
+    }
+
+    const contentText = data.content !== undefined ? data.content : existing.content;
+    const byteSize = Buffer.byteLength(contentText || '', 'utf8');
+
+    // Ensure shareToken exists if sharing is enabled
+    let shareToken = existing.shareToken;
+    if (!shareToken) {
+        shareToken = 'doc_' + crypto.randomBytes(12).toString('hex');
+    }
+
+    // Increment minor version (e.g. 1.0 -> 1.1)
+    let nextVersion = existing.version || '1.0';
+    try {
+        const parts = nextVersion.split('.');
+        if (parts.length === 2) {
+            nextVersion = `${parts[0]}.${parseInt(parts[1]) + 1}`;
+        }
+    } catch {
+        nextVersion = '1.1';
+    }
+
+    const updated = await (prisma as any).document.update({
+        where: { id },
+        data: {
+            title: data.title ? data.title.trim() : existing.title,
+            description: data.description !== undefined ? (data.description?.trim() || null) : existing.description,
+            content: contentText,
+            size: byteSize,
+            categoryId: data.categoryId !== undefined ? (data.categoryId || null) : existing.categoryId,
+            securityLevel: data.securityLevel || existing.securityLevel,
+            isShareable: data.isShareable !== undefined ? !!data.isShareable : existing.isShareable,
+            shareToken,
+            sharePassword: data.sharePassword !== undefined ? (data.sharePassword?.trim() || null) : existing.sharePassword,
+            shareExpiresAt: data.shareExpiresAt !== undefined ? (data.shareExpiresAt ? new Date(data.shareExpiresAt) : null) : existing.shareExpiresAt,
+            allowDownload: data.allowDownload !== undefined ? !!data.allowDownload : existing.allowDownload,
+            version: nextVersion
+        }
+    });
+
+    revalidatePath('/library');
+    revalidatePath(`/library/document/${id}`);
+    revalidatePath(`/library/editor/${id}`);
+    return updated;
+}
+
+export async function updateDocumentSharingSettings(id: string, settings: {
+    isShareable: boolean;
+    sharePassword?: string | null;
+    shareExpiresAt?: string | null;
+    allowDownload?: boolean;
+}) {
+    const { isLeadership, user } = await getLeadershipStatus();
+    if (!user) throw new Error('Unauthorized');
+    await verifyActionPermission('LIBRARY_EDIT');
+
+    const existing = await (prisma as any).document.findUnique({ where: { id } });
+    if (!existing) throw new Error('Không tìm thấy tài liệu');
+
+    let shareToken = existing.shareToken;
+    if (!shareToken) {
+        shareToken = 'doc_' + crypto.randomBytes(12).toString('hex');
+    }
+
+    const updated = await (prisma as any).document.update({
+        where: { id },
+        data: {
+            isShareable: settings.isShareable,
+            shareToken,
+            sharePassword: settings.sharePassword ? settings.sharePassword.trim() : null,
+            shareExpiresAt: settings.shareExpiresAt ? new Date(settings.shareExpiresAt) : null,
+            allowDownload: settings.allowDownload ?? true
+        }
+    });
+
+    revalidatePath('/library');
+    revalidatePath(`/library/document/${id}`);
+    return updated;
+}
+
+export async function getPublicDocument(token: string, passwordInput?: string) {
+    if (!token) return { error: 'NOT_FOUND' };
+
+    const doc = await (prisma as any).document.findFirst({
+        where: { shareToken: token },
+        include: {
+            creator: { select: { name: true, avatar: true, email: true } },
+            category: { select: { name: true } }
+        }
+    });
+
+    if (!doc) return { error: 'NOT_FOUND' };
+    if (!doc.isShareable) return { error: 'DISABLED' };
+
+    // Check expiration
+    if (doc.shareExpiresAt && new Date() > new Date(doc.shareExpiresAt)) {
+        return { error: 'EXPIRED', expiresAt: doc.shareExpiresAt };
+    }
+
+    // Check password protection
+    if (doc.sharePassword && doc.sharePassword.trim() !== '') {
+        if (!passwordInput || passwordInput !== doc.sharePassword) {
+            return {
+                isPasswordProtected: true,
+                title: doc.title,
+                creatorName: doc.creator?.name || 'Doanh nghiệp',
+                error: passwordInput ? 'WRONG_PASSWORD' : null
+            };
+        }
+    }
+
+    // Increment public view count silently
+    try {
+        await (prisma as any).document.update({
+            where: { id: doc.id },
+            data: { viewCount: { increment: 1 } }
+        });
+    } catch {}
+
+    const layoutSettings = await getLayoutSettings();
+
+    return {
+        document: {
+            id: doc.id,
+            title: doc.title,
+            description: doc.description,
+            content: doc.content,
+            fileType: doc.fileType,
+            fileUrl: doc.fileUrl,
+            version: doc.version,
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+            allowDownload: doc.allowDownload,
+            categoryName: doc.category?.name,
+            creator: doc.creator
+        },
+        company: {
+            name: layoutSettings?.name || 'T-SOLUTIONS ENTERPRISE',
+            logo: layoutSettings?.logo || null
+        }
+    };
 }
