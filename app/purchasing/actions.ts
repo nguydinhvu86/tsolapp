@@ -16,6 +16,80 @@ async function getUser() {
     return session.user;
 }
 
+async function syncPurchaseBillSerials(
+    txOrPrisma: any, 
+    billId: string, 
+    billCode: string, 
+    items: any[], 
+    warehouseId?: string | null
+) {
+    if (!billId) return;
+
+    const newSerialsMap = new Map<string, { productId: string }>();
+    for (const item of (items || [])) {
+        if (item.productId && item.productId !== 'EXTERNAL' && item.serials) {
+            try {
+                const raw = Array.isArray(item.serials) 
+                    ? item.serials 
+                    : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
+                const clean = Array.from(new Set(raw.map((s: any) => String(s).trim()).filter(Boolean)));
+                for (const sn of clean) {
+                    newSerialsMap.set(sn as string, { productId: item.productId });
+                }
+            } catch (e) {
+                console.error('Lỗi parse serial trong syncPurchaseBillSerials:', e);
+            }
+        }
+    }
+
+    const existingBillSerials = await txOrPrisma.productSerial.findMany({
+        where: { purchaseBillId: billId }
+    });
+
+    for (const ex of existingBillSerials) {
+        if (!newSerialsMap.has(ex.serialNumber)) {
+            if (ex.status === 'IN_STOCK') {
+                await txOrPrisma.productSerial.delete({ where: { id: ex.id } });
+            } else {
+                await txOrPrisma.productSerial.update({
+                    where: { id: ex.id },
+                    data: { purchaseBillId: null }
+                });
+            }
+        }
+    }
+
+    for (const [sn, info] of Array.from(newSerialsMap.entries())) {
+        const existing = await txOrPrisma.productSerial.findUnique({
+            where: { serialNumber: sn }
+        });
+
+        if (existing) {
+            await txOrPrisma.productSerial.update({
+                where: { serialNumber: sn },
+                data: {
+                    productId: info.productId,
+                    purchaseBillId: billId,
+                    warehouseId: warehouseId !== undefined ? warehouseId : existing.warehouseId,
+                    status: existing.status === 'SOLD' ? 'SOLD' : 'IN_STOCK',
+                    notes: existing.notes || `Nhập từ HĐ mua hàng ${billCode}`
+                }
+            });
+        } else {
+            await txOrPrisma.productSerial.create({
+                data: {
+                    productId: info.productId,
+                    serialNumber: sn,
+                    purchaseBillId: billId,
+                    warehouseId: warehouseId || null,
+                    status: 'IN_STOCK',
+                    notes: `Nhập từ HĐ mua hàng ${billCode}`
+                }
+            });
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // SUPPLIERS
 // ---------------------------------------------------------------------------
@@ -834,6 +908,10 @@ export async function createPurchaseBill(data: any) {
                     const lineSubTotal = item.quantity * item.unitPrice;
                     const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
                     const isExternal = item.productId === 'EXTERNAL' || !item.productId;
+                    const rawSerials = item.serials;
+                    const serialsStr = Array.isArray(rawSerials) && rawSerials.length > 0 
+                        ? JSON.stringify(rawSerials.map((x: any) => String(x).trim()).filter(Boolean)) 
+                        : (typeof rawSerials === 'string' && rawSerials.trim() ? rawSerials : null);
                     return {
                         productId: isExternal ? null : item.productId,
                         productName: isExternal ? item.productName || item.customName : null,
@@ -843,42 +921,16 @@ export async function createPurchaseBill(data: any) {
                         unitPrice: item.unitPrice,
                         taxRate: item.taxRate !== undefined ? item.taxRate : 0,
                         taxAmount: lineTaxAmount,
-                        totalPrice: lineSubTotal + lineTaxAmount
+                        totalPrice: lineSubTotal + lineTaxAmount,
+                        serials: serialsStr
                     };
                 })
             }
         }
     });
 
-    // Tự động phân bổ và gán số Serial/IMEI vào quản lý ProductSerial
-    for (const item of (data.items || [])) {
-        if (item.productId && item.productId !== 'EXTERNAL' && item.serials) {
-            try {
-                const raw = Array.isArray(item.serials) ? item.serials : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
-                const clean = Array.from(new Set(raw.map((s: any) => String(s).trim()).filter(Boolean)));
-                for (const sn of (clean as string[])) {
-                    await prisma.productSerial.upsert({
-                        where: { serialNumber: sn },
-                        update: {
-                            productId: item.productId,
-                            purchaseBillId: bill.id,
-                            status: 'IN_STOCK',
-                            notes: `Nhập từ HĐ mua hàng ${bill.code}`
-                        },
-                        create: {
-                            productId: item.productId,
-                            serialNumber: sn,
-                            purchaseBillId: bill.id,
-                            status: 'IN_STOCK',
-                            notes: `Nhập từ HĐ mua hàng ${bill.code}`
-                        }
-                    });
-                }
-            } catch (serErr) {
-                console.error('Lỗi đồng bộ ProductSerial cho PurchaseBill:', serErr);
-            }
-        }
-    }
+    // Tự động phân bổ và đồng bộ số Serial/IMEI vào quản lý ProductSerial
+    await syncPurchaseBillSerials(prisma, bill.id, bill.code, data.items);
 
     if (data.attachment) {
         try {
@@ -914,6 +966,7 @@ export async function createPurchaseBill(data: any) {
     }
 
     revalidatePath('/purchasing/bills');
+    revalidatePath('/inventory/serials');
     return bill;
 }
 
@@ -992,44 +1045,7 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
         }
 
         // 3.5. Đồng bộ phân bổ kho cho toàn bộ số Serial của Hóa đơn mua hàng này
-        await tx.productSerial.updateMany({
-            where: { purchaseBillId: bill.id },
-            data: {
-                warehouseId: toWarehouseId,
-                status: 'IN_STOCK'
-            }
-        });
-        for (const item of (bill.items || [])) {
-            if (item.productId && item.serials) {
-                try {
-                    const raw = JSON.parse(item.serials);
-                    if (Array.isArray(raw) && raw.length > 0) {
-                        for (const sn of (raw as string[])) {
-                            await tx.productSerial.upsert({
-                                where: { serialNumber: sn.trim() },
-                                update: {
-                                    productId: item.productId,
-                                    purchaseBillId: bill.id,
-                                    warehouseId: toWarehouseId,
-                                    status: 'IN_STOCK',
-                                    notes: `Nhập kho từ HĐ mua hàng ${bill.code}`
-                                },
-                                create: {
-                                    productId: item.productId,
-                                    serialNumber: sn.trim(),
-                                    purchaseBillId: bill.id,
-                                    warehouseId: toWarehouseId,
-                                    status: 'IN_STOCK',
-                                    notes: `Nhập kho từ HĐ mua hàng ${bill.code}`
-                                }
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.error('Lỗi phân bổ serial khi duyệt kho PB:', e);
-                }
-            }
-        }
+        await syncPurchaseBillSerials(tx, bill.id, bill.code, bill.items, toWarehouseId);
 
         // 4. Update Supplier Debt
         await tx.supplier.update({
@@ -1054,6 +1070,9 @@ export async function approvePurchaseBill(billId: string, toWarehouseId: string)
             });
         }
 
+        revalidatePath('/purchasing/bills');
+        revalidatePath(`/purchasing/bills/${billId}`);
+        revalidatePath('/inventory/serials');
         return updatedBill;
     });
 }
@@ -1082,6 +1101,10 @@ export async function updatePurchaseBill(id: string, data: any) {
         const lineSubTotal = item.quantity * item.unitPrice;
         const lineTaxAmount = calcTaxAmount(lineSubTotal, item.taxRate);
         const isExternal = item.productId === 'EXTERNAL' || !item.productId;
+        const rawSerials = item.serials;
+        const serialsStr = Array.isArray(rawSerials) && rawSerials.length > 0 
+            ? JSON.stringify(rawSerials.map((x: any) => String(x).trim()).filter(Boolean)) 
+            : (typeof rawSerials === 'string' && rawSerials.trim() ? rawSerials : null);
         return {
             productId: isExternal ? null : item.productId,
             productName: isExternal ? item.productName || item.customName : null,
@@ -1091,7 +1114,8 @@ export async function updatePurchaseBill(id: string, data: any) {
             unitPrice: item.unitPrice,
             taxRate: item.taxRate !== undefined ? item.taxRate : 0,
             taxAmount: lineTaxAmount,
-            totalPrice: lineSubTotal + lineTaxAmount
+            totalPrice: lineSubTotal + lineTaxAmount,
+            serials: serialsStr
         };
     });
 
@@ -1126,6 +1150,9 @@ export async function updatePurchaseBill(id: string, data: any) {
             }
         });
 
+        // Đồng bộ serial trong trạng thái nháp
+        await syncPurchaseBillSerials(prisma, id, data.code, data.items);
+
         if (uId) {
             try {
                 await prisma.purchaseBillActivityLog.create({
@@ -1147,6 +1174,7 @@ export async function updatePurchaseBill(id: string, data: any) {
 
         revalidatePath('/purchasing/bills');
         revalidatePath(`/purchasing/bills/${id}`);
+        revalidatePath('/inventory/serials');
         return bill;
     }
 
@@ -1334,6 +1362,9 @@ export async function updatePurchaseBill(id: string, data: any) {
             }
         });
 
+        // 5.5. Đồng bộ phân bổ kho cho toàn bộ số Serial của Hóa đơn mua hàng này
+        await syncPurchaseBillSerials(tx, id, data.code, data.items, targetWarehouseId);
+
         // 6. Record Activity Log
         const logChanges = [...diffChanges];
         logChanges.push(`🔄 **Hệ thống tự động đồng bộ**: Đã hoàn nhập và cập nhật lại tồn kho theo danh mục mới.`);
@@ -1356,6 +1387,7 @@ export async function updatePurchaseBill(id: string, data: any) {
 
         revalidatePath('/purchasing/bills');
         revalidatePath(`/purchasing/bills/${id}`);
+        revalidatePath('/inventory/serials');
         return updatedBill;
     });
 }
@@ -1410,10 +1442,19 @@ export async function deletePurchaseBill(id: string) {
 
     if (existing?.status !== 'DRAFT') throw new Error("Chỉ có thể xóa hóa đơn Nháp");
 
+    await prisma.productSerial.deleteMany({
+        where: { purchaseBillId: id, status: 'IN_STOCK' }
+    });
+    await prisma.productSerial.updateMany({
+        where: { purchaseBillId: id },
+        data: { purchaseBillId: null }
+    });
+
     await prisma.purchaseBillItem.deleteMany({ where: { billId: id } });
     await prisma.purchaseBill.delete({ where: { id } });
 
     revalidatePath('/purchasing/bills');
+    revalidatePath('/inventory/serials');
     return true;
 }
 
@@ -1478,6 +1519,12 @@ export async function cancelPurchaseBill(id: string) {
             });
         }
 
+        // Hoàn tác / ghi chú serial thuộc hóa đơn mua hàng này
+        await tx.productSerial.updateMany({
+            where: { purchaseBillId: bill.id, status: 'IN_STOCK' },
+            data: { notes: `Đã hủy theo HĐ mua hàng ${bill.code}`, purchaseBillId: null, warehouseId: null }
+        });
+
         const updatedBill = await tx.purchaseBill.update({
             where: { id },
             data: { status: 'CANCELLED', notes: `${bill.notes || ''}\n[Đã hủy bởi ${(user as any)?.name || 'System'}]`.trim() }
@@ -1495,6 +1542,8 @@ export async function cancelPurchaseBill(id: string) {
         }
 
         revalidatePath('/purchasing/bills');
+        revalidatePath(`/purchasing/bills/${id}`);
+        revalidatePath('/inventory/serials');
         return updatedBill;
     });
 }

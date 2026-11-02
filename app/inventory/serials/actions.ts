@@ -36,6 +36,7 @@ export async function fetchSerials(params?: { search?: string; status?: string; 
                     product: { select: { id: true, name: true, sku: true, unit: true, warrantyMonths: true } },
                     customer: { select: { id: true, name: true, phone: true, email: true } },
                     salesInvoice: { select: { id: true, code: true } },
+                    purchaseBill: { select: { id: true, code: true } },
                     warehouse: { select: { id: true, name: true } },
                 },
                 orderBy: { createdAt: 'desc' },

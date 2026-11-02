@@ -8,13 +8,33 @@ import { logCustomerActivity } from '@/lib/customerLogger';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
 import { sendEmailWithTracking } from '@/lib/mailer';
 
-async function markInvoiceSerialsSold(txOrPrisma: any, invoiceId: string, items: any[], customerId: string, soldDate?: Date | null) {
+async function markInvoiceSerialsSold(
+    txOrPrisma: any, 
+    invoiceId: string, 
+    items: any[], 
+    customerId: string, 
+    soldDate?: Date | null,
+    invoiceCode?: string
+) {
     const date = soldDate ? new Date(soldDate) : new Date();
+
+    let code = invoiceCode;
+    if (!code && invoiceId) {
+        try {
+            const inv = await txOrPrisma.salesInvoice.findUnique({
+                where: { id: invoiceId },
+                select: { code: true }
+            });
+            if (inv?.code) code = inv.code;
+        } catch (e) {}
+    }
 
     for (const item of (items || [])) {
         if (!item.serials) continue;
         try {
-            const raw = Array.isArray(item.serials) ? item.serials : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
+            const raw = Array.isArray(item.serials) 
+                ? item.serials 
+                : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
             const clean = raw.map((x: any) => String(x).trim()).filter(Boolean);
             if (clean.length === 0) continue;
 
@@ -37,19 +57,45 @@ async function markInvoiceSerialsSold(txOrPrisma: any, invoiceId: string, items:
 
             for (const sn of clean) {
                 try {
-                    await txOrPrisma.productSerial.update({
-                        where: { serialNumber: sn },
-                        data: {
-                            status: 'SOLD',
-                            customerId: customerId || null,
-                            salesInvoiceId: invoiceId || null,
-                            warrantyStartDate: date,
-                            warrantyEndDate: warrantyEndDate,
-                            notes: `Xuất bán theo HĐ ${invoiceId}`
-                        }
+                    const existing = await txOrPrisma.productSerial.findUnique({
+                        where: { serialNumber: sn }
                     });
+
+                    let targetProductId = item.productId || existing?.productId;
+                    if (!targetProductId) {
+                        const fallbackProd = await txOrPrisma.product.findFirst();
+                        if (fallbackProd) targetProductId = fallbackProd.id;
+                    }
+
+                    if (existing) {
+                        await txOrPrisma.productSerial.update({
+                            where: { serialNumber: sn },
+                            data: {
+                                status: 'SOLD',
+                                productId: targetProductId || undefined,
+                                customerId: customerId || null,
+                                salesInvoiceId: invoiceId || null,
+                                warrantyStartDate: date,
+                                warrantyEndDate: warrantyEndDate,
+                                notes: code ? `Xuất bán theo HĐ ${code}` : (existing.notes || 'Xuất bán theo HĐ')
+                            }
+                        });
+                    } else if (targetProductId) {
+                        await txOrPrisma.productSerial.create({
+                            data: {
+                                productId: targetProductId,
+                                serialNumber: sn,
+                                status: 'SOLD',
+                                customerId: customerId || null,
+                                salesInvoiceId: invoiceId || null,
+                                warrantyStartDate: date,
+                                warrantyEndDate: warrantyEndDate,
+                                notes: code ? `Xuất bán theo HĐ ${code}` : 'Xuất bán theo HĐ'
+                            }
+                        });
+                    }
                 } catch (err) {
-                    console.error(`Không thể cập nhật serial ${sn} sang SOLD:`, err);
+                    console.error(`Không thể đồng bộ serial ${sn} sang SOLD:`, err);
                 }
             }
         } catch (e) {
@@ -58,22 +104,57 @@ async function markInvoiceSerialsSold(txOrPrisma: any, invoiceId: string, items:
     }
 }
 
-async function releaseInvoiceSerials(txOrPrisma: any, items: any[]) {
+async function releaseInvoiceSerials(
+    txOrPrisma: any, 
+    invoiceId?: string, 
+    items?: any[], 
+    excludeSerials?: Set<string>
+) {
+    if (invoiceId) {
+        try {
+            const currentlyLinked = await txOrPrisma.productSerial.findMany({
+                where: { salesInvoiceId: invoiceId }
+            });
+            for (const ser of currentlyLinked) {
+                if (excludeSerials && excludeSerials.has(ser.serialNumber)) {
+                    continue;
+                }
+                await txOrPrisma.productSerial.update({
+                    where: { id: ser.id },
+                    data: {
+                        status: 'IN_STOCK',
+                        customerId: null,
+                        salesInvoiceId: null,
+                        warrantyStartDate: null,
+                        warrantyEndDate: null,
+                        notes: 'Hoàn về kho do điều chỉnh hoặc hủy hóa đơn'
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Lỗi release currentlyLinked serials:', e);
+        }
+    }
+
     for (const item of (items || [])) {
         if (!item.serials) continue;
         try {
-            const raw = Array.isArray(item.serials) ? item.serials : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
+            const raw = Array.isArray(item.serials) 
+                ? item.serials 
+                : (typeof item.serials === 'string' && item.serials.trim() ? JSON.parse(item.serials) : []);
             const clean = raw.map((x: any) => String(x).trim()).filter(Boolean);
             for (const sn of clean) {
+                if (excludeSerials && excludeSerials.has(sn)) continue;
                 try {
-                    await txOrPrisma.productSerial.update({
+                    await txOrPrisma.productSerial.updateMany({
                         where: { serialNumber: sn },
                         data: {
                             status: 'IN_STOCK',
                             customerId: null,
                             salesInvoiceId: null,
                             warrantyStartDate: null,
-                            warrantyEndDate: null
+                            warrantyEndDate: null,
+                            notes: 'Hoàn về kho do điều chỉnh hoặc hủy hóa đơn'
                         }
                     });
                 } catch (err) {
@@ -359,47 +440,9 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
             }
         });
 
-        // Tự động gán xuất bán & bảo hành cho các serial nếu trạng thái là ISSUED
-        if (formData.status === 'ISSUED') {
-            for (const item of (formData.items || [])) {
-                if (item.serials) {
-                    try {
-                        const raw = Array.isArray(item.serials) ? item.serials : JSON.parse(item.serials);
-                        const clean = raw.map((x: any) => String(x).trim()).filter(Boolean);
-                        if (clean.length > 0) {
-                            let warrantyMonths = 12;
-                            if (item.productId) {
-                                const prod = await prisma.product.findUnique({
-                                    where: { id: item.productId },
-                                    select: { warrantyMonths: true }
-                                });
-                                if (prod && prod.warrantyMonths !== null && prod.warrantyMonths !== undefined) {
-                                    warrantyMonths = prod.warrantyMonths;
-                                }
-                            }
-                            const issueDate = invoice.date ? new Date(invoice.date) : new Date();
-                            let warrantyEndDate: Date | null = null;
-                            if (warrantyMonths > 0) {
-                                warrantyEndDate = new Date(issueDate);
-                                warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyMonths);
-                            }
-                            await prisma.productSerial.updateMany({
-                                where: { serialNumber: { in: clean } },
-                                data: {
-                                    status: 'SOLD',
-                                    customerId: invoice.customerId,
-                                    salesInvoiceId: invoice.id,
-                                    warrantyStartDate: issueDate,
-                                    warrantyEndDate,
-                                    notes: `Xuất bán theo HĐ ${invoice.code}`
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Lỗi kích hoạt bảo hành/xuất bán serial:', e);
-                    }
-                }
-            }
+        // Tự động gán xuất bán & bảo hành cho các serial nếu trạng thái là ISSUED hoặc PAID
+        if (formData.status === 'ISSUED' || formData.status === 'PAID') {
+            await markInvoiceSerialsSold(prisma, invoice.id, formData.items, invoice.customerId, invoice.date, invoice.code);
         }
 
         // Tạo các hóa đơn định kỳ cho các kỳ tiếp theo (nếu có chọn Lặp lại)
@@ -490,6 +533,9 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
 
         revalidatePath('/sales/invoices');
         revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: invoice, recurringInvoices };
     } catch (error: any) {
         console.error("Lỗi khi tạo Hóa Đơn:", error);
@@ -789,8 +835,19 @@ export async function updateSalesInvoice(id: string, formData: any) {
             }
 
             // Đồng bộ trạng thái serial: hoàn trả các serial cũ bị bỏ và gán serial mới
-            await releaseInvoiceSerials(tx, currentInvoice.items);
-            await markInvoiceSerialsSold(tx, id, formattedItems, formData.customerId, formData.date);
+            const newSerialsSet = new Set<string>();
+            for (const item of formattedItems) {
+                if (item.serials) {
+                    try {
+                        const raw = Array.isArray(item.serials) ? item.serials : JSON.parse(item.serials);
+                        const clean = raw.map((x: any) => String(x).trim()).filter(Boolean);
+                        clean.forEach((s: string) => newSerialsSet.add(s));
+                    } catch (e) {}
+                }
+            }
+
+            await releaseInvoiceSerials(tx, id, currentInvoice.items, newSerialsSet);
+            await markInvoiceSerialsSold(tx, id, formattedItems, formData.customerId, formData.date, formData.code || currentInvoice.code);
 
             // 3. Update Customer Debt
             const oldTotal = currentInvoice.totalAmount || 0;
@@ -878,9 +935,6 @@ export async function updateSalesInvoice(id: string, formData: any) {
 
 
 
-            // Cập nhật trạng thái Serial thành SOLD và kích hoạt bảo hành điện tử chính xác theo từng sản phẩm
-            await markInvoiceSerialsSold(tx, updatedInvoice.id, updatedInvoice.items, updatedInvoice.customerId, updatedInvoice.date || new Date());
-
             await tx.customerActivityLog.create({
                 data: {
                     customerId: formData.customerId,
@@ -898,6 +952,10 @@ export async function updateSalesInvoice(id: string, formData: any) {
 
         revalidatePath('/sales/invoices');
         revalidatePath(`/sales/invoices/${id}`);
+        revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: updatedInvoice };
     } catch (error: any) {
         console.error("Lỗi khi cập nhật Hóa Đơn:", error);
@@ -930,12 +988,12 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
         if (newStatus === 'ISSUED' || newStatus === 'PAID') {
             const fullInv = await prisma.salesInvoice.findUnique({ where: { id }, include: { items: true } });
             if (fullInv) {
-                await markInvoiceSerialsSold(prisma, id, fullInv.items, fullInv.customerId, fullInv.date);
+                await markInvoiceSerialsSold(prisma, id, fullInv.items, fullInv.customerId, fullInv.date, fullInv.code);
             }
         } else if (newStatus === 'CANCELLED') {
             const fullInv = await prisma.salesInvoice.findUnique({ where: { id }, include: { items: true } });
             if (fullInv) {
-                await releaseInvoiceSerials(prisma, fullInv.items);
+                await releaseInvoiceSerials(prisma, id, fullInv.items);
             }
         }
 
@@ -952,6 +1010,10 @@ export async function updateSalesInvoiceStatus(id: string, newStatus: string) {
 
         revalidatePath('/sales/invoices');
         revalidatePath(`/sales/invoices/${id}`);
+        revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi cập nhật trạng thái Hóa Đơn:", error);
@@ -1088,7 +1150,7 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
             });
 
             // Cập nhật xuất bán và kích hoạt bảo hành cho các mã Serial/IMEI
-            await markInvoiceSerialsSold(tx, invoice.id, invoice.items, invoice.customerId, invoice.date);
+            await markInvoiceSerialsSold(tx, invoice.id, invoice.items, invoice.customerId, invoice.date, invoice.code);
 
             // 3. Create OUT Inventory Transaction (Chỉ xuất kho cho sản phẩm vật lý PRODUCT)
             const invoiceProductIds = invoice.items.map(i => i.productId).filter(Boolean) as string[];
@@ -1178,6 +1240,11 @@ export async function approveSalesInvoice(invoiceId: string, userId: string) {
         });
 
         revalidatePath('/sales/invoices');
+        revalidatePath(`/sales/invoices/${invoiceId}`);
+        revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi duyệt hóa đơn:", error);
@@ -1275,7 +1342,7 @@ export async function cancelSalesInvoice(invoiceId: string) {
             // Nếu hóa đơn đã được duyệt (đã xuất kho, ghi nhận công nợ) -> cần rollback
             if (invoice.status === "ISSUED" || invoice.status === "PARTIAL_PAID" || invoice.status === "PAID") {
                 // Hoàn trả serial về lại kho IN_STOCK
-                await releaseInvoiceSerials(tx, invoice.items);
+                await releaseInvoiceSerials(tx, invoiceId, invoice.items);
 
                 // 1. Giảm trừ lại công nợ KH
                 await tx.customer.update({
@@ -1343,6 +1410,11 @@ export async function cancelSalesInvoice(invoiceId: string) {
         });
 
         revalidatePath('/sales/invoices');
+        revalidatePath(`/sales/invoices/${invoiceId}`);
+        revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi hủy hóa đơn:", error);
@@ -1469,6 +1541,11 @@ export async function restoreSalesInvoice(invoiceId: string) {
         });
 
         revalidatePath('/sales/invoices');
+        revalidatePath(`/sales/invoices/${invoiceId}`);
+        revalidatePath('/inventory');
+        revalidatePath('/inventory/serials');
+        revalidatePath('/portal/warranty');
+        revalidatePath('/warranty');
         return { success: true, data: result };
     } catch (error: any) {
         console.error("Lỗi khi khôi phục hóa đơn:", error);

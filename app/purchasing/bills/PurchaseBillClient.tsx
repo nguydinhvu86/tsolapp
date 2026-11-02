@@ -290,16 +290,27 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
             attachments: parsedAttachments
         } as any);
 
-        setBillItems(bill.items?.map((i: any) => ({
-            productId: i.productId || 'EXTERNAL',
-            productName: i.product?.name || i.productName || '',
-            customName: i.productName || '',
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            taxRate: i.taxRate || 0,
-            unit: i.unit || i.product?.unit || 'Cái',
-            description: i.description || i.notes || ''
-        })) || []);
+        setBillItems(bill.items?.map((i: any) => {
+            let parsedSerials: string[] = [];
+            if (Array.isArray(i.serials)) {
+                parsedSerials = i.serials;
+            } else if (typeof i.serials === 'string' && i.serials.trim()) {
+                try {
+                    parsedSerials = JSON.parse(i.serials);
+                } catch (e) {}
+            }
+            return {
+                productId: i.productId || 'EXTERNAL',
+                productName: i.product?.name || i.productName || '',
+                customName: i.productName || '',
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                taxRate: i.taxRate || 0,
+                unit: i.unit || i.product?.unit || 'Cái',
+                description: i.description || i.notes || '',
+                serials: parsedSerials
+            };
+        }) || []);
 
         // Reset sub-form
         setQty(1);
@@ -495,6 +506,7 @@ export function PurchaseBillClient({ initialBills, suppliers, orders, warehouses
         }
         setPrice(item.unitPrice);
         setQty(item.quantity);
+        setCurrentSerials(item.serials || []);
 
         handleRemoveItem(index);
     };

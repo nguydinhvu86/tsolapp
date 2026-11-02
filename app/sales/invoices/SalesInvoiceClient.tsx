@@ -312,19 +312,28 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
     };
 
     const handleEdit = (inv: any) => {
-        const mappedItems = inv.items ? inv.items.map((i: any) => ({
-            productId: i.productId,
-            productName: i.product?.name || i.customName || i.productName || '',
-            customName: i.customName || '',
-            description: i.description,
-            unit: i.product?.unit || i.unit || '',
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            taxRate: i.taxRate || 0,
-            taxAmount: i.taxAmount || 0,
-            totalPrice: i.totalPrice,
-            isSubItem: i.isSubItem || false
-        })) : [];
+        const mappedItems = inv.items ? inv.items.map((i: any) => {
+            let itemSerials: string[] = [];
+            if (i.serials) {
+                try {
+                    itemSerials = Array.isArray(i.serials) ? i.serials : JSON.parse(i.serials);
+                } catch (e) {}
+            }
+            return {
+                productId: i.productId,
+                productName: i.product?.name || i.customName || i.productName || '',
+                customName: i.customName || '',
+                description: i.description,
+                unit: i.product?.unit || i.unit || '',
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                taxRate: i.taxRate || 0,
+                taxAmount: i.taxAmount || 0,
+                totalPrice: i.totalPrice,
+                isSubItem: i.isSubItem || false,
+                serials: itemSerials
+            };
+        }) : [];
 
         const calcSubTotal = mappedItems.reduce((acc: number, curr: any) => acc + (curr.quantity * curr.unitPrice), 0);
         const calcTaxAmount = mappedItems.reduce((acc: number, curr: any) => acc + curr.taxAmount, 0);
