@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma';
+import { calculateWarrantyRemaining } from '@/lib/warranty';
 
 export async function lookupPublicWarranty(serialNumber: string) {
     try {
@@ -43,20 +44,7 @@ export async function lookupPublicWarranty(serialNumber: string) {
         const exportDate = record.warrantyStartDate || record.salesInvoice?.date || (record.status === 'SOLD' ? record.updatedAt : null);
         const endDate = record.warrantyEndDate;
 
-        const now = new Date();
-        const isWarrantyValid = !isNoWarranty && !!endDate && now <= new Date(endDate);
-        const isExpired = !isNoWarranty && !!endDate && now > new Date(endDate);
-
-        let daysRemaining = 0;
-        let daysExpired = 0;
-        if (endDate && !isNoWarranty) {
-            const diffDays = Math.ceil((new Date(endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDays >= 0) {
-                daysRemaining = diffDays;
-            } else {
-                daysExpired = Math.abs(diffDays);
-            }
-        }
+        const stats = calculateWarrantyRemaining(endDate, warrantyMonths);
 
         // Lấy thông tin công ty từ SystemSetting để khách hàng có thể liên hệ tại gốc
         const companySettings = await prisma.systemSetting.findMany({
@@ -85,10 +73,13 @@ export async function lookupPublicWarranty(serialNumber: string) {
                 warrantyMonths,
                 exportDate: exportDate ? exportDate.toISOString() : null,
                 warrantyEndDate: endDate ? endDate.toISOString() : null,
-                isWarrantyValid,
-                isExpired,
-                daysRemaining,
-                daysExpired,
+                isWarrantyValid: stats.isValid,
+                isExpired: stats.isExpired,
+                daysRemaining: stats.daysRemaining,
+                daysExpired: stats.daysExpired,
+                warrantyDetailText: stats.detailText,
+                warrantyBreakdownText: stats.breakdownText,
+                warrantyBadgeText: stats.badgeText,
                 supportContact: {
                     companyName: settingsMap['COMPANY_NAME'] || 'TRUNG TÂM BẢO HÀNH CHÍNH HÃNG',
                     phone: settingsMap['COMPANY_PHONE'] || '(0274) 999 2222',

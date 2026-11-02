@@ -517,31 +517,46 @@ export default function SalesInvoiceDetailClient({
         const ws = wb.addWorksheet('BienBanBanGiao', {
             views: [{ showGridLines: true }],
             pageSetup: {
-                paperSize: 9,
-                orientation: 'landscape',
+                paperSize: 9, // A4
+                orientation: 'portrait', // Trang đứng Portrait chuẩn in ấn & gửi khách hàng
                 fitToPage: true,
                 fitToWidth: 1,
-                fitToHeight: 0
+                fitToHeight: 0,
+                horizontalCentered: true,
+                margins: {
+                    left: 0.4,
+                    right: 0.4,
+                    top: 0.5,
+                    bottom: 0.5,
+                    header: 0.3,
+                    footer: 0.3
+                }
             }
         });
 
-        // 7 Columns without any price or unit cost
-        const colCount = 7;
+        // 6 cột chuẩn trang đứng (Portrait A4), đã bỏ cột 'Mã SKU' theo yêu cầu
+        const colCount = 6;
         ws.columns = [
-            { key: 'col1', width: 6 },
-            { key: 'col2', width: 36 },
-            { key: 'col3', width: 16 },
-            { key: 'col4', width: 10 },
-            { key: 'col5', width: 12 },
-            { key: 'col6', width: 50 },
-            { key: 'col7', width: 22 }
+            { key: 'col1', width: 6 },  // STT
+            { key: 'col2', width: 33 }, // Tên Thiết Bị / Hàng Hóa
+            { key: 'col3', width: 9 },  // ĐVT
+            { key: 'col4', width: 10 }, // Số Lượng
+            { key: 'col5', width: 26 }, // Danh Sách Số Serial / IMEI Bàn Giao
+            { key: 'col6', width: 16 }  // Tình Trạng & Bảo Hành
         ];
 
+        // Màu xanh thương hiệu chủ đạo của công ty (Deep Teal / Emerald #0F766E)
+        const companyBrandColor = settings?.COMPANY_PRIMARY_COLOR || settings?.PRIMARY_COLOR || settings?.COMPANY_COLOR;
+        let brandColorArgb = 'FF0F766E';
+        if (companyBrandColor && companyBrandColor.startsWith('#')) {
+            brandColorArgb = 'FF' + companyBrandColor.replace('#', '').toUpperCase();
+        }
+
         const thinBorder = {
-            top: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
-            left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
-            bottom: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
-            right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } }
+            top: { style: 'thin' as const, color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin' as const, color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin' as const, color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin' as const, color: { argb: 'FFE2E8F0' } }
         };
 
         const companyName = (settings?.COMPANY_FULL_NAME || settings?.COMPANY_NAME || settings?.COMPANY_DISPLAY_NAME || 'CÔNG TY TNHH GIẢI PHÁP ĐÀO TẠO TRỊNH GIA').toUpperCase();
@@ -549,94 +564,120 @@ export default function SalesInvoiceDetailClient({
         const companyPhone = settings?.COMPANY_PHONE || '';
         const companyEmail = settings?.COMPANY_EMAIL || '';
         const companyWebsite = settings?.COMPANY_WEBSITE || '';
+        const companyTax = settings?.COMPANY_TAX || settings?.COMPANY_TAX_CODE || '';
 
-        // Row 1: Company Name
+        // Row 1: Tên công ty
         ws.mergeCells(1, 1, 1, colCount);
         const cellA1 = ws.getCell('A1');
         cellA1.value = companyName;
-        cellA1.font = { bold: true, size: 12, color: { argb: 'FF0F172A' }, name: 'Arial' };
+        cellA1.font = { bold: true, size: 11.5, color: { argb: brandColorArgb }, name: 'Arial' };
         cellA1.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
         ws.getRow(1).height = 24;
 
-        // Row 2: Address & Contact
+        // Row 2: Địa chỉ công ty
         ws.mergeCells(2, 1, 2, colCount);
         const cellA2 = ws.getCell('A2');
+        cellA2.value = companyAddress ? `Địa chỉ: ${companyAddress}` : '';
+        cellA2.font = { size: 9, color: { argb: 'FF475569' }, name: 'Arial' };
+        cellA2.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(2).height = 19;
+
+        // Row 3: Hotline - Email - Website
+        ws.mergeCells(3, 1, 3, colCount);
+        const cellA3 = ws.getCell('A3');
         const contactLine = [
-            companyAddress ? `Địa chỉ: ${companyAddress}` : '',
             companyPhone ? `Hotline: ${companyPhone}` : '',
             companyEmail ? `Email: ${companyEmail}` : '',
             companyWebsite ? `Website: ${companyWebsite}` : ''
         ].filter(Boolean).join('   |   ');
-        cellA2.value = contactLine;
-        cellA2.font = { size: 9.5, color: { argb: 'FF475569' }, name: 'Arial' };
-        cellA2.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-        ws.getRow(2).height = 20;
+        cellA3.value = contactLine;
+        cellA3.font = { size: 9, color: { argb: 'FF475569' }, name: 'Arial' };
+        cellA3.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        ws.getRow(3).height = 19;
 
-        // Row 3: Empty space
+        let currentRow = 4;
+        if (companyTax) {
+            ws.mergeCells(currentRow, 1, currentRow, colCount);
+            const cellTax = ws.getCell(`A${currentRow}`);
+            cellTax.value = `Mã số thuế: ${companyTax}`;
+            cellTax.font = { size: 9, color: { argb: 'FF475569' }, name: 'Arial' };
+            cellTax.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            ws.getRow(currentRow).height = 18;
+            currentRow++;
+        }
+
+        // Khoảng trống trước Tiêu đề
         ws.addRow([]);
-        ws.getRow(3).height = 10;
+        ws.getRow(currentRow).height = 12;
+        currentRow++;
 
-        // Row 4: Main Document Title
-        const titleRowNumber = 4;
+        // Tiêu đề chính của Biên bản
+        const titleRowNumber = currentRow;
         ws.mergeCells(titleRowNumber, 1, titleRowNumber, colCount);
         const titleCell = ws.getCell(`A${titleRowNumber}`);
         titleCell.value = 'BIÊN BẢN BÀN GIAO THIẾT BỊ & BẢNG KÊ SERIAL / IMEI';
-        titleCell.font = { bold: true, size: 15, color: { argb: 'FF1E293B' }, name: 'Arial' };
+        titleCell.font = { bold: true, size: 14.5, color: { argb: brandColorArgb }, name: 'Arial' };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(titleRowNumber).height = 28;
+        currentRow++;
 
-        // Row 5: Subtitle
-        const subTitleRowNumber = 5;
+        // Tiêu đề phụ (Số Hóa đơn tham chiếu)
+        const subTitleRowNumber = currentRow;
         ws.mergeCells(subTitleRowNumber, 1, subTitleRowNumber, colCount);
         const subTitleCell = ws.getCell(`A${subTitleRowNumber}`);
-        subTitleCell.value = `(Kèm theo Hóa đơn bán hàng số: ${invoice.code} - Ngày lập: ${formatDate(invoice.date || invoice.createdAt)})`;
-        subTitleCell.font = { italic: true, size: 10, color: { argb: 'FF64748B' }, name: 'Arial' };
+        subTitleCell.value = `(Kèm theo Hóa đơn bán hàng số: ${invoice.code} - Ngày lập: ${formatDate(invoice.issueDate || invoice.date || invoice.createdAt)})`;
+        subTitleCell.font = { italic: true, size: 9.5, color: { argb: 'FF64748B' }, name: 'Arial' };
         subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getRow(subTitleRowNumber).height = 20;
+        currentRow++;
 
-        // Row 6: Empty
+        // Khoảng trống
         ws.addRow([]);
-        ws.getRow(6).height = 10;
+        ws.getRow(currentRow).height = 10;
+        currentRow++;
 
-        // Helper for meta rows
+        // Hàm hỗ trợ render dòng thông tin khách hàng / bàn giao (tự động co giãn hàng đầy đủ nội dung)
         const addMetaRow = (label: string, value: string, isBold: boolean = false) => {
             const row = ws.addRow([]);
             const rowNum = row.number;
-            row.height = 20;
+            
+            // Tính toán chiều cao hàng tự động để không bị mất chữ nếu địa chỉ hoặc tên dài
+            const lineCount = Math.max(1, Math.ceil((value || '').length / 50));
+            row.height = Math.max(22, lineCount * 18);
 
             ws.mergeCells(rowNum, 1, rowNum, 2);
             const lbl = row.getCell(1);
             lbl.value = label;
             lbl.font = { bold: true, size: 9.5, color: { argb: 'FF334155' }, name: 'Arial' };
-            lbl.alignment = { horizontal: 'left', vertical: 'middle' };
+            lbl.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle' };
 
             ws.mergeCells(rowNum, 3, rowNum, colCount);
             const val = row.getCell(3);
             val.value = value || '-';
             val.font = { bold: isBold, size: 9.5, color: { argb: 'FF0F172A' }, name: 'Arial' };
-            val.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            val.alignment = { horizontal: 'left', vertical: lineCount > 1 ? 'top' : 'middle', wrapText: true };
             return row;
         };
 
-        // Customer Info Block
+        // Thông tin Đơn vị nhận bàn giao
         addMetaRow('Đơn vị nhận bàn giao:', invoice.customer?.name || '', true);
         const customerAddress = invoice.customer?.address || invoice.customer?.billingAddress || invoice.customer?.shippingAddress;
         if (customerAddress) addMetaRow('Địa chỉ giao hàng:', customerAddress);
         const contactName = invoice.customer?.contactName || invoice.customer?.contacts?.[0]?.name;
         const contactPhone = invoice.customer?.phone || invoice.customer?.contacts?.[0]?.phone;
         const contactStr = [contactName ? `Người nhận: ${contactName}` : '', contactPhone ? `SĐT: ${contactPhone}` : ''].filter(Boolean).join('    -    ');
-        if (contactStr) addMetaRow('Thông tin liên hệ:', contactStr);
+        if (contactStr) addMetaRow('Thông tin người nhận:', contactStr);
         if (invoice.order?.code) addMetaRow('Đơn hàng tham chiếu:', invoice.order.code);
         addMetaRow('Thời gian bàn giao:', formatDate(new Date()));
 
-        // Empty row
-        const emptyRow = ws.addRow([]);
-        emptyRow.height = 10;
+        // Dòng trống trước bảng dữ liệu
+        const emptyBeforeTable = ws.addRow([]);
+        emptyBeforeTable.height = 10;
 
-        // Table Header (NO PRICES / NO MONETARY VALUES)
-        const headers = ['STT', 'Tên Thiết Bị / Hàng Hóa', 'Mã SKU', 'ĐVT', 'Số Lượng', 'Danh Sách Số Serial / IMEI Bàn Giao', 'Tình Trạng & Bảo Hành'];
+        // Tiêu đề bảng - 6 cột chuẩn Portrait (ĐÃ BỎ CỘT MÃ SKU)
+        const headers = ['STT', 'Tên Thiết Bị / Hàng Hóa', 'ĐVT', 'Số Lượng', 'Danh Sách Số Serial / IMEI Bàn Giao', 'Tình Trạng & Bảo Hành'];
         const headerRow = ws.addRow(headers);
-        headerRow.height = 26;
+        headerRow.height = 28;
         headerRow.font = { bold: true, size: 9.5, color: { argb: 'FFFFFFFF' }, name: 'Arial' };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
@@ -645,12 +686,17 @@ export default function SalesInvoiceDetailClient({
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FF1E40AF' }
+                fgColor: { argb: brandColorArgb }
             };
-            cell.border = thinBorder;
+            cell.border = {
+                top: { style: 'medium' as const, color: { argb: brandColorArgb } },
+                left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+                bottom: { style: 'medium' as const, color: { argb: brandColorArgb } },
+                right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } }
+            };
         }
 
-        // Table Rows
+        // Dữ liệu bảng hàng hóa
         let totalItemsCount = 0;
         let totalSerialsCount = 0;
 
@@ -658,96 +704,168 @@ export default function SalesInvoiceDetailClient({
             let serialsList: string[] = [];
             if (item.serials) {
                 try {
-                    const parsed = JSON.parse(item.serials);
-                    if (Array.isArray(parsed)) serialsList = parsed;
+                    const parsed = typeof item.serials === 'string' ? JSON.parse(item.serials) : item.serials;
+                    if (Array.isArray(parsed)) {
+                        serialsList = parsed.filter(Boolean);
+                    } else if (typeof parsed === 'string') {
+                        serialsList = [parsed];
+                    }
                 } catch {
-                    serialsList = [];
+                    if (typeof item.serials === 'string') {
+                        serialsList = item.serials.split(',').map((s: string) => s.trim()).filter(Boolean);
+                    }
                 }
             }
 
             totalItemsCount += Number(item.quantity) || 0;
             totalSerialsCount += serialsList.length;
 
+            // ĐỐI VỚI SẢN PHẨM MUA SỐ LƯỢNG NHIỀU: CÁC SỐ SERIAL ĐƯỢC PHÂN CÁCH BỞI DẤU PHẨY (,)
             const serialText = serialsList.length > 0 
-                ? serialsList.join('\n') 
+                ? serialsList.join(', ') 
                 : (item.productId ? 'Không yêu cầu Serial' : '-');
 
-            const lineCount = Math.max(1, serialsList.length);
-            const rowHeight = Math.max(26, lineCount * 17);
+            const itemName = item.productName || item.customName || item.product?.name || 'Sản phẩm';
+            const desc = item.description ? `\n(${item.description})` : '';
+            const fullTitle = `${itemName}${desc}`;
+            const warrantyText = serialsList.length > 0 ? 'Mới 100% - BH điện tử' : 'Mới 100%';
+
+            // Tự động tính toán chiều cao hàng để không bao giờ bị cắt chữ
+            const titleLines = fullTitle.split('\n').reduce((acc, line) => acc + Math.max(1, Math.ceil(line.length / 30)), 0);
+            const serialLines = serialsList.length > 0 ? Math.max(1, Math.ceil(serialText.length / 24)) : 1;
+            const warrantyLines = Math.max(1, Math.ceil(warrantyText.length / 14));
+            const estimatedLines = Math.max(titleLines, serialLines, warrantyLines);
+            const rowHeight = Math.max(26, estimatedLines * 18 + 6);
 
             const row = ws.addRow([
                 idx + 1,
-                item.productName || item.customName || item.product?.name || 'Sản phẩm',
-                item.product?.sku || '-',
+                fullTitle,
                 item.unit || item.product?.unit || 'Cái',
                 Number(item.quantity) || 1,
                 serialText,
-                serialsList.length > 0 ? 'Mới 100% - Bảo hành điện tử' : 'Mới 100%'
+                warrantyText
             ]);
 
             row.height = rowHeight;
+
+            // Zebra striping nhẹ nhàng cho bảng chuyên nghiệp
+            const isEven = idx % 2 === 1;
+            const rowFillColor = isEven ? 'FFF8FAFC' : 'FFFFFFFF';
+
+            // Định dạng từng ô
             row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(1).font = { name: 'Arial', size: 9.5 };
+
             row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            row.getCell(2).font = { name: 'Arial', size: 9.5, color: { argb: 'FF0F172A' } };
+
             row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
-            row.getCell(3).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
+            row.getCell(3).font = { name: 'Arial', size: 9.5, color: { argb: 'FF475569' } };
+
             row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
-            row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
-            row.getCell(5).font = { name: 'Arial', size: 10, bold: true };
-            row.getCell(6).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-            row.getCell(6).font = { name: 'Courier New', size: 9.5, bold: true, color: { argb: 'FF1E40AF' } };
-            row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-            row.getCell(7).font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF475569' } };
+            row.getCell(4).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+
+            row.getCell(5).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+            row.getCell(5).font = { name: 'Arial', size: 9, bold: serialsList.length > 0, color: { argb: serialsList.length > 0 ? brandColorArgb : 'FF64748B' } };
+
+            row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            row.getCell(6).font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF475569' } };
 
             for (let c = 1; c <= colCount; c++) {
-                row.getCell(c).border = thinBorder;
+                const cell = row.getCell(c);
+                cell.border = thinBorder;
+                if (isEven) {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: rowFillColor }
+                    };
+                }
             }
         });
 
-        // Summary Row
+        // Dòng tổng cộng (Summary Row)
         const summaryRow = ws.addRow([
             '',
             'TỔNG CỘNG THIẾT BỊ BÀN GIAO:',
-            '',
             '',
             totalItemsCount,
             `Tổng cộng: ${totalSerialsCount} mã Serial/IMEI đã bàn giao`,
             ''
         ]);
-        summaryRow.height = 24;
-        summaryRow.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
-        summaryRow.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
-        summaryRow.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
-        summaryRow.getCell(6).alignment = { horizontal: 'left', vertical: 'middle' };
+        const summaryRowNum = summaryRow.number;
+        summaryRow.height = 26;
+
+        // Merge STT, Tên Thiết Bị, ĐVT cho nhãn tổng cộng
+        ws.mergeCells(summaryRowNum, 1, summaryRowNum, 3);
+        const sumLbl = ws.getCell(`A${summaryRowNum}`);
+        sumLbl.value = 'TỔNG CỘNG THIẾT BỊ BÀN GIAO:';
+        sumLbl.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+        sumLbl.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        // Ô Số lượng tổng
+        const sumQty = ws.getCell(`D${summaryRowNum}`);
+        sumQty.value = totalItemsCount;
+        sumQty.font = { bold: true, size: 10, name: 'Arial', color: { argb: brandColorArgb } };
+        sumQty.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        // Merge Cột Serial & Bảo hành cho text tổng serials
+        ws.mergeCells(summaryRowNum, 5, summaryRowNum, 6);
+        const sumSerial = ws.getCell(`E${summaryRowNum}`);
+        sumSerial.value = `Tổng cộng: ${totalSerialsCount} mã Serial/IMEI đã bàn giao`;
+        sumSerial.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: brandColorArgb } };
+        sumSerial.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        const summaryBorder = {
+            top: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+            bottom: { style: 'double' as const, color: { argb: brandColorArgb } },
+            right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } }
+        };
 
         for (let c = 1; c <= colCount; c++) {
-            summaryRow.getCell(c).border = thinBorder;
-            summaryRow.getCell(c).fill = {
+            const cell = summaryRow.getCell(c);
+            cell.border = summaryBorder;
+            cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FFF1F5F9' }
+                fgColor: { argb: 'FFF0FDFA' } // Nền xanh nhạt trang nhã
             };
         }
 
-        // Terms
+        // Điều khoản bàn giao & bảo hành
         ws.addRow([]);
         const noteRow = ws.addRow(['XÁC NHẬN BÀN GIAO & BẢO HÀNH:']);
         ws.mergeCells(noteRow.number, 1, noteRow.number, colCount);
-        noteRow.getCell(1).font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+        noteRow.height = 22;
+        noteRow.getCell(1).font = { bold: true, size: 9.5, name: 'Arial', color: { argb: brandColorArgb } };
+        noteRow.getCell(1).alignment = { vertical: 'middle' };
 
         const term1 = ws.addRow(['1. Hai bên cùng tiến hành nghiệm thu, kiểm tra số lượng và số Serial/IMEI thực tế của toàn bộ thiết bị nêu trên.']);
         ws.mergeCells(term1.number, 1, term1.number, colCount);
+        term1.height = 19;
         term1.getCell(1).font = { size: 9, name: 'Arial', color: { argb: 'FF334155' } };
+        term1.getCell(1).alignment = { vertical: 'middle' };
 
-        const term2 = ws.addRow(['2. Bên nhận xác nhận toàn bộ thiết bị nguyên vẹn, đúng chủng loại, đúng mã Serial/IMEI và hoạt động bình thường theo tiêu chuẩn.']);
+        const term2 = ws.addRow(['2. Bên nhận xác nhận toàn bộ thiết bị nguyên vẹn, đúng chủng loại, đúng mã Serial/IMEI và hoạt động bình thường theo tiêu chuẩn kỹ thuật.']);
         ws.mergeCells(term2.number, 1, term2.number, colCount);
+        term2.height = 19;
         term2.getCell(1).font = { size: 9, name: 'Arial', color: { argb: 'FF334155' } };
+        term2.getCell(1).alignment = { vertical: 'middle' };
 
+        const term3 = ws.addRow(['3. Biên bản này được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ bảo hành và quyết toán.']);
+        ws.mergeCells(term3.number, 1, term3.number, colCount);
+        term3.height = 19;
+        term3.getCell(1).font = { size: 9, name: 'Arial', color: { argb: 'FF334155' } };
+        term3.getCell(1).alignment = { vertical: 'middle' };
+
+        // Khoảng trống trước khối chữ ký
         ws.addRow([]);
 
-        // Signatures
+        // Khối chữ ký hai bên
         const sigRow = ws.addRow([]);
-        sigRow.height = 22;
-        const mid = Math.floor(colCount / 2);
+        sigRow.height = 24;
+        const mid = 3; // 3 cột bên nhận (1..3), 3 cột bên giao (4..6)
 
         ws.mergeCells(sigRow.number, 1, sigRow.number, mid);
         const khCell = sigRow.getCell(1);
@@ -765,18 +883,41 @@ export default function SalesInvoiceDetailClient({
         subSigRow.height = 18;
         ws.mergeCells(subSigRow.number, 1, subSigRow.number, mid);
         const subKh = subSigRow.getCell(1);
-        subKh.value = '(Ký, ghi rõ họ tên)';
-        subKh.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subKh.value = '(Ký, ghi rõ họ tên & đóng dấu)';
+        subKh.font = { italic: true, size: 8.5, name: 'Arial', color: { argb: 'FF64748B' } };
         subKh.alignment = { horizontal: 'center', vertical: 'middle' };
 
         ws.mergeCells(subSigRow.number, mid + 1, subSigRow.number, colCount);
         const subCt = subSigRow.getCell(mid + 1);
         subCt.value = '(Ký, ghi rõ họ tên)';
-        subCt.font = { italic: true, size: 9, name: 'Arial', color: { argb: 'FF64748B' } };
+        subCt.font = { italic: true, size: 8.5, name: 'Arial', color: { argb: 'FF64748B' } };
         subCt.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        ws.addRow([]);
-        ws.addRow([]);
+        // Tạo khoảng trống ký tên rộng rãi (4 hàng trống để ký và đóng dấu)
+        for (let s = 0; s < 4; s++) {
+            const emptySpaceRow = ws.addRow([]);
+            emptySpaceRow.height = 18;
+        }
+
+        // Tên người ký ở chân trang nếu có
+        const customerSigner = invoice.customer?.contactName || '';
+        const creatorSigner = invoice.creator?.name || '';
+        if (customerSigner || creatorSigner) {
+            const signerNameRow = ws.addRow([]);
+            signerNameRow.height = 20;
+
+            ws.mergeCells(signerNameRow.number, 1, signerNameRow.number, mid);
+            const khSignerCell = signerNameRow.getCell(1);
+            khSignerCell.value = customerSigner;
+            khSignerCell.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+            khSignerCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            ws.mergeCells(signerNameRow.number, mid + 1, signerNameRow.number, colCount);
+            const ctSignerCell = signerNameRow.getCell(mid + 1);
+            ctSignerCell.value = creatorSigner;
+            ctSignerCell.font = { bold: true, size: 9.5, name: 'Arial', color: { argb: 'FF0F172A' } };
+            ctSignerCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
 
         const buffer = await wb.xlsx.writeBuffer();
         saveAs(new Blob([buffer]), `Bien_Ban_Ban_Giao_Serial_${invoice.code}.xlsx`);
@@ -1013,11 +1154,11 @@ export default function SalesInvoiceDetailClient({
 
                     <button
                         onClick={handleExportSerialsExcel}
-                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                        title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial không hiển thị đơn giá"
+                        className="inline-flex items-center gap-1.5 h-[34px] px-3 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial (Khổ đứng, màu xanh thương hiệu công ty)"
                     >
-                        <Barcode size={14} className="text-purple-600" />
-                        <span>Xuất Serials</span>
+                        <Barcode size={14} className="text-teal-600" />
+                        <span>Xuất BB Bàn Giao</span>
                     </button>
 
                     <button
@@ -1543,11 +1684,11 @@ export default function SalesInvoiceDetailClient({
                                                     <div className="flex items-center gap-2.5">
                                                         <button
                                                             onClick={handleExportSerialsExcel}
-                                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
-                                                            title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial không hiển thị đơn giá"
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+                                                            title="Tạo file Biên bản bàn giao thiết bị & bảng kê Serial (Khổ đứng, màu xanh thương hiệu công ty)"
                                                         >
                                                             <Barcode size={14} />
-                                                            <span>Xuất Serials (File Bàn Giao)</span>
+                                                            <span>Xuất File Bàn Giao (Excel)</span>
                                                         </button>
                                                     </div>
                                                 </div>

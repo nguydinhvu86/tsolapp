@@ -7,6 +7,7 @@ import {
     MapPin, Globe, Copy, Check, Printer, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { lookupPublicWarranty } from './actions';
+import { calculateWarrantyRemaining } from '@/lib/warranty';
 
 interface WarrantyData {
     serialNumber: string;
@@ -81,9 +82,15 @@ export default function PublicWarrantyClient({ initialSerial = '', isEmbed = fal
         handlePerformSearch(searchQuery);
     };
 
+    const warrantyStats = React.useMemo(() => {
+        if (!result || !result.warrantyEndDate) return null;
+        return calculateWarrantyRemaining(result.warrantyEndDate, result.warrantyMonths);
+    }, [result]);
+
     const handleCopy = () => {
         if (!result) return;
-        const text = `THÔNG TIN BẢO HÀNH CHÍNH HÃNG\n- Thiết bị: ${result.productName}\n- Mã SKU: ${result.sku}\n- Số Serial: ${result.serialNumber}\n- Ngày xuất hàng: ${result.exportDate ? new Date(result.exportDate).toLocaleDateString('vi-VN') : 'Chưa có'}\n- Thời hạn bảo hành: ${result.isNoWarranty ? 'Không bảo hành (KBH)' : `${result.warrantyMonths} tháng`}\n- Hạn bảo hành đến ngày: ${result.warrantyEndDate ? new Date(result.warrantyEndDate).toLocaleDateString('vi-VN') : 'Không áp dụng'}\n- Tình trạng: ${result.isNoWarranty ? 'Không áp dụng BH' : (result.isWarrantyValid ? `Còn hạn (${result.daysRemaining} ngày)` : 'Đã hết hạn')}`;
+        const statusText = result.isNoWarranty ? 'Không áp dụng BH' : (warrantyStats?.isValid ? warrantyStats.detailText : (warrantyStats?.detailText || 'Đã hết hạn'));
+        const text = `THÔNG TIN BẢO HÀNH CHÍNH HÃNG\n- Thiết bị: ${result.productName}\n- Mã SKU: ${result.sku}\n- Số Serial: ${result.serialNumber}\n- Ngày xuất hàng: ${result.exportDate ? new Date(result.exportDate).toLocaleDateString('vi-VN') : 'Chưa có'}\n- Thời hạn bảo hành: ${result.isNoWarranty ? 'Không bảo hành (KBH)' : `${result.warrantyMonths} tháng`}\n- Hạn bảo hành đến ngày: ${result.warrantyEndDate ? new Date(result.warrantyEndDate).toLocaleDateString('vi-VN') : 'Không áp dụng'}\n- Tình trạng: ${statusText}`;
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -193,15 +200,15 @@ export default function PublicWarrantyClient({ initialSerial = '', isEmbed = fal
                                         <Clock className="w-4 h-4" />
                                         Thiết Bị Kho (Kích hoạt {result.warrantyMonths} tháng khi bán)
                                     </span>
-                                ) : result.isWarrantyValid ? (
+                                ) : (warrantyStats?.isValid ?? result.isWarrantyValid) ? (
                                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white text-emerald-800 shadow-lg font-extrabold text-xs">
                                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                                        <span>CÒN HẠN BẢO HÀNH</span>
+                                        <span>{warrantyStats?.badgeText || 'CÒN HẠN BẢO HÀNH'}</span>
                                     </div>
                                 ) : (
                                     <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-rose-500 text-white shadow-md">
                                         <ShieldAlert className="w-4 h-4" />
-                                        HẾT HẠN BẢO HÀNH
+                                        {warrantyStats?.badgeText || 'HẾT HẠN BẢO HÀNH'}
                                     </span>
                                 )}
                             </div>
@@ -273,10 +280,10 @@ export default function PublicWarrantyClient({ initialSerial = '', isEmbed = fal
                                             'Không tính thời hạn'
                                         ) : result.status === 'IN_STOCK' ? (
                                             `Nguyên hạn ${result.warrantyMonths} tháng (Chưa kích hoạt)`
-                                        ) : result.isWarrantyValid ? (
-                                            `Còn lại ${result.daysRemaining} ngày (~${Math.floor(result.daysRemaining / 30)} tháng ${result.daysRemaining % 30} ngày)`
+                                        ) : (warrantyStats?.isValid ?? result.isWarrantyValid) ? (
+                                            warrantyStats?.detailText || `Còn lại ${result.daysRemaining} ngày`
                                         ) : (
-                                            `Đã hết hạn bảo hành (${result.daysExpired} ngày trước)`
+                                            warrantyStats?.detailText || `Đã hết hạn bảo hành (${result.daysExpired} ngày trước)`
                                         )}
                                     </p>
                                     <div className="flex items-center gap-1 text-xs pt-0.5 text-slate-600">

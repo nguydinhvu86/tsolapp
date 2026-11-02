@@ -883,6 +883,19 @@ async function main() {
         console.warn('⚠️ Chú ý về DocumentAccessLog:', logErr.message);
     }
 
+    // 9b. Cập nhật an toàn warrantyStartDate cho các Serial đã xuất bán nếu còn đang NULL
+    try {
+        await prisma.$executeRawUnsafe(`
+            UPDATE ProductSerial ps
+            JOIN SalesInvoice si ON ps.salesInvoiceId = si.id
+            SET ps.warrantyStartDate = si.date
+            WHERE ps.status = 'SOLD' AND ps.warrantyStartDate IS NULL AND si.date IS NOT NULL;
+        `);
+        console.log('✅ Đã đồng bộ warrantyStartDate cho các serial đã xuất bán.');
+    } catch (wsErr) {
+        // Ignored
+    }
+
     // 10. Verification and record counts
     const taskCount = await prisma.task.count();
     const todoCount = await prisma.todo.count();

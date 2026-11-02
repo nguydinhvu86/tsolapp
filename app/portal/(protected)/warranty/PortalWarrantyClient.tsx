@@ -7,6 +7,7 @@ import {
     FileSpreadsheet, ExternalLink, Code, Info, ArrowUpRight
 } from 'lucide-react';
 import { lookupPublicWarranty } from '@/app/warranty/actions';
+import { calculateWarrantyRemaining } from '@/lib/warranty';
 
 interface CustomerSerialItem {
     id: string;
@@ -50,6 +51,11 @@ export default function PortalWarrantyClient({
     const [copiedSerial, setCopiedSerial] = useState<string | null>(null);
     const [copiedPublicLink, setCopiedPublicLink] = useState(false);
     const [copiedIframe, setCopiedIframe] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Calculate real-time stats
     const now = new Date();
@@ -357,7 +363,9 @@ export default function PortalWarrantyClient({
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs font-mono text-slate-700">
-                    <span className="truncate pr-4">{getOrigin()}/warranty</span>
+                    <span className="truncate pr-4" suppressHydrationWarning>
+                        {mounted && typeof window !== 'undefined' ? `${window.location.origin}/warranty` : '/warranty'}
+                    </span>
                     <a
                         href="/warranty"
                         target="_blank"
@@ -467,7 +475,7 @@ export default function PortalWarrantyClient({
                                                 {s.salesInvoice?.code || '-'}
                                             </td>
 
-                                            <td className="px-4 py-3.5 font-mono text-slate-600">
+                                            <td className="px-4 py-3.5 font-mono text-slate-600" suppressHydrationWarning>
                                                 {exportDate ? new Date(exportDate).toLocaleDateString('vi-VN') : '-'}
                                             </td>
 
@@ -483,26 +491,29 @@ export default function PortalWarrantyClient({
                                                 )}
                                             </td>
 
-                                            <td className="px-4 py-3.5 font-mono font-bold text-slate-800">
+                                            <td className="px-4 py-3.5 font-mono font-bold text-slate-800" suppressHydrationWarning>
                                                 {s.warrantyEndDate ? new Date(s.warrantyEndDate).toLocaleDateString('vi-VN') : '-'}
                                             </td>
 
-                                            <td className="px-4 py-3.5 text-center">
+                                            <td className="px-4 py-3.5 text-center" suppressHydrationWarning>
                                                 {isNoWarranty ? (
                                                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
                                                         KBH
                                                     </span>
-                                                ) : isValid ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                        Còn hạn
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                                        Hết hạn
-                                                    </span>
-                                                )}
+                                                ) : (() => {
+                                                    const wStat = calculateWarrantyRemaining(s.warrantyEndDate, s.product.warrantyMonths ?? 12);
+                                                    return wStat.isValid ? (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                            Còn {wStat.daysRemaining} ngày
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                                            Hết hạn
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                         </tr>
                                     );

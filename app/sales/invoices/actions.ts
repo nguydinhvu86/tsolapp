@@ -367,14 +367,29 @@ export async function submitSalesInvoice(creatorId: string, formData: any) {
                         const raw = Array.isArray(item.serials) ? item.serials : JSON.parse(item.serials);
                         const clean = raw.map((x: any) => String(x).trim()).filter(Boolean);
                         if (clean.length > 0) {
-                            const warrantyEndDate = new Date();
-                            warrantyEndDate.setMonth(warrantyEndDate.getMonth() + 12);
+                            let warrantyMonths = 12;
+                            if (item.productId) {
+                                const prod = await prisma.product.findUnique({
+                                    where: { id: item.productId },
+                                    select: { warrantyMonths: true }
+                                });
+                                if (prod && prod.warrantyMonths !== null && prod.warrantyMonths !== undefined) {
+                                    warrantyMonths = prod.warrantyMonths;
+                                }
+                            }
+                            const issueDate = invoice.date ? new Date(invoice.date) : new Date();
+                            let warrantyEndDate: Date | null = null;
+                            if (warrantyMonths > 0) {
+                                warrantyEndDate = new Date(issueDate);
+                                warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyMonths);
+                            }
                             await prisma.productSerial.updateMany({
                                 where: { serialNumber: { in: clean } },
                                 data: {
                                     status: 'SOLD',
                                     customerId: invoice.customerId,
                                     salesInvoiceId: invoice.id,
+                                    warrantyStartDate: issueDate,
                                     warrantyEndDate,
                                     notes: `Xuất bán theo HĐ ${invoice.code}`
                                 }

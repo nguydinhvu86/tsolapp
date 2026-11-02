@@ -33,7 +33,7 @@ export async function fetchSerials(params?: { search?: string; status?: string; 
             prisma.productSerial.findMany({
                 where,
                 include: {
-                    product: { select: { id: true, name: true, sku: true, unit: true } },
+                    product: { select: { id: true, name: true, sku: true, unit: true, warrantyMonths: true } },
                     customer: { select: { id: true, name: true, phone: true, email: true } },
                     salesInvoice: { select: { id: true, code: true } },
                     warehouse: { select: { id: true, name: true } },
@@ -233,6 +233,9 @@ export async function lookupWarranty(serialNumber: string) {
                 expiredDays: info.daysExpired,
                 isWarrantyValid: info.isWarrantyValid,
                 isExpired: info.isExpired,
+                warrantyDetailText: info.warrantyDetailText,
+                warrantyBreakdownText: info.warrantyBreakdownText,
+                warrantyBadgeText: info.warrantyBadgeText,
                 customerName: info.customer?.name,
                 customerPhone: info.customer?.phone,
                 customerEmail: info.customer?.email,

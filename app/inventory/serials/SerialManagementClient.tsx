@@ -46,6 +46,7 @@ import {
     deleteSerialRecord,
     lookupWarranty 
 } from './actions';
+import { calculateWarrantyRemaining } from '@/lib/warranty';
 
 export default function SerialManagementClient() {
     const [serials, setSerials] = useState<any[]>([]);
@@ -149,6 +150,10 @@ export default function SerialManagementClient() {
     // Lookup state
     const [lookupSearch, setLookupSearch] = useState('');
     const [lookupResult, setLookupResult] = useState<any>(null);
+    const activeWarrantyStats = useMemo(() => {
+        if (!lookupResult || !lookupResult.warrantyEndDate) return null;
+        return calculateWarrantyRemaining(lookupResult.warrantyEndDate, lookupResult.warrantyMonths);
+    }, [lookupResult]);
     const [showEmbedCode, setShowEmbedCode] = useState(false);
     const [copiedPublicUrl, setCopiedPublicUrl] = useState(false);
     const [copiedEmbedSnippet, setCopiedEmbedSnippet] = useState(false);
@@ -497,6 +502,7 @@ export default function SerialManagementClient() {
                         type="text"
                         readOnly
                         value={getPublicLookupUrl()}
+                        suppressHydrationWarning
                         className="flex-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 font-mono font-bold text-blue-600 dark:text-blue-400 select-all outline-none"
                     />
                     <span className="text-[11px] text-slate-400 whitespace-nowrap">
@@ -521,7 +527,7 @@ export default function SerialManagementClient() {
                                 <span>{copiedEmbedSnippet ? 'Đã Sao Chép Mã' : 'Sao Chép Mã Nhúng'}</span>
                             </button>
                         </div>
-                        <pre className="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-emerald-400 overflow-x-auto whitespace-pre-wrap select-all border border-slate-800">
+                        <pre suppressHydrationWarning className="p-3 rounded-lg bg-slate-950 font-mono text-[11px] text-emerald-400 overflow-x-auto whitespace-pre-wrap select-all border border-slate-800">
 {`<iframe src="${getPublicLookupUrl()}?embed=true" width="100%" height="720" frameborder="0" style="border:none;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);"></iframe>`}
                         </pre>
                         <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -587,15 +593,15 @@ export default function SerialManagementClient() {
                                         <Clock className="w-3.5 h-3.5 text-amber-600" />
                                         Thiết bị tồn kho (Bảo hành {lookupResult.warrantyMonths || 12} tháng khi bán)
                                     </span>
-                                ) : lookupResult.isWarrantyValid ? (
+                                ) : (activeWarrantyStats?.isValid ?? lookupResult.isWarrantyValid) ? (
                                     <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-xs">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                        CÒN BẢO HÀNH (Còn {lookupResult.remainingDays} ngày)
+                                        {activeWarrantyStats?.badgeText || `CÒN BẢO HÀNH (Còn ${lookupResult.remainingDays} ngày)`}
                                     </span>
                                 ) : (
                                     <span className="px-3 py-1.5 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1.5 shadow-xs">
                                         <ShieldAlert className="w-4 h-4 text-rose-600" />
-                                        HẾT HẠN BẢO HÀNH ({lookupResult.expiredDays ? `Hết ${lookupResult.expiredDays} ngày trước` : 'Đã hết hạn'})
+                                        {activeWarrantyStats?.badgeText || (lookupResult.expiredDays ? `HẾT HẠN BẢO HÀNH (Hết ${lookupResult.expiredDays} ngày trước)` : 'HẾT HẠN BẢO HÀNH')}
                                     </span>
                                 )}
                                 <button 
@@ -625,27 +631,29 @@ export default function SerialManagementClient() {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-400">Từ ngày (Kích hoạt/Xuất):</span>
-                                        <span className="font-bold font-mono text-slate-900 dark:text-white">
+                                        <span className="font-bold font-mono text-slate-900 dark:text-white" suppressHydrationWarning>
                                             {lookupResult.warrantyStartDate ? new Date(lookupResult.warrantyStartDate).toLocaleDateString('vi-VN') : (lookupResult.salesInvoiceDate ? new Date(lookupResult.salesInvoiceDate).toLocaleDateString('vi-VN') : (lookupResult.status === 'IN_STOCK' ? 'Kích hoạt khi xuất bán' : 'Chưa có'))}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-400">Đến ngày (Hết hạn):</span>
-                                        <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                                        <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400" suppressHydrationWarning>
                                             {lookupResult.warrantyEndDate ? new Date(lookupResult.warrantyEndDate).toLocaleDateString('vi-VN') : (lookupResult.isNoWarranty ? 'Không áp dụng' : 'Chưa kích hoạt')}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center pt-1 border-t border-slate-200/60 dark:border-slate-700">
                                         <span className="text-slate-400">Thời gian còn lại:</span>
-                                        <span className="font-extrabold text-slate-900 dark:text-white">
+                                        <span className="font-extrabold text-slate-900 dark:text-white" suppressHydrationWarning>
                                             {lookupResult.isNoWarranty ? (
                                                 'Không tính hạn'
                                             ) : lookupResult.status === 'IN_STOCK' ? (
                                                 'Nguyên hạn trong kho'
-                                            ) : lookupResult.isWarrantyValid ? (
-                                                `${lookupResult.remainingDays} ngày (~${Math.floor(lookupResult.remainingDays / 30)} tháng ${lookupResult.remainingDays % 30} ngày)`
                                             ) : (
-                                                'Đã hết hạn bảo hành'
+                                                activeWarrantyStats?.detailText || (
+                                                    lookupResult.isWarrantyValid
+                                                        ? `${lookupResult.remainingDays} ngày`
+                                                        : 'Đã hết hạn bảo hành'
+                                                )
                                             )}
                                         </span>
                                     </div>
@@ -903,22 +911,25 @@ export default function SerialManagementClient() {
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
                                                         KBH
                                                     </span>
-                                                ) : s.warrantyEndDate ? (
-                                                    <div>
-                                                        <span className="font-bold text-xs text-slate-900 dark:text-white">
-                                                            {new Date(s.warrantyEndDate).toLocaleDateString('vi-VN')}
-                                                        </span>
-                                                        <div className="flex items-center gap-1 mt-0.5">
-                                                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${new Date() <= new Date(s.warrantyEndDate) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                            <span className={`text-[10px] font-bold ${new Date() <= new Date(s.warrantyEndDate) ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                                                {new Date() <= new Date(s.warrantyEndDate) ? 'Còn hạn' : 'Hết hạn'}
+                                                ) : s.warrantyEndDate ? (() => {
+                                                    const wStat = calculateWarrantyRemaining(s.warrantyEndDate, s.product?.warrantyMonths ?? 12);
+                                                    return (
+                                                        <div>
+                                                            <span className="font-bold text-xs text-slate-900 dark:text-white" suppressHydrationWarning>
+                                                                {new Date(s.warrantyEndDate).toLocaleDateString('vi-VN')}
                                                             </span>
-                                                            <span className="text-[10px] text-slate-400">
-                                                                ({s.product?.warrantyMonths || 12}T)
-                                                            </span>
+                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${wStat.isValid ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                                <span className={`text-[10px] font-bold ${wStat.isValid ? 'text-emerald-600' : 'text-rose-500'}`} suppressHydrationWarning>
+                                                                    {wStat.isValid ? `Còn ${wStat.daysRemaining} ngày` : 'Hết hạn'}
+                                                                </span>
+                                                                <span className="text-[10px] text-slate-400">
+                                                                    ({s.product?.warrantyMonths || 12}T)
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
+                                                    );
+                                                })() : (
                                                     <span className="text-slate-400 text-xs">
                                                         {s.status === 'IN_STOCK' ? `${s.product?.warrantyMonths || 12}T (Kho)` : '-'}
                                                     </span>

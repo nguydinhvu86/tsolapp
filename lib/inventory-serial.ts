@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { calculateWarrantyRemaining } from '@/lib/warranty';
 
 export interface ReceiveSerialsInput {
     productId: string;
@@ -121,30 +122,20 @@ export async function lookupSerialWarranty(serialNumber: string) {
     const startDate = record.warrantyStartDate || record.salesInvoice?.date || (record.status === 'SOLD' ? record.updatedAt : null);
     const endDate = record.warrantyEndDate;
 
-    const now = new Date();
-    const isWarrantyValid = !isNoWarranty && !!endDate && now <= new Date(endDate);
-    const isExpired = !isNoWarranty && !!endDate && now > new Date(endDate);
-
-    let daysRemaining = 0;
-    let daysExpired = 0;
-    if (endDate && !isNoWarranty) {
-        const diffDays = Math.ceil((new Date(endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0) {
-            daysRemaining = diffDays;
-        } else {
-            daysExpired = Math.abs(diffDays);
-        }
-    }
+    const stats = calculateWarrantyRemaining(endDate, warrantyMonths);
 
     return {
         ...record,
         warrantyMonths,
-        isNoWarranty,
+        isNoWarranty: stats.isNoWarranty,
         warrantyStartDate: startDate,
         warrantyEndDate: endDate,
-        isWarrantyValid,
-        isExpired,
-        daysRemaining,
-        daysExpired
+        isWarrantyValid: stats.isValid,
+        isExpired: stats.isExpired,
+        daysRemaining: stats.daysRemaining,
+        daysExpired: stats.daysExpired,
+        warrantyDetailText: stats.detailText,
+        warrantyBreakdownText: stats.breakdownText,
+        warrantyBadgeText: stats.badgeText,
     };
 }
