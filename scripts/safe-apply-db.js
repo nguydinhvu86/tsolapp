@@ -303,6 +303,50 @@ async function main() {
     `);
 
     await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS \`Unit\` (
+            \`id\` VARCHAR(191) NOT NULL,
+            \`name\` VARCHAR(191) NOT NULL,
+            \`description\` TEXT NULL,
+            \`isDefault\` BOOLEAN NOT NULL DEFAULT false,
+            \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (\`id\`),
+            UNIQUE INDEX \`Unit_name_key\` (\`name\`),
+            INDEX \`Unit_name_idx\` (\`name\`)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+
+    // Tự động seed các đơn vị tính phổ biến và từ các sản phẩm đã có
+    const initialUnits = ['Cái', 'Bộ', 'Chiếc', 'Gói', 'Hộp', 'Mét', 'Cuộn', 'Bản quyền', 'Tháng', 'Năm', 'Kg', 'Lít', 'Thùng', 'Thanh', 'Cây', 'Vỉ', 'Bình'];
+    for (const uName of initialUnits) {
+        try {
+            await prisma.unit.upsert({
+                where: { name: uName },
+                update: {},
+                create: {
+                    name: uName,
+                    isDefault: uName === 'Cái',
+                    description: `Đơn vị tính ${uName}`
+                }
+            });
+        } catch (e) {}
+    }
+
+    try {
+        const prodUnits = await prisma.product.findMany({ select: { unit: true } });
+        for (const p of prodUnits) {
+            if (p.unit && p.unit.trim()) {
+                const cleanU = p.unit.trim();
+                await prisma.unit.upsert({
+                    where: { name: cleanU },
+                    update: {},
+                    create: { name: cleanU, description: `Đơn vị tính từ danh mục sản phẩm` }
+                });
+            }
+        }
+    } catch (e) {}
+
+    await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS \`ProductSerial\` (
             \`id\` VARCHAR(191) NOT NULL,
             \`productId\` VARCHAR(191) NOT NULL,

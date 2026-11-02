@@ -40,9 +40,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: { a
         orderBy: { name: 'asc' }
     });
 
+    const units = await (prisma as any).unit.findMany({
+        orderBy: [{ isDefault: 'desc' }, { name: 'asc' }]
+    });
+
     return (
         <div className="space-y-6 w-full">
-            <ProductClient initialProducts={products} warehouses={warehouses} productGroups={productGroups} userRole={userRole} />
+            <ProductClient initialProducts={products} warehouses={warehouses} productGroups={productGroups} userRole={userRole} initialUnits={units} />
         </div>
     );
 }

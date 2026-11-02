@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { buildViewFilter, verifyActionPermission, verifyActionOwnership } from '@/lib/permissions';
+import { ensureUnitExists } from './units/actions';
 
 // --- WAREHOUSE ACTIONS ---
 
@@ -132,8 +133,13 @@ export async function createProduct(data: {
         throw new Error(`Mã sản phẩm (SKU) ${data.sku} đã tồn tại!`);
     }
 
+    if (data.unit) {
+        await ensureUnitExists(data.unit);
+    }
+
     const product = await prisma.product.create({ data });
     revalidatePath('/inventory/products');
+    revalidatePath('/inventory/units');
     return product;
 }
 
@@ -160,11 +166,16 @@ export async function updateProduct(id: string, data: Partial<{
         }
     }
 
+    if (data.unit) {
+        await ensureUnitExists(data.unit);
+    }
+
     const product = await prisma.product.update({
         where: { id },
         data
     });
     revalidatePath('/inventory/products');
+    revalidatePath('/inventory/units');
     return product;
 }
 

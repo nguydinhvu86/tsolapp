@@ -826,6 +826,17 @@ model ProductUnitConversion {
   @@index([productId])
 }
 
+model Unit {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
 model ProductSerial {
   id              String        @id @default(cuid())
   productId       String

@@ -2,6 +2,7 @@
 
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -10,7 +11,7 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { 
     Plus, Search, Edit, Edit2, Trash2, Package, Layers, X, Eye, 
     ShieldCheck, Shield, Sparkles, Wrench, Barcode, Check, AlertCircle,
-    Boxes, Tag, DollarSign, Calendar, Info
+    Boxes, Tag, DollarSign, Calendar, Info, Ruler, Settings2
 } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, createProductGroup, updateProductGroup, deleteProductGroup } from '../actions';
 import { useRouter } from 'next/navigation';
@@ -31,9 +32,34 @@ const WARRANTY_OPTIONS = [
     { label: 'Tùy chỉnh', months: -1, desc: 'Nhập số tháng' },
 ];
 
-const COMMON_UNITS = ['Cái', 'Bộ', 'Chiếc', 'Gói', 'Hộp', 'Mét', 'Bản quyền'];
+// Hàm chuẩn hóa số tiền linh hoạt: hỗ trợ cả số chẵn, lẻ và số có phân cách hàng nghìn (VD: 5500, 10500000, 12,345,965 hay 12.345.965)
+function parseCleanNumber(input: string | number | undefined | null): number {
+    if (typeof input === 'number') return isNaN(input) ? 0 : input;
+    if (!input) return 0;
+    const str = String(input).trim();
+    // Loại bỏ dấu phẩy phân cách hàng nghìn (VD: 12,345,965 -> 12345965)
+    let sanitized = str.replace(/,/g, '');
+    // Nếu có nhiều dấu chấm kiểu phân cách hàng nghìn VN (VD: 12.345.965 -> 12345965)
+    if (sanitized.includes('.') && sanitized.split('.').length > 2) {
+        sanitized = sanitized.replace(/\./g, '');
+    }
+    const num = parseFloat(sanitized);
+    return isNaN(num) ? 0 : num;
+}
 
-export default function ProductClient({ initialProducts, warehouses = [], productGroups = [], userRole = 'USER' }: { initialProducts: any[], warehouses?: any[], productGroups?: any[], userRole?: string }) {
+export default function ProductClient({ 
+    initialProducts, 
+    warehouses = [], 
+    productGroups = [], 
+    userRole = 'USER',
+    initialUnits = []
+}: { 
+    initialProducts: any[], 
+    warehouses?: any[], 
+    productGroups?: any[], 
+    userRole?: string,
+    initialUnits?: any[]
+}) {
     const canViewImportPrice = userRole === 'ADMIN' || userRole === 'MANAGER';
     const router = useRouter();
     const { t } = useTranslation();
@@ -43,6 +69,7 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
     const [viewingProduct, setViewingProduct] = useState<any>(null);
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [availableUnits, setAvailableUnits] = useState<any[]>(initialUnits || []);
 
     // Form states
     const [sku, setSku] = useState('');
@@ -91,7 +118,8 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
         setSku('');
         setName('');
         setType('PRODUCT');
-        setUnit('Cái');
+        const defaultU = availableUnits.find(u => u.isDefault)?.name || (availableUnits.length > 0 ? availableUnits[0].name : 'Cái');
+        setUnit(defaultU);
         setTaxRate('0');
         setImportPrice('0');
         setSalePrice('0');
@@ -155,14 +183,18 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                 ? Math.max(0, parseInt(customWarrantyInput) || 0)
                 : warrantyMonths;
 
+            const numImportPrice = parseCleanNumber(importPrice);
+            const numSalePrice = parseCleanNumber(salePrice);
+            const cleanUnit = unit.trim() || 'Cái';
+
             const data = {
                 sku: sku.trim(),
                 name: name.trim(),
                 type,
-                unit: unit.trim() || 'Cái',
+                unit: cleanUnit,
                 taxRate: parseFloat(taxRate) || 0,
-                importPrice: parseFloat(importPrice) || 0,
-                salePrice: parseFloat(salePrice) || 0,
+                importPrice: numImportPrice,
+                salePrice: numSalePrice,
                 minStockLevel: parseInt(minStockLevel) || 0,
                 warrantyMonths: resolvedWarranty,
                 description: description.trim(),
@@ -170,6 +202,10 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                 isActive: true,
                 groupId: groupId || null
             };
+
+            if (cleanUnit && !availableUnits.some(u => u.name.toLowerCase() === cleanUnit.toLowerCase())) {
+                setAvailableUnits(prev => [...prev, { name: cleanUnit, isDefault: false }]);
+            }
 
             if (editingProduct) {
                 await updateProduct(editingProduct.id, data);
@@ -609,31 +645,72 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                     </div>
 
                                     <div>
-                                        <label className="block mb-1 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                            Đơn Vị Tính <span className="text-rose-500">*</span>
-                                        </label>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                Đơn Vị Tính <span className="text-rose-500">*</span>
+                                            </label>
+                                            <Link 
+                                                href="/inventory/units" 
+                                                target="_blank" 
+                                                className="text-[11px] text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1 font-medium"
+                                                title="Mở trang Quản lý đơn vị tính"
+                                            >
+                                                <Settings2 className="w-3 h-3" />
+                                                Quản lý ĐVT
+                                            </Link>
+                                        </div>
                                         <div className="space-y-1.5">
-                                            <Input 
-                                                value={unit} 
-                                                onChange={(e) => setUnit(e.target.value)} 
-                                                placeholder="VD: Cái, Bộ, Hộp..." 
-                                                required 
-                                                className="h-10 text-xs border-slate-200 rounded-xl font-medium" 
-                                            />
-                                            <div className="flex flex-wrap gap-1">
-                                                {COMMON_UNITS.map(u => (
-                                                    <button
-                                                        key={u}
-                                                        type="button"
-                                                        onClick={() => setUnit(u)}
-                                                        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
-                                                            unit === u ? 'bg-emerald-600 text-white' : 'bg-slate-200/70 hover:bg-slate-300 text-slate-600'
-                                                        }`}
-                                                    >
-                                                        {u}
-                                                    </button>
-                                                ))}
+                                            <div className="relative flex items-center">
+                                                <Input 
+                                                    list="units-datalist"
+                                                    value={unit} 
+                                                    onChange={(e) => setUnit(e.target.value)} 
+                                                    placeholder="Chọn hoặc gõ ĐVT mới (VD: Cái, Bộ, Mét...)" 
+                                                    required 
+                                                    className="h-10 text-xs border-slate-200 rounded-xl font-medium pr-8" 
+                                                />
+                                                <select
+                                                    aria-label="Chọn đơn vị tính có sẵn"
+                                                    value={availableUnits.some(u => u.name.toLowerCase() === unit.trim().toLowerCase()) ? unit : ''}
+                                                    onChange={(e) => {
+                                                        if (e.target.value) setUnit(e.target.value);
+                                                    }}
+                                                    className="absolute right-1 w-7 h-8 opacity-70 hover:opacity-100 bg-transparent text-slate-500 border-none cursor-pointer focus:outline-none"
+                                                    title="Bấm để chọn từ danh mục ĐVT"
+                                                >
+                                                    <option value="">▼</option>
+                                                    {availableUnits.map(u => (
+                                                        <option key={u.id || u.name} value={u.name}>
+                                                            {u.name} {u.isDefault ? '★' : ''}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <datalist id="units-datalist">
+                                                    {availableUnits.map(u => (
+                                                        <option key={u.id || u.name} value={u.name} />
+                                                    ))}
+                                                </datalist>
                                             </div>
+                                            {/* Gợi ý ĐVT thông dụng */}
+                                            {availableUnits.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 items-center pt-0.5">
+                                                    <span className="text-[10px] text-slate-400 font-medium">Gợi ý:</span>
+                                                    {availableUnits.slice(0, 7).map(u => (
+                                                        <button
+                                                            key={u.id || u.name}
+                                                            type="button"
+                                                            onClick={() => setUnit(u.name)}
+                                                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
+                                                                unit.trim().toLowerCase() === u.name.toLowerCase() 
+                                                                    ? 'bg-emerald-600 text-white shadow-xs' 
+                                                                    : 'bg-slate-200/70 hover:bg-slate-300 text-slate-600'
+                                                            }`}
+                                                        >
+                                                            {u.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -653,16 +730,16 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                                 {t('products.formImportPriceLabel')}
                                             </label>
                                             <Input 
-                                                type="number" 
+                                                type="text" 
+                                                inputMode="numeric"
                                                 value={importPrice} 
                                                 onChange={(e) => setImportPrice(e.target.value)} 
-                                                min="0" 
-                                                step="1000"
+                                                placeholder="VD: 5500 hoặc 12,345,965..."
                                                 className="h-10 text-xs font-mono font-bold border-slate-200 rounded-xl" 
                                             />
-                                            {Number(importPrice) > 0 && (
+                                            {parseCleanNumber(importPrice) > 0 && (
                                                 <span className="text-[11px] text-slate-500 font-mono mt-1 block">
-                                                    ≈ {formatMoney(Number(importPrice))}
+                                                    ≈ {formatMoney(parseCleanNumber(importPrice))}
                                                 </span>
                                             )}
                                         </div>
@@ -673,17 +750,17 @@ export default function ProductClient({ initialProducts, warehouses = [], produc
                                             {t('products.formSalePriceLabel')} <span className="text-rose-500">*</span>
                                         </label>
                                         <Input 
-                                            type="number" 
+                                            type="text" 
+                                            inputMode="numeric"
                                             value={salePrice} 
                                             onChange={(e) => setSalePrice(e.target.value)} 
-                                            min="0" 
-                                            step="1000"
+                                            placeholder="VD: 5500 hoặc 12,345,965..."
                                             required 
                                             className="h-10 text-xs font-mono font-bold text-emerald-700 border-slate-200 rounded-xl" 
                                         />
-                                        {Number(salePrice) > 0 && (
+                                        {parseCleanNumber(salePrice) > 0 && (
                                             <span className="text-[11px] text-emerald-600 font-mono font-bold mt-1 block">
-                                                ≈ {formatMoney(Number(salePrice))}
+                                                ≈ {formatMoney(parseCleanNumber(salePrice))}
                                             </span>
                                         )}
                                     </div>

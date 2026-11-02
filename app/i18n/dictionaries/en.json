@@ -160,6 +160,7 @@
         "tpl_dispatches": "Dispatch Tpl.",
         "inventory": "Inventory",
         "products": "Products & Services",
+        "units": "Units of Measurement",
         "warehouses": "Warehouses",
         "inventory_tx": "Transactions",
         "inventory_adj": "Adjustments",

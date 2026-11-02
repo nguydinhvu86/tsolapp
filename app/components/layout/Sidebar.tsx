@@ -66,6 +66,7 @@ const mainNavItems: any[] = [
         icon: Package,
         children: [
             { name: 'Sản Phẩm & Dịch Vụ', nameKey: 'sidebar.products', href: '/inventory/products', permission: 'PRODUCTS_VIEW' },
+            { name: 'Quản Lý Đơn Vị Tính', nameKey: 'sidebar.units', href: '/inventory/units', permission: 'PRODUCTS_VIEW' },
             { name: 'Đơn Vị Tính Quy Đổi', nameKey: 'sidebar.unit_conversions', href: '/inventory/unit-conversions', permission: 'PRODUCTS_VIEW' },
             { name: 'Serial / IMEI & Bảo Hành', nameKey: 'sidebar.serials', href: '/inventory/serials', permission: 'INVENTORY_TX_VIEW' },
             { name: 'Danh Sách Kho', nameKey: 'sidebar.warehouses', href: '/inventory/warehouses', permission: 'WAREHOUSES_VIEW' },
