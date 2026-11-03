@@ -22,9 +22,9 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
-    const supplierFilterOptions = [{ value: '', label: t('purchaseOrders.allSuppliers') }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))];
-    const supplierFormOptions = [{ value: '', label: t('purchaseOrders.selectSupplier') }, ...suppliers.map((s: any) => ({ value: s.id, label: `${s.name} - ${s.code}` }))];
-    const productOptions = [{ value: '', label: 'Lựa chọn...' }, { value: 'EXTERNAL', label: '+ Nhập Sản Phẩm tùy chỉnh ngoài hệ thống...' }, ...products.map((p: any) => ({ value: p.id, label: p.code ? `[${p.code}] ${p.name}` : p.name }))];
+    const supplierFilterOptions = [{ value: '', label: t('purchaseOrders.allSuppliers') || 'Tất cả NCC' }, ...(suppliers || []).map((s: any) => ({ value: s.id, label: s.name || '' }))];
+    const supplierFormOptions = [{ value: '', label: t('purchaseOrders.selectSupplier') || 'Chọn Nhà Cung Cấp' }, ...(suppliers || []).map((s: any) => ({ value: s.id, label: `${s.name || ''}${s.code ? ' - ' + s.code : ''}` }))];
+    const productOptions = [{ value: '', label: 'Lựa chọn...' }, { value: 'EXTERNAL', label: '+ Nhập Sản Phẩm tùy chỉnh ngoài hệ thống...' }, ...(products || []).map((p: any) => ({ value: p.id, label: (p.sku || p.code) ? `[${p.sku || p.code}] ${p.name || ''}` : (p.name || '') }))];
 
     // Modals
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -64,8 +64,12 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         if (hasOpenedFromUrl.current) return;
 
         const supplierId = searchParams.get('supplierId');
+        const action = searchParams.get('action');
         if (supplierId) {
             setFormData(prev => ({ ...prev, supplierId }));
+            setIsCreateModalOpen(true);
+            hasOpenedFromUrl.current = true;
+        } else if (action === 'new') {
             setIsCreateModalOpen(true);
             hasOpenedFromUrl.current = true;
         }

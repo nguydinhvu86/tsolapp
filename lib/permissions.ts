@@ -74,9 +74,10 @@ export function buildViewFilter(
     permissions: string[],
     resource: ResourceId,
     creatorField: string = 'creatorId',
-    includeManagers: boolean = false
+    includeManagers: boolean = false,
+    role?: string
 ): any {
-    if (permissions.includes(`${resource}_VIEW_ALL`)) {
+    if (role === 'ADMIN' || permissions?.includes('ADMIN') || permissions?.includes(`${resource}_VIEW_ALL`)) {
         return {}; // Can view everything
     }
     if (permissions.includes(`${resource}_VIEW_OWN`)) {

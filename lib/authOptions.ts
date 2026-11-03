@@ -1,3 +1,4 @@
+import { PermissionHelper } from '@/lib/permissions';
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
@@ -151,6 +152,11 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
 
+                if (user.role === 'ADMIN') {
+                    PermissionHelper.getAllPermissions().forEach(p => mergedPerms.add(p));
+                    mergedPerms.add('ADMIN');
+                }
+
                 if (isManagementLevelUser(user.role, user.permissionGroup?.name, user.employeeProfile?.position)) {
                     mergedPerms.add('VIEW_EXECUTIVE_BI');
                 }
@@ -245,8 +251,11 @@ export const authOptions: NextAuthOptions = {
                         token.role = dbUser.role;
                         token.name = dbUser.name;
                         token.avatar = dbUser.avatar;
-                        // Bảo vệ quyền của ADMIN khỏi bị ghi đè, vì quyền ADMIN được cấp động lúc đăng nhập (không lưu vào DB mảng array)
-                        if (dbUser.role !== 'ADMIN') {
+                        if (dbUser.role === 'ADMIN') {
+                            const adminPerms = new Set(PermissionHelper.getAllPermissions());
+                            adminPerms.add('ADMIN');
+                            token.permissions = Array.from(adminPerms);
+                        } else {
                             const userPerms = JSON.parse(dbUser.permissions || "[]");
                             const groupPerms = dbUser.permissionGroup ? JSON.parse(dbUser.permissionGroup.permissions || "[]") : [];
                             const rawPerms = Array.from(new Set([...userPerms, ...groupPerms]));

@@ -781,7 +781,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">Khách Hàng (*)</label>
                                 <SearchableSelect
-                                    options={customers.map((c: any) => ({ value: c.id, label: c.name }))}
+                                    options={(customers || []).map((c: any) => ({ value: c.id, label: c.name || c.email || "Khách hàng" }))}
                                     value={formData.customerId || ''}
                                     onChange={val => setFormData({ ...formData, customerId: val })}
                                     placeholder="-- Chọn KH --"
@@ -798,7 +798,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">Dự Án Lắp Đặt (Tùy chọn)</label>
                                 <SearchableSelect
-                                    options={projects?.map((p: any) => ({ value: p.id, label: p.title })) || []}
+                                    options={(projects || []).map((p: any) => ({ value: p.id, label: p.name || p.title || p.code || "Dự án" }))}
                                     value={formData.projectId || ''}
                                     onChange={val => setFormData({ ...formData, projectId: val })}
                                     placeholder="-- Chọn Dự án --"
@@ -865,7 +865,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                     <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Sản Phẩm</label>
                                     {!isCustomProduct ? (
                                         <SearchableSelect
-                                            options={products.map((p: any) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+                                            options={(products || []).map((p: any) => ({ value: p.id, label: `${p.sku || p.code || "SP"} - ${p.name || ""}` }))}
                                             value={selectedProduct || ''}
                                             onChange={handleProductSelect}
                                             placeholder="-- Chọn Sản Phẩm --"

@@ -18,7 +18,7 @@ interface SearchableSelectProps {
 }
 
 export function SearchableSelect({
-    options,
+    options = [],
     value,
     onChange,
     placeholder = "Chọn một mục",
@@ -40,11 +40,16 @@ export function SearchableSelect({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [wrapperRef]);
 
-    const filteredOptions = options.filter(opt =>
-        opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const safeOptions = Array.isArray(options) ? options : [];
+    const safeSearchTerm = (searchTerm || '').trim().toLowerCase();
 
-    const selectedOption = options.find(opt => opt.value === value);
+    const filteredOptions = safeOptions.filter(opt => {
+        if (!opt) return false;
+        const labelStr = String(opt.label ?? '');
+        return labelStr.toLowerCase().includes(safeSearchTerm);
+    });
+
+    const selectedOption = safeOptions.find(opt => opt && opt.value === value);
 
     return (
         <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }} className={className}>
@@ -79,7 +84,7 @@ export function SearchableSelect({
                 }}
                     className="custom-scrollbar"
                 >
-                    {selectedOption ? selectedOption.label : placeholder}
+                    {selectedOption ? (selectedOption.label ?? placeholder) : placeholder}
                 </div>
                 <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginLeft: '0.5rem', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
             </div>
@@ -114,9 +119,9 @@ export function SearchableSelect({
 
                     <div style={{ overflowY: 'auto', flex: 1, padding: '0.25rem' }}>
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt) => (
+                            filteredOptions.map((opt, idx) => (
                                 <div
-                                    key={opt.value}
+                                    key={`${opt.value || 'item'}-${idx}`}
                                     onClick={() => {
                                         onChange(opt.value);
                                         setIsOpen(false);
@@ -141,7 +146,7 @@ export function SearchableSelect({
                                         if (value !== opt.value) e.currentTarget.style.backgroundColor = 'transparent';
                                     }}
                                 >
-                                    {opt.label}
+                                    <span>{opt.label ?? ''}</span>
                                     {value === opt.value && <Check size={16} color="var(--primary)" />}
                                 </div>
                             ))

@@ -11,7 +11,7 @@ export default async function PurchaseOrderDetailPage({ params }: { params: { id
     if (!session || !session.user) return null;
 
     const perms = (session.user.permissions as string[]) || [];
-    const viewFilter = buildViewFilter(session.user.id, perms, 'PURCHASE_ORDERS', 'creatorId');
+    const viewFilter = buildViewFilter(session.user.id, perms, 'PURCHASE_ORDERS', 'creatorId', false, session.user.role);
     if (viewFilter.id === 'UNAUTHORIZED_NO_ACCESS') return notFound();
 
     const order = await prisma.purchaseOrder.findFirst({

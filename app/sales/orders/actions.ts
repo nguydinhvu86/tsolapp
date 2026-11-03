@@ -210,9 +210,9 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                 status: formData.status || "DRAFT",
                 notes: formData.notes,
                 customerId: formData.customerId,
-                subTotal: formData.subTotal,
-                taxAmount: formData.taxAmount,
-                totalAmount: formData.totalAmount,
+                subTotal: Number(formData.subTotal) || 0,
+                taxAmount: Number(formData.taxAmount) || 0,
+                totalAmount: Number(formData.totalAmount) || 0,
                 ...(formData.projectId ? { projects: { connect: [{ id: formData.projectId }] } } : {}),
                 creatorId: actualCreatorId,
                 items: {
@@ -221,12 +221,12 @@ export async function submitSalesOrder(creatorId: string, formData: any) {
                         customName: item.customName || null,
                         description: item.description || null,
                         unit: item.unit || null,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
-                        taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice,
-                        isSubItem: item.isSubItem || false
+                        quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0,
+                        isSubItem: Boolean(item.isSubItem)
                     }))
                 }
             },
@@ -265,10 +265,10 @@ export async function updateSalesOrder(id: string, formData: any) {
                 status: formData.status || "DRAFT",
                 notes: formData.notes,
                 customerId: formData.customerId,
-                subTotal: formData.subTotal,
-                taxAmount: formData.taxAmount,
-                totalAmount: formData.totalAmount,
-                ...(formData.projectId ? { projects: { connect: [{ id: formData.projectId }] } } : {}),
+                subTotal: Number(formData.subTotal) || 0,
+                taxAmount: Number(formData.taxAmount) || 0,
+                totalAmount: Number(formData.totalAmount) || 0,
+                ...(formData.projectId ? { projects: { set: [{ id: formData.projectId }] } } : { projects: { set: [] } }),
                 items: {
                     deleteMany: {},
                     create: formData.items.map((item: any) => ({
@@ -276,12 +276,12 @@ export async function updateSalesOrder(id: string, formData: any) {
                         customName: item.customName || null,
                         description: item.description || null,
                         unit: item.unit || null,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        taxRate: item.taxRate || 0,
-                        taxAmount: item.taxAmount || 0,
-                        totalPrice: item.totalPrice,
-                        isSubItem: item.isSubItem || false
+                        quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+                        unitPrice: Number(item.unitPrice) || 0,
+                        taxRate: Number(item.taxRate) || 0,
+                        taxAmount: Number(item.taxAmount) || 0,
+                        totalPrice: Number(item.totalPrice) || 0,
+                        isSubItem: Boolean(item.isSubItem)
                     }))
                 }
             },
@@ -304,8 +304,9 @@ export async function getSalesOrders(employeeId?: string) {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) return [];
 
+        const isAdmin = session.user.role === 'ADMIN';
         const permissions = session.user.permissions as string[] || [];
-        const viewAll = permissions.includes('SALES_ORDERS_VIEW_ALL');
+        const viewAll = isAdmin || permissions.includes('SALES_ORDERS_VIEW_ALL');
         const viewOwn = permissions.includes('SALES_ORDERS_VIEW_OWN');
 
         if (!viewAll && !viewOwn) return [];

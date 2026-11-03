@@ -13,8 +13,9 @@ export default async function SalesOrderDetailPage({ params }: { params: { id: s
     const session = await getServerSession(authOptions);
     if (!session || !session.user) return notFound();
 
+    const isAdmin = session.user.role === 'ADMIN';
     const perms = (session.user.permissions as string[]) || [];
-    const isViewAll = perms.includes('SALES_ORDERS_VIEW_ALL');
+    const isViewAll = isAdmin || perms.includes('SALES_ORDERS_VIEW_ALL');
     const isViewOwn = perms.includes('SALES_ORDERS_VIEW_OWN');
 
     if (!isViewAll && !isViewOwn) return notFound();
