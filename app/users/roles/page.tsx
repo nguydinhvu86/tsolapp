@@ -7,7 +7,11 @@ import { RolesClient } from './RolesClient';
 export default async function RolesPage() {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'ADMIN') {
+    const isAdmin = session?.user?.role === 'ADMIN' || (session?.user?.permissions as string[])?.includes('ADMIN');
+    const perms = (session?.user?.permissions as string[]) || [];
+    const canView = isAdmin || perms.includes('ROLES_VIEW_ALL') || perms.includes('ROLES_VIEW_OWN');
+
+    if (!session || !canView) {
         redirect('/dashboard');
     }
 

@@ -145,8 +145,11 @@ export const authOptions: NextAuthOptions = {
                 const mergedPerms = new Set<string>();
                 for (const p of rawPerms) {
                     if (p.endsWith('_VIEW')) {
-                        mergedPerms.add(p + '_ALL');
-                        mergedPerms.add(p + '_OWN');
+                        const base = p.replace('_VIEW', '');
+                        if (!rawPerms.includes(`${base}_VIEW_ALL`) && !rawPerms.includes(`${base}_VIEW_OWN`)) {
+                            mergedPerms.add(`${base}_VIEW_ALL`);
+                            mergedPerms.add(`${base}_VIEW_OWN`);
+                        }
                     } else {
                         mergedPerms.add(p);
                     }

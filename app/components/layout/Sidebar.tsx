@@ -20,20 +20,26 @@ interface OnlineUser {
     os?: string;
 }
 
-const hasPermission = (permissions: string[], requiredPerm: string) => {
-    if (permissions.includes(requiredPerm)) return true;
-    if (requiredPerm.endsWith('_VIEW')) {
-        const base = requiredPerm.replace('_VIEW', '');
-        return permissions.includes(`${base}_VIEW_ALL`) || permissions.includes(`${base}_VIEW_OWN`);
+const hasPermission = (permissions: string[], requiredPerm: string | string[]) => {
+    const checkSingle = (perm: string) => {
+        if (permissions.includes(perm)) return true;
+        if (perm.endsWith('_VIEW')) {
+            const base = perm.replace('_VIEW', '');
+            return permissions.includes(`${base}_VIEW_ALL`) || permissions.includes(`${base}_VIEW_OWN`);
+        }
+        return false;
+    };
+    if (Array.isArray(requiredPerm)) {
+        return requiredPerm.some(p => checkSingle(p));
     }
-    return false;
+    return checkSingle(requiredPerm);
 };
 
 const mainNavItems: any[] = [
     { name: 'Bảng Điều Khiển', nameKey: 'sidebar.dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'VIEW_DASHBOARD' },
     { name: 'Executive BI & Dự Báo', nameKey: 'sidebar.executive_bi', href: '/executive-bi', icon: Activity, permission: 'VIEW_EXECUTIVE_BI' },
     { name: 'Bảng Vinh Danh', nameKey: 'sidebar.leaderboard', href: '/leaderboard', icon: Trophy, permission: 'VIEW_DASHBOARD' },
-    { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: 'TASKS_VIEW' },
+    { name: 'Dự Án (Projects)', nameKey: 'sidebar.projects', href: '/projects', icon: Target, permission: ['PROJECTS_VIEW', 'TASKS_VIEW'] },
     { name: 'Công Việc & Giao Việc', nameKey: 'sidebar.tasks', href: '/tasks', icon: CheckSquare, permission: 'TASKS_VIEW' },
     { name: 'T-Drive & Tài Liệu', nameKey: 'sidebar.library', href: '/library', icon: HardDrive, permission: 'TASKS_VIEW' },
     {

@@ -36,16 +36,25 @@ export async function generateProjectCode() {
 export async function getProjects(filters?: any) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    const isAdmin = session?.user?.role === 'ADMIN';
+    const permissions = (session?.user as any)?.permissions as string[] || [];
+    const isAdmin = session?.user?.role === 'ADMIN' || permissions.includes('ADMIN');
 
     let whereClause: any = {};
 
-    // Base Privacy Filter (same logic as tasks but for Projects)
-    if (!isAdmin && userId) {
-        whereClause.OR = [
-            { creatorId: userId },
-            { members: { some: { userId: userId } } }
-        ];
+    // Base Privacy Filter (respect PROJECTS_VIEW_ALL vs PROJECTS_VIEW_OWN)
+    const hasViewAll = isAdmin || permissions.includes('PROJECTS_VIEW_ALL');
+    const hasViewOwn = permissions.includes('PROJECTS_VIEW_OWN') || permissions.includes('TASKS_VIEW_OWN') || permissions.includes('TASKS_VIEW_ALL');
+
+    if (!isAdmin && !hasViewAll) {
+        if (!hasViewOwn && permissions.length > 0) {
+            return [];
+        }
+        if (userId) {
+            whereClause.OR = [
+                { creatorId: userId },
+                { members: { some: { userId: userId } } }
+            ];
+        }
     }
 
     const projects = await prisma.project.findMany({

@@ -110,7 +110,6 @@ export async function getSuppliers() {
     if (!viewAll && viewOwn) {
         filter = {
             OR: [
-                { creatorId: session.user.id },
                 { orders: { some: { creatorId: session.user.id } } },
                 { bills: { some: { creatorId: session.user.id } } },
                 { payments: { some: { creatorId: session.user.id } } }
@@ -167,7 +166,6 @@ export async function getSupplier(id: string) {
     if (!viewAll && viewOwn) {
         filter = {
             OR: [
-                { creatorId: session.user.id },
                 { orders: { some: { creatorId: session.user.id } } },
                 { bills: { some: { creatorId: session.user.id } } },
                 { payments: { some: { creatorId: session.user.id } } }

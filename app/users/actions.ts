@@ -12,11 +12,14 @@ async function checkUserPermission(action: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error('Unauthorized');
 
+    if (session.user.role === 'ADMIN' || (session.user.permissions as string[])?.includes('ADMIN')) {
+        return session;
+    }
+
     const perms = (session.user.permissions as string[]) || [];
     const hasPerm = perms.includes(`USERS_${action}`);
-    const noGroupAdmin = session.user.role === 'ADMIN' && perms.length === 0;
 
-    if (!hasPerm && !noGroupAdmin) {
+    if (!hasPerm) {
         throw new Error('Unauthorized');
     }
     return session;
