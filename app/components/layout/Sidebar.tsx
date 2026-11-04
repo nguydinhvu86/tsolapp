@@ -321,7 +321,7 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
 
     const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item mb-1">
+        <div ref={setNodeRef} style={style} className="flex items-center w-full group/item mb-0.5">
             <div 
                 {...attributes} 
                 {...listeners} 
@@ -333,17 +333,20 @@ function SortableItem({ item, isAdmin, userPermissions, pathname, openSubMenus, 
             <Link
                 href={item.href}
                 onClick={() => { if (onClose && window.innerWidth < 768) onClose(); }}
-                className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 text-[13px] outline-none ${
+                className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 text-[12.5px] outline-none relative ${
                     isActive 
-                        ? 'bg-slate-800/90 text-white font-semibold shadow-xs border border-slate-700/60' 
+                        ? 'bg-slate-800/95 text-emerald-300 font-semibold shadow-xs border border-slate-700/60' 
                         : 'text-slate-300 hover:text-white hover:bg-slate-800/50 hover:translate-x-0.5 font-medium border border-transparent'
                 }`}
             >
+                {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-[3px] bg-emerald-400 rounded-r-full shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                )}
                 <item.icon 
-                    size={17} 
+                    size={16} 
                     strokeWidth={1.8}
                     className={`flex-shrink-0 transition-colors ${
-                        isActive ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : 'text-slate-400 group-hover/item:text-emerald-400'
+                        isActive ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : 'text-slate-400 group-hover/item:text-slate-200'
                     }`} 
                 />
                 <span className="truncate tracking-normal font-inherit">
@@ -449,134 +452,75 @@ export function Sidebar({ brandName = 'ContractMgr', logoUrl, isOpen = false, on
 
     return (
         <aside className={`sidebar-container ${isOpen ? 'open' : ''} bg-slate-900 shadow-xl border-r border-slate-800 z-20`} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <>
-                <style>{`
-                    @keyframes sign-shine {
-                        0% { left: -100%; top: 0; }
-                        20% { left: 100%; top: 0; }
-                        100% { left: 100%; top: 0; }
-                    }
-                    @keyframes pulse-dot {
-                        0%, 100% { transform: scale(1); opacity: 0.8; }
-                        50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px #10b981; }
-                    }
-                    .tech-signboard {
-                        background: transparent;
-                        border: 1px solid transparent;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        border-radius: 12px;
-                    }
-                    .tech-signboard:hover {
-                        transform: translateY(-1px);
-                        background: rgba(255,255,255,0.03);
-                        border-color: rgba(255,255,255,0.05);
-                    }
-                    .dark .tech-signboard { }
-                    .dark .tech-signboard:hover { }
-                    .brand-gradient-text {
-                        color: #ffffff;
-                        text-shadow: 0 2px 10px rgba(255,255,255,0.15);
-                    }
-                    .dark .brand-gradient-text {
-                        color: #ffffff;
-                    }
-                `}</style>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0.85rem', borderBottom: '1px solid rgba(51, 65, 85, 0.5)', gap: '8px' }}>
-                    <div style={{ position: 'relative', flex: 1, minWidth: 0, cursor: 'pointer' }} className="group">
-                        <div className="tech-signboard" style={{
-                            display: 'flex', alignItems: 'center', gap: '10px',
-                            padding: '6px 8px',
-                            borderRadius: '10px',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            width: '100%'
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', borderBottom: '1px solid rgba(51, 65, 85, 0.45)', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                    {logoUrl ? (
+                        <div style={{
+                            width: '34px', height: '34px', borderRadius: '8px',
+                            overflow: 'hidden', flexShrink: 0, backgroundColor: '#fff',
+                            padding: '2px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            {/* Shimmer overlay */}
-                            <div style={{
-                                position: 'absolute',
-                                top: 0, bottom: 0, width: '30px',
-                                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%)',
-                                transform: 'skewX(-20deg)',
-                                animation: 'sign-shine 4s ease-in-out infinite',
-                                pointerEvents: 'none',
-                                zIndex: 2
-                            }} className="dark:opacity-10"></div>
-
-                            {/* Logo */}
-                            {logoUrl ? (
-                                <div style={{
-                                    width: '36px', height: '36px', borderRadius: '8px',
-                                    overflow: 'hidden', flexShrink: 0, backgroundColor: '#fff',
-                                    padding: '2.5px',
-                                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                                    border: '1px solid rgba(241, 245, 249, 0.8)',
-                                    position: 'relative', zIndex: 1
-                                }}>
-                                    <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                </div>
-                            ) : (
-                                <div style={{
-                                    width: '36px', height: '36px', borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #05A613 0%, #048C10 100%)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: 'white', flexShrink: 0,
-                                    boxShadow: '0 2px 8px rgba(5, 166, 19, 0.3)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    position: 'relative', zIndex: 1
-                                }}>
-                                    <FileText size={18} strokeWidth={2.2} />
-                                </div>
-                            )}
-
-                            {/* Text Information */}
-                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 1, overflow: 'hidden', flex: 1 }}>
-                                <span className="brand-gradient-text" style={{
-                                    fontSize: '0.95rem',
-                                    fontWeight: 700,
-                                    letterSpacing: '-0.02em',
-                                    lineHeight: '1.2',
-                                    textTransform: 'uppercase',
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    display: 'block'
-                                }}>
-                                    {brandName}
-                                </span>
-                                <span style={{
-                                    fontSize: '0.58rem',
-                                    color: '#94a3b8',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.08em',
-                                    textTransform: 'uppercase',
-                                    lineHeight: '1',
-                                    display: 'flex', alignItems: 'center', gap: '4px',
-                                    marginTop: '2.5px'
-                                }}>
-                                    <span style={{
-                                        width: '5px', height: '5px', borderRadius: '50%',
-                                        background: '#10b981', display: 'inline-block',
-                                        animation: 'pulse-dot 2s infinite',
-                                        boxShadow: '0 0 6px rgba(16, 185, 129, 0.6)'
-                                    }}></span>
-                                    ENTERPRISE SYSTEM
-                                </span>
-                            </div>
+                            <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         </div>
-                    </div>
-
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="show-on-mobile flex-shrink-0"
-                            style={{ padding: '0.4rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}
-                            aria-label="Close menu"
-                        >
-                            <ChevronRight size={18} className="rotate-180" />
-                        </button>
+                    ) : (
+                        <div style={{
+                            width: '34px', height: '34px', borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <FileText size={17} strokeWidth={2.2} />
+                        </div>
                     )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', flex: 1 }}>
+                        <span style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            letterSpacing: '-0.02em',
+                            lineHeight: '1.2',
+                            color: '#ffffff',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            display: 'block'
+                        }}>
+                            {brandName}
+                        </span>
+                        <span style={{
+                            fontSize: '0.62rem',
+                            color: '#34d399',
+                            fontWeight: 600,
+                            letterSpacing: '0.04em',
+                            lineHeight: '1',
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                            marginTop: '3px'
+                        }}>
+                            <span style={{
+                                width: '5px', height: '5px', borderRadius: '50%',
+                                backgroundColor: '#10b981', display: 'inline-block'
+                            }}></span>
+                            HỆ THỐNG DOANH NGHIỆP
+                        </span>
+                    </div>
                 </div>
-            </>
+
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="show-on-mobile flex-shrink-0"
+                        style={{ padding: '0.4rem', borderRadius: 'var(--radius)', color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}
+                        aria-label="Close menu"
+                    >
+                        <ChevronRight size={18} className="rotate-180" />
+                    </button>
+                )}
+            </div>
             <nav className="px-2.5 py-3 flex flex-col gap-1.5 flex-1 overflow-y-auto custom-scrollbar">
                 {isClient && (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

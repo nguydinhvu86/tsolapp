@@ -203,7 +203,7 @@ export function GlobalSearch() {
                     <input
                         ref={desktopInputRef}
                         type="text"
-                        placeholder="Siêu tìm kiếm (Tên, Ghi chú, Đơn hàng, Mã...)"
+                        placeholder="Tìm kiếm nhanh (Ctrl + K)..."
                         className="gs-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}

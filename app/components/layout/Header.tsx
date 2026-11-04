@@ -19,16 +19,16 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
     return (
         <header
-            className="app-header sticky top-0 z-50 px-3 sm:px-4 md:px-8 flex items-center justify-between border-b border-slate-200"
+            className="app-header sticky top-0 z-50 px-3.5 sm:px-5 lg:px-6 flex items-center justify-between border-b border-slate-200/90"
             style={{
-                height: '56px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                height: '52px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)'
             }}
         >
             {/* Left section */}
-            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-1 max-w-[600px] min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-[600px] min-w-0">
                 {onMenuToggle && (
                     <button
                         onClick={onMenuToggle}
@@ -36,24 +36,24 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         style={{ padding: '0.4rem', borderRadius: 'var(--radius)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                         aria-label="Open menu"
                     >
-                        <Menu size={20} />
+                        <Menu size={19} />
                     </button>
                 )}
 
-                <div className="flex items-center gap-1 sm:gap-2 flex-grow max-w-[500px] min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-grow max-w-[480px] min-w-0">
                     <GlobalSearch />
                     <QuickCreateMenu />
                 </div>
 
                 {/* Greeting on large screens */}
-                <div className="hidden lg:flex flex-col ml-1 shrink-0">
-                    <span className="text-[11px] font-medium text-slate-400">Mừng trở lại,</span>
-                    <span className="text-xs font-semibold text-slate-800 leading-tight">{session?.user?.name || 'Administrator'}</span>
+                <div className="hidden xl:flex flex-col ml-2 pl-3 border-l border-slate-200/80 shrink-0">
+                    <span className="text-[10.5px] font-medium text-slate-400">Xin chào,</span>
+                    <span className="text-[12px] font-semibold text-slate-800 leading-tight truncate max-w-[140px]">{session?.user?.name || 'Administrator'}</span>
                 </div>
             </div>
 
             {/* Right section */}
-            <div className="flex items-center gap-1 sm:gap-2 md:gap-2.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
                 {session?.user && (
                     <div className="hidden sm:flex">
                         <ChatWidget currentUser={session.user} />
@@ -67,17 +67,21 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     <PushPermissionToggle />
                 </div>
                 <NotificationBell />
-                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', cursor: 'pointer', padding: '0.2rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100 shrink-0">
+
+                <div className="hidden sm:block w-[1px] h-4 bg-slate-200 mx-1"></div>
+
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', cursor: 'pointer', padding: '0.15rem', borderRadius: '8px', transition: 'background 0.2s' }} className="hover:bg-slate-100 shrink-0" title="Hồ sơ cá nhân">
                     <AvatarImage
                         src={session?.user?.avatar}
                         name={session?.user?.name}
-                        size={32}
-                        style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
-                        fallbackStyle={{ backgroundColor: 'rgba(5, 166, 19, 0.1)', color: 'var(--primary)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                        size={30}
+                        style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
+                        fallbackStyle={{ backgroundColor: 'rgba(5, 150, 105, 0.1)', color: 'var(--primary)', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
                     />
                 </Link>
 
-                <div
+                <button
+                    type="button"
                     onClick={async () => {
                         const confirmed = await confirmModal({
                             title: 'Xác nhận đăng xuất',
@@ -94,21 +98,12 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         } catch(e) { console.error('Logout error', e) }
                         signOut({ callbackUrl: '/login' });
                     }}
-                    className="hidden md:flex"
-                    style={{
-                        cursor: 'pointer',
-                        color: 'var(--danger)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: '#fee2e2'
-                    }}
+                    className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
                     title="Đăng xuất"
+                    aria-label="Đăng xuất"
                 >
-                    <LogOut size={16} />
-                </div>
+                    <LogOut size={15} />
+                </button>
             </div>
         </header>
     );

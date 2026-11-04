@@ -1064,7 +1064,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             </Modal>
             {/* Convert Modal */}
             <Modal isOpen={!!convertModalId} onClose={() => !isConverting && setConvertModalId(null)} title="Xác nhận Lên Hóa Đơn">
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         Bạn có chắc chắn muốn chuyển dữ liệu từ Đơn Đặt Hàng này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
                     </p>
@@ -1109,7 +1109,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
 
             {/* Generic Action Modal */}
             <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <div className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         {actionModal?.message}
                     </div>

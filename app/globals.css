@@ -26,19 +26,60 @@ If you remove these generic classes (e.g. `stat-card`, `btn-primary`,
     --danger: #ef4444;
     --success: #10b981;
     --radius: 10px;
+    --sidebar-width: 245px;
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.04), 0 2px 4px -2px rgb(0 0 0 / 0.04);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
 }
 
+/* =============================================================================
+   ERP INTERNATIONAL TYPOGRAPHY & RESPONSIVE DENSITY SCALE
+   Tối ưu hóa hiển thị chuẩn quốc tế cho Full HD (1080p), 2K và 4K.
+   Tự động thích ứng tỷ lệ cân đối mà không cần người dùng phải zoom thủ công.
+   ============================================================================= */
 html {
+    /* Base mặc định cho Mobile & màn hình nhỏ (< 768px) */
     font-size: 13.5px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.005em;
+}
+
+/* Màn hình Tablet & Laptop 1080p với Windows Scaling 125% (Viewport 768px - 1439px):
+   Đây là điểm mấu chốt tạo nên cảm giác "zoom out 10%" hoàn hảo theo phản hồi thực tế.
+   Mật độ dữ liệu cao (High Density), bảng biểu và card hiển thị trọn vẹn, thanh thoát. */
+@media (min-width: 768px) and (max-width: 1439px) {
+    html {
+        font-size: 12.5px;
+    }
+}
+
+/* Desktop Full HD 1080p chuẩn với tỉ lệ 100% (Viewport 1440px - 1919px):
+   Cân đối hài hòa giữa độ thoáng đãng và tính chuyên nghiệp của hệ thống ERP. */
+@media (min-width: 1440px) and (max-width: 1919px) {
+    html {
+        font-size: 12.8px;
+    }
+}
+
+/* Màn hình 2K QHD (Viewport 1920px - 2559px):
+   Đảm bảo độ sắc nét cao, mật độ thông tin tối ưu trên màn hình lớn. */
+@media (min-width: 1920px) and (max-width: 2559px) {
+    html {
+        font-size: 13.2px;
+    }
+}
+
+/* Màn hình 4K UHD / Ultra-wide (Viewport >= 2560px):
+   Tự động scale kích thước font để không bị quá bé trên màn hình siêu phân giải. */
+@media (min-width: 2560px) {
+    html {
+        font-size: 14.2px;
+    }
 }
 
 *,
@@ -70,41 +111,47 @@ body {
     font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--background);
     color: var(--text-main);
-    line-height: 1.48;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
+    font-variant-numeric: tabular-nums;
     display: flex;
     min-height: 100vh;
     width: 100%;
 }
 
 h1 {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
     color: var(--text-main);
 }
 
 h2 {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
     color: var(--text-main);
 }
 
 h3 {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    line-height: 1.4;
     color: var(--text-main);
 }
 
 h4,
 h5,
 h6 {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--text-main);
 }
 
@@ -445,18 +492,33 @@ table {
 }
 
 /* Text */
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1.05rem;
+}
+
 .text-sm {
+    font-size: 0.8125rem;
+    line-height: 1.2rem;
+}
+
+.text-base {
     font-size: 0.875rem;
-    line-height: 1.25rem;
+    line-height: 1.35rem;
 }
 
 .text-lg {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
+    font-size: 1.05rem;
+    line-height: 1.5rem;
 }
 
 .text-xl {
-    font-size: 1.25rem;
+    font-size: 1.1875rem;
+    line-height: 1.6rem;
+}
+
+.text-2xl {
+    font-size: 1.375rem;
     line-height: 1.75rem;
 }
 
@@ -580,170 +642,78 @@ table {
     background: var(--surface);
     border-radius: 12px;
     box-shadow: var(--shadow-xs);
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.25rem;
     border: 1px solid var(--border);
 }
 
 /* Premium Stat Cards */
 .stat-card {
-    padding: 1.25rem 1.5rem;
+    background: #ffffff;
+    padding: 1rem 1.25rem;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    gap: 0.375rem;
+    border: 1px solid var(--border);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-xs);
     position: relative;
     overflow: hidden;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-.stat-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100px;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
-    transform: skewX(-20deg) translateX(150%);
-    transition: transform 0.6s ease;
-}
-
-.stat-card:hover::after {
-    transform: skewX(-20deg) translateX(-150%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.08);
+    border-color: #cbd5e1;
 }
 
 .stat-card-blue {
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border-color: #bfdbfe;
 }
+.stat-card-blue .stat-title { color: #2563eb; }
+.stat-card-blue .stat-value { color: #1e40af; }
+.stat-card-blue .stat-icon { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
 
-.stat-card-blue .stat-title {
-    color: #3b82f6;
-}
-
-.stat-card-blue .stat-value {
-    color: #1d4ed8;
-}
-
-.stat-card-blue .stat-icon {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-}
-
-.stat-card-green {
+.stat-card-green, .stat-card-emerald {
     background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
     border-color: #a7f3d0;
 }
-
-.stat-card-green .stat-title {
-    color: #10b981;
-}
-
-.stat-card-green .stat-value {
-    color: #047857;
-}
-
-.stat-card-green .stat-icon {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-}
+.stat-card-green .stat-title, .stat-card-emerald .stat-title { color: #059669; }
+.stat-card-green .stat-value, .stat-card-emerald .stat-value { color: #065f46; }
+.stat-card-green .stat-icon, .stat-card-emerald .stat-icon { background: rgba(5, 150, 105, 0.12); color: #059669; }
 
 .stat-card-red {
     background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
     border-color: #fca5a5;
 }
-
-.stat-card-red .stat-title {
-    color: #ef4444;
-}
-
-.stat-card-red .stat-value {
-    color: #b91c1c;
-}
-
-.stat-card-red .stat-icon {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-}
+.stat-card-red .stat-title { color: #dc2626; }
+.stat-card-red .stat-value { color: #991b1b; }
+.stat-card-red .stat-icon { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
 
 .stat-card-amber {
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
     border-color: #fde68a;
 }
-
-.stat-card-amber .stat-title {
-    color: #f59e0b;
-}
-
-.stat-card-amber .stat-value {
-    color: #b45309;
-}
-
-.stat-card-amber .stat-icon {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
-}
+.stat-card-amber .stat-title { color: #d97706; }
+.stat-card-amber .stat-value { color: #92400e; }
+.stat-card-amber .stat-icon { background: rgba(217, 119, 6, 0.12); color: #d97706; }
 
 .stat-card-purple {
     background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
     border-color: #e9d5ff;
 }
-
-.stat-card-purple .stat-title {
-    color: #a855f7;
-}
-
-.stat-card-purple .stat-value {
-    color: #7e22ce;
-}
-
-.stat-card-purple .stat-icon {
-    background: rgba(168, 85, 247, 0.1);
-    color: #a855f7;
-}
+.stat-card-purple .stat-title { color: #9333ea; }
+.stat-card-purple .stat-value { color: #6b21a8; }
+.stat-card-purple .stat-icon { background: rgba(147, 51, 234, 0.12); color: #9333ea; }
 
 .stat-card-indigo {
     background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
     border-color: #c7d2fe;
 }
-
-.stat-card-indigo .stat-title {
-    color: #6366f1;
-}
-
-.stat-card-indigo .stat-value {
-    color: #4338ca;
-}
-
-.stat-card-indigo .stat-icon {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
-}
-
-.stat-card-emerald {
-    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-    border-color: #a7f3d0;
-}
-
-.stat-card-emerald .stat-title {
-    color: #10b981;
-}
-
-.stat-card-emerald .stat-value {
-    color: #047857;
-}
-
-.stat-card-emerald .stat-icon {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-}
+.stat-card-indigo .stat-title { color: #4f46e5; }
+.stat-card-indigo .stat-value { color: #3730a3; }
+.stat-card-indigo .stat-icon { background: rgba(79, 70, 229, 0.12); color: #4f46e5; }
 
 .stat-header {
     display: flex;
@@ -757,25 +727,28 @@ table {
 }
 
 .stat-title {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.72rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
     gap: 0.375rem;
+    color: #64748b;
 }
 
 .stat-value {
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: 1.45rem;
+    font-weight: 750;
     line-height: 1.2;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
 }
 
 .stat-icon {
-    padding: 0.5rem;
-    border-radius: 10px;
+    padding: 0.45rem;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -815,9 +788,16 @@ table {
     padding-left: 2.5rem;
 }
 
+/* Global ERP Table Standards */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
 .table-wrapper {
     overflow-x: auto;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
     box-shadow: var(--shadow-xs);
@@ -829,7 +809,7 @@ table {
     z-index: 10;
     background: #f8fafc;
     text-align: left;
-    padding: 0.55rem 0.85rem;
+    padding: 0.5rem 0.75rem;
     font-weight: 650;
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -838,16 +818,19 @@ table {
     border-bottom: 1px solid #e2e8f0;
     box-shadow: 0 1px 0 #e2e8f0;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 .table-wrapper table td {
-    padding: 0.55rem 0.85rem;
+    padding: 0.45rem 0.75rem;
     border-bottom: 1px solid #f1f5f9;
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
     font-weight: 450;
     color: #1e293b;
+    line-height: 1.4;
     transition: background-color 0.15s ease;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
 .table-wrapper table tr:hover td {
@@ -881,7 +864,7 @@ table {
 }
 
 .sidebar-container {
-    width: 265px;
+    width: var(--sidebar-width);
     height: 100vh;
     position: fixed;
     top: 0;
@@ -894,7 +877,7 @@ table {
 
 .main-wrapper {
     flex: 1;
-    margin-left: 265px;
+    margin-left: var(--sidebar-width);
     display: flex;
     flex-direction: column;
     min-width: 0;

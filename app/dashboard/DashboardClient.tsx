@@ -189,54 +189,54 @@ export function DashboardClient({
         <div className="bg-gray-50/50 min-h-screen p-3.5 xl:p-6 pt-3 xl:pt-4">
             <div className="w-full mx-auto space-y-5 pb-8">
                 {/* Dashboard Header Bar */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2 -mx-1 md:mx-0">
-                    <div>
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-2 -mx-1 md:mx-0">
+                    <div className="shrink-0 min-w-fit">
                         <div className="flex items-center gap-2">
-                            <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
                                 Bảng Điều Khiển
                             </h2>
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/80 text-slate-700">
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 whitespace-nowrap">
                                 ERP / CRM
                             </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5 whitespace-nowrap hidden sm:block">
                             Tổng quan hoạt động kinh doanh, tài chính và điều hành doanh nghiệp
                         </p>
                     </div>
 
                     {/* Action Controls */}
-                    <div className="flex flex-col sm:flex-row md:items-center items-stretch gap-2 w-full md:w-auto">
+                    <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
                         {/* Quick Shortcuts */}
                         <div className="flex items-center gap-1.5 mr-1">
                             <Link
                                 href="/sales/estimates/new"
-                                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-2xs"
+                                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-2xs whitespace-nowrap"
                             >
                                 <Receipt size={14} className="shrink-0" />
-                                <span className="whitespace-nowrap">Báo giá mới</span>
+                                <span>Báo giá mới</span>
                             </Link>
                             <Link
                                 href="/customers"
-                                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-2xs"
+                                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-2xs whitespace-nowrap"
                             >
                                 <Users size={14} className="shrink-0" />
-                                <span className="whitespace-nowrap">Khách hàng</span>
+                                <span>Khách hàng</span>
                             </Link>
                             <button
                                 onClick={() => setIsAddEventModalOpen(true)}
-                                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors border border-indigo-200/60 shadow-2xs"
+                                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors border border-indigo-200/60 shadow-2xs whitespace-nowrap"
                             >
                                 <Briefcase size={14} className="shrink-0" />
-                                <span className="whitespace-nowrap">Giao việc</span>
+                                <span>Giao việc</span>
                             </button>
                         </div>
 
                         {/* Employee Filter (Admin / Manager) */}
                         {isAdminOrManager && users && users.length > 0 && (
-                            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                            <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Xem theo:</span>
                                 <select
-                                    className="flex-1 sm:flex-none px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                                    className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 shadow-2xs cursor-pointer max-w-[200px]"
                                     value={currentEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -258,13 +258,13 @@ export function DashboardClient({
                         )}
 
                         {/* Global Period Filter: Synchronizes Funnel, Top Customers, and Invoices widgets */}
-                        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                        <div className="flex items-center gap-1.5">
                             <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Thời gian:</span>
                             <DashboardPeriodFilter
                                 value={globalPeriodFilter}
                                 onChange={handleGlobalPeriodChange}
                                 align="right"
-                                buttonClassName="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold"
+                                buttonClassName="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold whitespace-nowrap"
                             />
                         </div>
 
@@ -272,7 +272,7 @@ export function DashboardClient({
                         <button
                             type="button"
                             onClick={() => setIsDragReorderMode(!isDragReorderMode)}
-                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all border flex items-center justify-center gap-1.5 shadow-2xs ${
+                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all border flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer ${
                                 isDragReorderMode
                                     ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
                                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -287,7 +287,7 @@ export function DashboardClient({
                         <button
                             type="button"
                             onClick={() => setIsCustomizeModalOpen(true)}
-                            className="px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
                         >
                             <SlidersHorizontal size={14} />
                             <span>Tùy chỉnh Dashboard</span>

@@ -179,7 +179,7 @@ export function SalesPaymentDetailClient({ payment, tasks, users, unpaidInvoices
     ] as const;
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', fontFamily: 'Inter, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+        <div style={{ padding: '2rem', maxWidth: '100%', margin: '0 auto', fontFamily: 'inherit', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-8">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button

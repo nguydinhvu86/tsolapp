@@ -242,7 +242,7 @@ export function StatusBadge({ status, label, showDot = true, className = '' }: S
         <span
             className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-tight border shadow-2xs whitespace-nowrap select-none ${config.bg} ${config.text} ${config.border} ${className}`}
             style={{
-                fontFamily: "var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                fontFamily: "var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                 lineHeight: '1.25'
             }}
         >

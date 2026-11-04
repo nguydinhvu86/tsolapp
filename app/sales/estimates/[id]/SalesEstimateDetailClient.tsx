@@ -1393,7 +1393,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             </div>
             {/* Convert Modal */}
             <Modal isOpen={isConvertModalOpen} onClose={() => !isConverting && setIsConvertModalOpen(false)} title="Xác nhận Lên Hóa Đơn">
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
                     </p>
@@ -1437,7 +1437,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
             </Modal>
             {/* Convert to Order Modal */}
             <Modal isOpen={isConvertOrderModalOpen} onClose={() => !isConvertingOrder && setIsConvertOrderModalOpen(false)} title="Xác nhận Lên Đơn Đặt Hàng">
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Đơn Đặt Hàng</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Đơn Đặt Hàng mới.
                     </p>
@@ -1482,7 +1482,7 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
 
             {/* Generic Action Modal */}
             <Modal isOpen={!!actionModal?.isOpen} onClose={() => !isActioning && setActionModal(null)} title={actionModal?.title || 'Xác nhận'}>
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <div className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         {actionModal?.message}
                     </div>

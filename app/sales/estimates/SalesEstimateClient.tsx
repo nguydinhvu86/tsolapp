@@ -694,7 +694,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             gap: 4px;
             padding: 2px 8px;
             border-radius: 9999px;
-            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
             font-weight: 500;
             line-height: 1.25;
@@ -722,7 +722,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             text-align: left;
             padding: 2px 20px 2px 8px !important;
             border-radius: 9999px;
-            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 11px;
             font-weight: 500;
             line-height: 1.25;
@@ -1518,7 +1518,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
 
             {/* Convert Modal */}
             <Modal isOpen={!!convertModalId} onClose={() => !isConverting && setConvertModalId(null)} title="Xác nhận Lên Hóa Đơn">
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Hóa Đơn</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Hóa Đơn mới.
                     </p>
@@ -1562,7 +1562,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             </Modal>
             {/* Convert to Order Modal */}
             <Modal isOpen={!!convertOrderModalId} onClose={() => !isConvertingOrder && setConvertOrderModalId(null)} title="Xác nhận Lên Đơn Đặt Hàng">
-                <div className="p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div className="p-6" style={{ fontFamily: 'inherit' }}>
                     <p className="text-gray-700 text-[15px] mb-6 leading-relaxed">
                         Bạn có chắc chắn muốn chuyển dữ liệu từ Báo Giá này thành <strong>Đơn Đặt Hàng</strong> không? Các thông tin chi tiết sẽ được tự động sao chép sang Đơn Đặt Hàng mới.
                     </p>

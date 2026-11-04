@@ -34,7 +34,7 @@ export function MainLayout({ children, brandName, logoUrl, initialSidebarOrder }
             {/* Main content wrapper pushes right on desktop, takes full width on mobile */}
             <div className="main-wrapper">
                 <Header onMenuToggle={() => setIsMobileMenuOpen(true)} />
-                <main className="p-4 md:p-8 flex-1 min-w-0" style={{ overflowX: 'hidden' }}>
+                <main className="p-3.5 sm:p-5 lg:p-6 flex-1 min-w-0" style={{ overflowX: 'hidden' }}>
                     {children}
                 </main>
             </div>
