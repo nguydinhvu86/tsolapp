@@ -33,7 +33,8 @@ import {
     Check
 } from 'lucide-react';
 import { 
-    AlertTriangle, ClipboardCheck, Scale, ArrowRightLeft, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+    AlertTriangle, ClipboardCheck, Scale, ArrowRightLeft, Sparkles, ChevronDown, ChevronUp, Barcode, ClipboardPaste, Tag, KeyRound, Pencil } from 'lucide-react';
+import ProductSearchSelect from '@/app/components/inventory/ProductSearchSelect';
 import { 
     fetchSerials,
     getInventorySerialDiscrepancies,
@@ -42,6 +43,7 @@ import {
     createSerialRecord, 
     bulkCreateSerials, 
     dispatchSerialsAction,
+    updateSerialRecord,
     updateSerialStatus,
     deleteSerialRecord,
     lookupWarranty 
@@ -128,8 +130,62 @@ export default function SerialManagementClient() {
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
     const [newSerial, setNewSerial] = useState('');
+    const [serialTags, setSerialTags] = useState<string[]>([]);
     const [newNotes, setNewNotes] = useState('');
     const [savingSingle, setSavingSingle] = useState(false);
+
+    // Modal Edit Serial & Product (Sửa sản phẩm / serial khi nhập sai)
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingSerial, setEditingSerial] = useState<any>(null);
+    const [editProductId, setEditProductId] = useState('');
+    const [editSerialNumber, setEditSerialNumber] = useState('');
+    const [editWarehouseId, setEditWarehouseId] = useState('');
+    const [editStatus, setEditStatus] = useState('IN_STOCK');
+    const [editNotes, setEditNotes] = useState('');
+    const [savingEdit, setSavingEdit] = useState(false);
+
+    const handleOpenEditModal = (item: any) => {
+        setEditingSerial(item);
+        setEditProductId(item.productId || item.product?.id || '');
+        setEditSerialNumber(item.serialNumber || '');
+        setEditWarehouseId(item.warehouseId || item.warehouse?.id || '');
+        setEditStatus(item.status || 'IN_STOCK');
+        setEditNotes(item.notes || '');
+        setShowEditModal(true);
+    };
+
+    const handleUpdateSerial = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingSerial) return;
+        if (!editProductId) {
+            toast.warning('Vui lòng chọn sản phẩm chính xác');
+            return;
+        }
+        if (!editSerialNumber.trim()) {
+            toast.warning('Số Serial/IMEI không được để trống');
+            return;
+        }
+
+        setSavingEdit(true);
+        const res = await updateSerialRecord({
+            id: editingSerial.id,
+            productId: editProductId,
+            serialNumber: editSerialNumber.trim(),
+            warehouseId: editWarehouseId || undefined,
+            status: editStatus,
+            notes: editNotes
+        });
+        setSavingEdit(false);
+
+        if (res.success) {
+            toast.success(`Đã cập nhật thông tin sản phẩm và Serial "${editSerialNumber.trim()}" thành công!`);
+            setShowEditModal(false);
+            setEditingSerial(null);
+            loadData();
+        } else {
+            toast.error(res.error || 'Lỗi khi cập nhật Serial');
+        }
+    };
 
     // Modal Bulk Import (Nhập hàng loạt 100 - 200 serial)
     const [showBulkModal, setShowBulkModal] = useState(false);
@@ -218,30 +274,162 @@ export default function SerialManagementClient() {
         return Array.from(new Set(tokens));
     }, [bulkText]);
 
+    const duplicateBulkCount = useMemo(() => {
+        if (!bulkText.trim()) return 0;
+        const rawTokens = bulkText.split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+        return Math.max(0, rawTokens.length - parsedBulkSerials.length);
+    }, [bulkText, parsedBulkSerials.length]);
+
+    const handleBulkPasteClipboard = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || !text.trim()) {
+                toast.info('Bộ nhớ tạm (Clipboard) đang trống.');
+                return;
+            }
+            setBulkText(prev => prev ? `${prev}\n${text.trim()}` : text.trim());
+            toast.success('Đã dán danh sách mã từ Clipboard!');
+        } catch {
+            toast.info('Nhấn Ctrl+V vào ô văn bản để dán danh sách mã');
+        }
+    };
+
+    const handleBulkFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            if (text) {
+                setBulkText(prev => prev ? `${prev}\n${text.trim()}` : text.trim());
+                toast.success(`Đã đọc nội dung từ tệp "${file.name}"!`);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    };
+
+    const handleInsertSampleSerials = () => {
+        const sample = `SN-WIN11-PRO-001\nSN-WIN11-PRO-002\nSN-WIN11-PRO-003\nSN-WIN11-PRO-004\nSN-WIN11-PRO-005`;
+        setBulkText(sample);
+        toast.info('Đã điền 5 mã mẫu thử nghiệm');
+    };
+
+    const handleAddTag = () => {
+        const trimmed = newSerial.trim();
+        if (!trimmed) return;
+        const tokens = trimmed.split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+        if (tokens.length === 0) return;
+
+        setSerialTags(prev => {
+            const combined = [...prev];
+            let addedCount = 0;
+            tokens.forEach(tok => {
+                if (!combined.includes(tok)) {
+                    combined.push(tok);
+                    addedCount++;
+                }
+            });
+            if (addedCount === 0) {
+                toast.warning('Mã này đã có trong danh sách thẻ!');
+            }
+            return combined;
+        });
+        setNewSerial('');
+    };
+
+    const handlePasteClipboard = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || !text.trim()) {
+                toast.info('Bộ nhớ tạm (Clipboard) đang trống.');
+                return;
+            }
+            const tokens = text.split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+            if (tokens.length === 0) return;
+
+            setSerialTags(prev => {
+                const combined = [...prev];
+                tokens.forEach(tok => {
+                    if (!combined.includes(tok)) {
+                        combined.push(tok);
+                    }
+                });
+                return combined;
+            });
+            toast.success(`Đã nhận diện ${tokens.length} mã thẻ từ clipboard!`);
+        } catch (err) {
+            toast.info('Nhấn Ctrl+V để dán mã vào ô nhập');
+        }
+    };
+
+    const handleRemoveTag = (index: number) => {
+        setSerialTags(prev => prev.filter((_, idx) => idx !== index));
+    };
+
     const handleCreateSerial = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedProductId || !newSerial.trim()) {
-            toast.warning('Vui lòng chọn sản phẩm và nhập số Serial');
+        if (!selectedProductId) {
+            toast.warning('Vui lòng chọn sản phẩm cần nhập Serial');
+            return;
+        }
+
+        // Combine tags and any leftover text in the input
+        const allSerials = [...serialTags];
+        const trimmedInput = newSerial.trim();
+        if (trimmedInput) {
+            const pendingTokens = trimmedInput.split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+            pendingTokens.forEach(tok => {
+                if (!allSerials.includes(tok)) {
+                    allSerials.push(tok);
+                }
+            });
+        }
+
+        if (allSerials.length === 0) {
+            toast.warning('Vui lòng nhập ít nhất 1 số Serial / IMEI / Mã thẻ');
             return;
         }
 
         setSavingSingle(true);
-        const res = await createSerialRecord({
-            productId: selectedProductId,
-            serialNumber: newSerial.trim(),
-            warehouseId: selectedWarehouseId || undefined,
-            notes: newNotes
-        });
-        setSavingSingle(false);
+        if (allSerials.length === 1) {
+            const res = await createSerialRecord({
+                productId: selectedProductId,
+                serialNumber: allSerials[0],
+                warehouseId: selectedWarehouseId || undefined,
+                notes: newNotes
+            });
+            setSavingSingle(false);
 
-        if (res.success) {
-            toast.success(`Đã thêm số Serial ${newSerial.trim()} vào kho thành công!`);
-            setShowAddModal(false);
-            setNewSerial('');
-            setNewNotes('');
-            loadData();
+            if (res.success) {
+                toast.success(`Đã thêm mã "${allSerials[0]}" vào kho thành công!`);
+                setShowAddModal(false);
+                setNewSerial('');
+                setSerialTags([]);
+                setNewNotes('');
+                loadData();
+            } else {
+                toast.error(res.error || 'Lỗi khi tạo Serial');
+            }
         } else {
-            toast.error(res.error || 'Lỗi khi tạo Serial');
+            const res = await bulkCreateSerials({
+                productId: selectedProductId,
+                serialNumbers: allSerials,
+                warehouseId: selectedWarehouseId || undefined,
+                notes: newNotes
+            });
+            setSavingSingle(false);
+
+            if (res.success) {
+                toast.success(`Đã thêm thành công ${res.count} mã Serial / Thẻ vào kho!`);
+                setShowAddModal(false);
+                setNewSerial('');
+                setSerialTags([]);
+                setNewNotes('');
+                loadData();
+            } else {
+                toast.error(res.error || 'Lỗi khi tạo danh sách Serial');
+            }
         }
     };
 
@@ -670,7 +858,16 @@ export default function SerialManagementClient() {
                                 <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
                                     <div>
                                         <span className="text-slate-400">Sản phẩm:</span>
-                                        <p className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 line-clamp-1">{lookupResult.productName}</p>
+                                        <a
+                                            href={`/inventory/products?search=${encodeURIComponent(lookupResult.sku || lookupResult.productName || '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
+                                            title="Nhấp để mở chi tiết / quản lý sản phẩm này"
+                                        >
+                                            <span className="line-clamp-1">{lookupResult.productName}</span>
+                                            <ExternalLink className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 shrink-0" />
+                                        </a>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-400">Mã SKU:</span>
@@ -681,10 +878,34 @@ export default function SerialManagementClient() {
                                         <span className="font-medium text-slate-800 dark:text-slate-200">{lookupResult.warehouseName || 'Kho chính'}</span>
                                     </div>
                                     <div className="flex justify-between items-center pt-1 border-t border-slate-200/60 dark:border-slate-700">
-                                        <span className="text-slate-400">Hóa đơn xuất:</span>
-                                        <span className="font-bold font-mono text-blue-600 dark:text-blue-400">
-                                            {lookupResult.salesInvoiceCode ? `HĐ: ${lookupResult.salesInvoiceCode}` : (lookupResult.purchaseBillCode ? `HĐ Mua: ${lookupResult.purchaseBillCode}` : 'Chưa xuất bán')}
-                                        </span>
+                                        <span className="text-slate-400">Chứng từ hóa đơn:</span>
+                                        {lookupResult.salesInvoiceId ? (
+                                            <a
+                                                href={`/sales/invoices/${lookupResult.salesInvoiceId}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold text-xs hover:underline transition-all shadow-2xs"
+                                                title="Mở chi tiết Hóa đơn bán hàng xuất thiết bị này"
+                                            >
+                                                <FileText className="w-3.5 h-3.5 text-blue-600" />
+                                                <span>HĐ: {lookupResult.salesInvoiceCode}</span>
+                                                <ExternalLink className="w-3 h-3 text-blue-500" />
+                                            </a>
+                                        ) : lookupResult.purchaseBillId ? (
+                                            <a
+                                                href={`/purchasing/bills/${lookupResult.purchaseBillId}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-mono font-bold text-xs hover:underline transition-all shadow-2xs"
+                                                title="Mở chi tiết Hóa đơn mua hàng nhập thiết bị này"
+                                            >
+                                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                                <span>HĐ Mua: {lookupResult.purchaseBillCode}</span>
+                                                <ExternalLink className="w-3 h-3 text-emerald-500" />
+                                            </a>
+                                        ) : (
+                                            <span className="font-medium text-slate-400 italic">Chưa xuất bán</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -701,18 +922,49 @@ export default function SerialManagementClient() {
                                         <>
                                             <div>
                                                 <span className="text-slate-400">Khách hàng:</span>
-                                                <p className="font-bold text-slate-900 dark:text-white text-xs mt-0.5">{lookupResult.customerName}</p>
+                                                {lookupResult.customerId ? (
+                                                    <a
+                                                        href={`/customers/${lookupResult.customerId}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
+                                                        title="Nhấp để xem hồ sơ và công nợ khách hàng này"
+                                                    >
+                                                        <span>{lookupResult.customerName}</span>
+                                                        <ExternalLink className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 shrink-0" />
+                                                    </a>
+                                                ) : (
+                                                    <p className="font-bold text-slate-900 dark:text-white text-xs mt-0.5">{lookupResult.customerName}</p>
+                                                )}
                                             </div>
                                             {lookupResult.customerPhone && (
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-slate-400">Số điện thoại:</span>
-                                                    <span className="font-bold font-mono text-slate-800 dark:text-slate-200">{lookupResult.customerPhone}</span>
+                                                    <a href={`tel:${lookupResult.customerPhone}`} className="font-bold font-mono text-blue-600 dark:text-blue-400 hover:underline">
+                                                        {lookupResult.customerPhone}
+                                                    </a>
                                                 </div>
                                             )}
                                             {lookupResult.customerEmail && (
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-slate-400">Email:</span>
-                                                    <span className="text-slate-700 dark:text-slate-300">{lookupResult.customerEmail}</span>
+                                                    <a href={`mailto:${lookupResult.customerEmail}`} className="text-slate-700 dark:text-slate-300 hover:underline">
+                                                        {lookupResult.customerEmail}
+                                                    </a>
+                                                </div>
+                                            )}
+                                            {lookupResult.customerId && (
+                                                <div className="pt-1">
+                                                    <a
+                                                        href={`/customers/${lookupResult.customerId}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] font-semibold hover:underline transition-colors"
+                                                    >
+                                                        <User className="w-3 h-3" />
+                                                        <span>Mở Hồ Sơ Khách Hàng</span>
+                                                        <ExternalLink className="w-2.5 h-2.5" />
+                                                    </a>
                                                 </div>
                                             )}
                                         </>
@@ -786,16 +1038,15 @@ export default function SerialManagementClient() {
                         <option value="DEFECTIVE">Lỗi / Hỏng</option>
                     </select>
 
-                    <select
-                        value={productFilter}
-                        onChange={(e) => setProductFilter(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none max-w-[200px]"
-                    >
-                        <option value="">Tất cả sản phẩm</option>
-                        {products.map((p) => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                    </select>
+                    <div className="w-full sm:w-[260px]">
+                        <ProductSearchSelect
+                            products={products}
+                            value={productFilter}
+                            onChange={setProductFilter}
+                            allOptionLabel="Tất cả sản phẩm"
+                            placeholder="Tất cả sản phẩm"
+                        />
+                    </div>
 
                     {warehouses.length > 0 && (
                         <select
@@ -882,8 +1133,23 @@ export default function SerialManagementClient() {
                                                 {s.serialNumber}
                                             </td>
                                             <td className="py-3 px-4">
-                                                <p className="font-semibold text-slate-800 dark:text-slate-200">{s.product?.name}</p>
-                                                <span className="text-xs text-slate-400 font-mono">Mã: {s.product?.sku || 'N/A'}</span>
+                                                {s.product ? (
+                                                    <a
+                                                        href={`/inventory/products?search=${encodeURIComponent(s.product.sku || s.product.name)}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="group flex flex-col items-start hover:text-blue-600 transition-colors"
+                                                        title="Nhấp để mở chi tiết / quản lý sản phẩm này"
+                                                    >
+                                                        <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:underline flex items-center gap-1">
+                                                            {s.product.name}
+                                                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 shrink-0" />
+                                                        </span>
+                                                        <span className="text-xs text-slate-400 font-mono">Mã: {s.product.sku || 'N/A'}</span>
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-slate-400 italic">Không rõ</span>
+                                                )}
                                             </td>
                                             <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs">
                                                 {s.warehouse?.name || 'Kho chính'}
@@ -893,17 +1159,63 @@ export default function SerialManagementClient() {
                                             </td>
                                             <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
                                                 {s.customer ? (
-                                                    <div>
-                                                        <p className="font-medium flex items-center gap-1">
-                                                            <User className="w-3.5 h-3.5 text-blue-500" />
-                                                            {s.customer.name}
-                                                        </p>
+                                                    <div className="space-y-0.5">
+                                                        <a
+                                                            href={`/customers/${s.customer.id}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
+                                                            title="Nhấp để xem hồ sơ khách hàng này"
+                                                        >
+                                                            <User className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                                            <span className="truncate max-w-[200px]">{s.customer.name}</span>
+                                                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 shrink-0" />
+                                                        </a>
                                                         {s.customer.phone && (
-                                                            <span className="text-xs text-slate-400">{s.customer.phone}</span>
+                                                            <span className="text-xs text-slate-400 block">{s.customer.phone}</span>
+                                                        )}
+                                                        {s.salesInvoice && (
+                                                            <a
+                                                                href={`/sales/invoices/${s.salesInvoice.id}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                                                                title="Mở hóa đơn bán hàng xuất thiết bị này"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                                HĐ: {s.salesInvoice.code}
+                                                                <ExternalLink className="w-2.5 h-2.5" />
+                                                            </a>
+                                                        )}
+                                                        {s.purchaseBill && !s.salesInvoice && (
+                                                            <a
+                                                                href={`/purchasing/bills/${s.purchaseBill.id}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+                                                                title="Mở hóa đơn mua hàng nhập thiết bị này"
+                                                            >
+                                                                <FileText className="w-3 h-3" />
+                                                                HĐ Mua: {s.purchaseBill.code}
+                                                                <ExternalLink className="w-2.5 h-2.5" />
+                                                            </a>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-slate-400 italic">Chưa xuất bán</span>
+                                                    <div className="space-y-0.5">
+                                                        <span className="text-slate-400 italic text-xs">Chưa xuất bán</span>
+                                                        {s.purchaseBill && (
+                                                            <a
+                                                                href={`/purchasing/bills/${s.purchaseBill.id}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="block font-mono text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+                                                                title="Mở hóa đơn mua hàng nhập thiết bị này"
+                                                            >
+                                                                HĐ Mua: {s.purchaseBill.code}
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
@@ -936,19 +1248,26 @@ export default function SerialManagementClient() {
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                                <div className="flex items-center justify-end gap-1.5">
                                                     {s.status === 'IN_STOCK' && (
                                                         <button
                                                             onClick={() => openDispatchModalForSingle(s.serialNumber)}
-                                                            className="px-2.5 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition-colors flex items-center gap-1"
+                                                            className="px-2.5 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                                                             title="Xuất bán cho khách hàng"
                                                         >
                                                             <ArrowUpRight className="w-3.5 h-3.5" /> Xuất bán
                                                         </button>
                                                     )}
                                                     <button
+                                                        onClick={() => handleOpenEditModal(s)}
+                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 rounded-lg transition-colors cursor-pointer"
+                                                        title="Sửa sản phẩm / số Serial này"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleDeleteSerial(s.id, s.serialNumber)}
-                                                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors cursor-pointer"
                                                         title="Xóa Serial này"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -964,51 +1283,328 @@ export default function SerialManagementClient() {
                 )}
             </div>
 
-            {/* Modal 1: Nhập Hàng Loạt (Bulk Import 100 - 200 serial từ NCC) */}
+            {/* Modal 1: Nhập Hàng Loạt (Bulk Import 100 - 500+ serial từ NCC) */}
             {showBulkModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-                            <div>
-                                <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Upload className="w-5 h-5 text-emerald-600" /> Nhập Hàng Loạt Số Serial / IMEI (100 - 200+ mã)
-                                </h3>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Copy danh sách từ Excel hoặc email của Nhà cung cấp và dán thẳng vào đây
-                                </p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-3xl w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 shrink-0">
+                                    <Upload className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                        Nhập Hàng Loạt Số Serial / IMEI / Thẻ Bản Quyền
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Dán cột Excel, email NCC hoặc tải tệp .txt / .csv để nhập đồng loạt 100 – 500+ mã vào kho
+                                    </p>
+                                </div>
                             </div>
-                            <button onClick={() => setShowBulkModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowBulkModal(false);
+                                    setBulkText('');
+                                    setBulkNotes('');
+                                }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleBulkCreateSerials} className="space-y-4 text-sm">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        Chọn Sản phẩm nhập kho <span className="text-rose-500">*</span>
+                        <form onSubmit={handleBulkCreateSerials} className="space-y-5 text-sm">
+                            {/* Row 1: Product Selection & Warehouse */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Package className="w-4 h-4 text-emerald-600" />
+                                        Chọn Sản Phẩm Nhập Kho <span className="text-rose-500">*</span>
                                     </label>
-                                    <select
+                                    <ProductSearchSelect
+                                        products={products}
                                         value={bulkProductId}
-                                        onChange={(e) => setBulkProductId(e.target.value)}
+                                        onChange={setBulkProductId}
                                         required
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                                    >
-                                        <option value="">-- Chọn sản phẩm --</option>
-                                        {products.map((p) => (
-                                            <option key={p.id} value={p.id}>{p.name} ({p.sku || 'Không có mã'})</option>
-                                        ))}
-                                    </select>
+                                        placeholder="-- Gõ tên hoặc mã SKU sản phẩm --"
+                                    />
+                                    {bulkProductId && (() => {
+                                        const selectedProd = products.find(p => p.id === bulkProductId);
+                                        return (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] text-emerald-900 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 animate-in fade-in">
+                                                <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
+                                                {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
-                                <div>
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        Kho nhập lưu trữ
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Warehouse className="w-4 h-4 text-emerald-600" />
+                                        Kho Nhập Lưu Trữ
                                     </label>
+                                    <div className="relative">
+                                        <Warehouse className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                                        <select
+                                            value={bulkWarehouseId}
+                                            onChange={(e) => setBulkWarehouseId(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-slate-900 dark:text-white"
+                                        >
+                                            <option value="">-- Kho chính (Mặc định) --</option>
+                                            {warehouses.map((w) => (
+                                                <option key={w.id} value={w.id}>{w.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Row 2: Bulk Text Input with Actions */}
+                            <div className="space-y-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <label className="font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                            <Barcode className="w-4 h-4 text-emerald-600" />
+                                            Dán Danh Sách Serial / IMEI <span className="text-rose-500">*</span>
+                                        </label>
+                                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                                            parsedBulkSerials.length > 0
+                                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                        }`}>
+                                            {parsedBulkSerials.length > 0 ? `Đã nhận diện: ${parsedBulkSerials.length} mã` : 'Chưa có mã'}
+                                        </span>
+                                    </div>
+
+                                    {/* Quick Actions Toolbar */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={handleBulkPasteClipboard}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer"
+                                            title="Dán từ Clipboard máy tính"
+                                        >
+                                            <ClipboardPaste className="w-3.5 h-3.5 text-emerald-600" />
+                                            <span>Dán Clipboard</span>
+                                        </button>
+
+                                        <label
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                                            title="Tải tệp .txt hoặc .csv"
+                                        >
+                                            <FileText className="w-3.5 h-3.5 text-slate-500" />
+                                            <span>Tải tệp</span>
+                                            <input
+                                                type="file"
+                                                accept=".txt,.csv"
+                                                onChange={handleBulkFileUpload}
+                                                className="hidden"
+                                            />
+                                        </label>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleInsertSampleSerials}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
+                                            title="Điền 5 mã mẫu"
+                                        >
+                                            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                                            <span>Mẫu thử</span>
+                                        </button>
+
+                                        {bulkText && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setBulkText('')}
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                                title="Xóa trắng nội dung"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                <span>Xóa</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="relative">
+                                    <textarea
+                                        value={bulkText}
+                                        onChange={(e) => setBulkText(e.target.value)}
+                                        placeholder="Dán 100, 200 hoặc 500 mã vào đây...&#10;VD:&#10;SN-WIN11-PRO-0001&#10;SN-WIN11-PRO-0002&#10;SN-WIN11-PRO-0003...&#10;(Mỗi mã một dòng, hoặc cách nhau bằng dấu phẩy, dấu chấm phẩy, khoảng trắng)"
+                                        rows={7}
+                                        required
+                                        className="w-full p-3.5 bg-slate-50/70 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs text-slate-900 dark:text-white uppercase leading-relaxed shadow-2xs"
+                                    />
+                                </div>
+
+                                {/* Duplicates warning pill */}
+                                {duplicateBulkCount > 0 && (
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[11px] text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 animate-in fade-in font-medium">
+                                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>Đã tự động loại bỏ <strong>{duplicateBulkCount}</strong> mã trùng lặp trong nội dung bạn dán.</span>
+                                    </div>
+                                )}
+
+                                {/* Preview chips container */}
+                                {parsedBulkSerials.length > 0 && (
+                                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                Xem trước <strong className="text-emerald-600 dark:text-emerald-400">{Math.min(12, parsedBulkSerials.length)}</strong>/{parsedBulkSerials.length} mã đầu tiên:
+                                            </span>
+                                            {parsedBulkSerials.length > 12 && (
+                                                <span className="text-[11px] text-slate-400">
+                                                    ... và {parsedBulkSerials.length - 12} mã khác
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                                            {parsedBulkSerials.slice(0, 12).map((sn, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200 shadow-2xs"
+                                                >
+                                                    <span className="text-[10px] text-slate-400 font-sans font-normal">#{idx + 1}</span>
+                                                    <span>{sn}</span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Row 3: Notes */}
+                            <div className="space-y-1.5">
+                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileText className="w-4 h-4 text-emerald-600" />
+                                    Ghi Chú Lô Hàng (Nhà cung cấp, Số hóa đơn mua...)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bulkNotes}
+                                    onChange={(e) => setBulkNotes(e.target.value)}
+                                    placeholder="VD: Lô nhập NCC Digiworld theo HĐ mua PB-2026-09"
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+                                />
+                            </div>
+
+                            {/* Footer Buttons */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <p className="text-[11px] text-slate-400">
+                                    💡 Các mã sau khi nhập sẽ ở trạng thái <strong className="text-emerald-600">Tồn kho</strong> và tự động cập nhật số lượng WMS.
+                                </p>
+                                <div className="flex items-center justify-end gap-3 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowBulkModal(false);
+                                            setBulkText('');
+                                            setBulkNotes('');
+                                        }}
+                                        className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={savingBulk || parsedBulkSerials.length === 0 || !bulkProductId}
+                                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                                    >
+                                        {savingBulk ? (
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Check className="w-4 h-4" />
+                                        )}
+                                        <span>
+                                            {savingBulk
+                                                ? 'Đang lưu vào kho...'
+                                                : parsedBulkSerials.length > 0
+                                                ? `Xác Nhận Nhập ${parsedBulkSerials.length} Mã Vào Kho`
+                                                : 'Nhập Kho Hàng Loạt'}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal 2: Thêm Serial / IMEI / Thẻ Bản Quyền */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+                                    <Barcode className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                        Thêm Serial / IMEI / Thẻ Bản Quyền
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Nhập mã định danh thiết bị hoặc thẻ bản quyền phần mềm vào kho
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowAddModal(false);
+                                    setNewSerial('');
+                                    setSerialTags([]);
+                                    setNewNotes('');
+                                }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateSerial} className="space-y-4 text-sm">
+                            {/* Product Combobox */}
+                            <div className="space-y-1.5">
+                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <Package className="w-4 h-4 text-blue-600" />
+                                    Chọn Sản phẩm <span className="text-rose-500">*</span>
+                                </label>
+                                <ProductSearchSelect
+                                    products={products}
+                                    value={selectedProductId}
+                                    onChange={setSelectedProductId}
+                                    required
+                                    placeholder="-- Gõ tên hoặc chọn sản phẩm --"
+                                />
+                                {selectedProductId && (() => {
+                                    const selectedProd = products.find(p => p.id === selectedProductId);
+                                    return (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 text-[11px] text-blue-800 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 animate-in fade-in">
+                                            <Tag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                            <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
+                                            {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* Warehouse Select */}
+                            <div className="space-y-1.5">
+                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <Warehouse className="w-4 h-4 text-blue-600" />
+                                    Kho Lưu Trữ Thiết Bị / Thẻ
+                                </label>
+                                <div className="relative">
+                                    <Warehouse className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                                     <select
-                                        value={bulkWarehouseId}
-                                        onChange={(e) => setBulkWarehouseId(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
+                                        value={selectedWarehouseId}
+                                        onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-900 dark:text-white"
                                     >
                                         <option value="">-- Kho chính (Mặc định) --</option>
                                         {warehouses.map((w) => (
@@ -1018,75 +1614,147 @@ export default function SerialManagementClient() {
                                 </div>
                             </div>
 
-                            <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300">
-                                        Dán Danh Sách Serial / IMEI <span className="text-rose-500">*</span>
+                            {/* Serial / IMEI / Thẻ Key Input */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Barcode className="w-4 h-4 text-blue-600" />
+                                        Mã Serial / IMEI / Thẻ Bản Quyền <span className="text-rose-500">*</span>
                                     </label>
-                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                                        parsedBulkSerials.length > 0 
-                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' 
-                                            : 'bg-slate-100 text-slate-500'
-                                    }`}>
-                                        Đã nhận diện: {parsedBulkSerials.length} mã hợp lệ
-                                    </span>
+                                    {serialTags.length > 0 && (
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800 animate-in fade-in">
+                                            {serialTags.length} thẻ
+                                        </span>
+                                    )}
                                 </div>
-                                <textarea
-                                    value={bulkText}
-                                    onChange={(e) => setBulkText(e.target.value)}
-                                    placeholder="Dán 100 hoặc 200 mã vào đây...&#10;VD:&#10;SN-WIN11-PRO-0001&#10;SN-WIN11-PRO-0002&#10;SN-WIN11-PRO-0003...&#10;(Mỗi mã một dòng hoặc cách nhau bằng dấu phẩy, khoảng trắng)"
-                                    rows={8}
-                                    required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-mono text-xs"
-                                />
-                            </div>
 
-                            {parsedBulkSerials.length > 0 && (
-                                <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-                                    <span className="text-xs text-slate-500 font-medium">Xem trước 5 mã đầu tiên:</span>
-                                    <div className="flex flex-wrap gap-1.5 pt-1">
-                                        {parsedBulkSerials.slice(0, 5).map((sn, idx) => (
-                                            <span key={idx} className="font-mono text-xs px-2 py-0.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded">
-                                                {sn}
-                                            </span>
-                                        ))}
-                                        {parsedBulkSerials.length > 5 && (
-                                            <span className="text-xs text-slate-400 self-center">
-                                                ... và {parsedBulkSerials.length - 5} mã khác
-                                            </span>
-                                        )}
+                                <div className="relative flex items-center rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all p-1 shadow-2xs">
+                                    <Barcode className="w-5 h-5 text-slate-400 ml-2.5 shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={newSerial}
+                                        onChange={(e) => setNewSerial(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ',') {
+                                                e.preventDefault();
+                                                handleAddTag();
+                                            }
+                                        }}
+                                        placeholder="Nhập mã thẻ / serial... (Enter để tạo thẻ)"
+                                        className="w-full bg-transparent px-3 py-2 text-sm font-mono tracking-wider font-semibold text-slate-900 dark:text-white uppercase outline-none placeholder:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
+                                    />
+                                    <div className="flex items-center gap-1 shrink-0 pr-1">
+                                        <button
+                                            type="button"
+                                            onClick={handlePasteClipboard}
+                                            title="Dán từ Clipboard"
+                                            className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                                        >
+                                            <ClipboardPaste className="w-3.5 h-3.5" />
+                                            <span>Dán</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddTag}
+                                            disabled={!newSerial.trim()}
+                                            title="Tạo thẻ mới từ mã vừa nhập"
+                                            className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-all flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            <span>Thêm thẻ</span>
+                                        </button>
                                     </div>
                                 </div>
-                            )}
 
-                            <div>
-                                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Ghi chú lô hàng (Nhà cung cấp, Số hóa đơn mua...)
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                    <span>Nhấn <strong>Enter</strong> hoặc phẩy <strong>(,)</strong> để tạo từng thẻ. Bạn cũng có thể dán nhiều mã cùng lúc từ Excel.</span>
+                                </p>
+
+                                {/* Tags Preview Area */}
+                                {serialTags.length > 0 && (
+                                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2 animate-in fade-in">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                Danh sách <strong className="text-blue-600 dark:text-blue-400">{serialTags.length}</strong> thẻ sẽ lưu vào kho:
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSerialTags([])}
+                                                className="text-[11px] text-rose-500 hover:underline cursor-pointer font-medium"
+                                            >
+                                                Xóa tất cả
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                            {serialTags.map((tag, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-700 border border-blue-200 dark:border-blue-800 text-xs font-mono font-bold text-blue-900 dark:text-blue-200 shadow-2xs"
+                                                >
+                                                    <span className="text-[10px] text-slate-400 font-sans font-normal">#{idx + 1}</span>
+                                                    <span>{tag}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveTag(idx)}
+                                                        className="text-slate-400 hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
+                                                        title="Xóa thẻ này"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Notes */}
+                            <div className="space-y-1.5">
+                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileText className="w-4 h-4 text-blue-600" />
+                                    Ghi Chú Lưu Kho (Tùy chọn)
                                 </label>
-                                <input
-                                    type="text"
-                                    value={bulkNotes}
-                                    onChange={(e) => setBulkNotes(e.target.value)}
-                                    placeholder="VD: Lô nhập NCC Digiworld theo HĐ mua PB-2026-09"
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
+                                <textarea
+                                    value={newNotes}
+                                    onChange={(e) => setNewNotes(e.target.value)}
+                                    placeholder="Vị trí kệ, lô sản xuất, nhà cung cấp, thông tin bổ sung..."
+                                    rows={2}
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
                                 />
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            {/* Footer Buttons */}
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                 <button
                                     type="button"
-                                    onClick={() => setShowBulkModal(false)}
-                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-medium"
+                                    onClick={() => {
+                                        setShowAddModal(false);
+                                        setNewSerial('');
+                                        setSerialTags([]);
+                                        setNewNotes('');
+                                    }}
+                                    className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={savingBulk || parsedBulkSerials.length === 0}
-                                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                    disabled={savingSingle || (!selectedProductId && serialTags.length === 0 && !newSerial.trim())}
+                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
                                 >
-                                    {savingBulk ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                    {savingBulk ? 'Đang lưu vào kho...' : `Nhập Kho Ngay (${parsedBulkSerials.length} mã)`}
+                                    {savingSingle ? (
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Check className="w-4 h-4" />
+                                    )}
+                                    <span>
+                                        {savingSingle
+                                            ? 'Đang lưu vào kho...'
+                                            : serialTags.length > 1 || (serialTags.length >= 1 && newSerial.trim())
+                                            ? `Lưu ${serialTags.length + (newSerial.trim() && !serialTags.includes(newSerial.trim()) ? 1 : 0)} Thẻ Vào Kho`
+                                            : 'Lưu Mã Thẻ Vào Kho'}
+                                    </span>
                                 </button>
                             </div>
                         </form>
@@ -1094,92 +1762,162 @@ export default function SerialManagementClient() {
                 </div>
             )}
 
-            {/* Modal 2: Thêm 1 Serial lẻ */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">Thêm Serial / IMEI Lẻ</h3>
-                            <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+            {/* Modal Edit: Chỉnh Sửa Serial / Đổi Sản Phẩm Khi Nhập Sai */}
+            {showEditModal && editingSerial && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-orange-500/25 shrink-0">
+                                    <Pencil className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                        Chỉnh Sửa Thông Tin Serial / Đổi Sản Phẩm
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Sửa lại tên sản phẩm, số serial hoặc thông tin kho khi phát hiện nhập sai
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowEditModal(false);
+                                    setEditingSerial(null);
+                                }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateSerial} className="space-y-4 text-sm">
-                            <div>
-                                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Chọn Sản phẩm <span className="text-rose-500">*</span>
-                                </label>
-                                <select
-                                    value={selectedProductId}
-                                    onChange={(e) => setSelectedProductId(e.target.value)}
+                        <form onSubmit={handleUpdateSerial} className="space-y-4 text-sm">
+                            {/* Product Combobox */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Package className="w-4 h-4 text-amber-600" />
+                                        Sản Phẩm Áp Dụng <span className="text-rose-500">*</span>
+                                    </label>
+                                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                        (Gõ để đổi sang sản phẩm đúng)
+                                    </span>
+                                </div>
+                                <ProductSearchSelect
+                                    products={products}
+                                    value={editProductId}
+                                    onChange={setEditProductId}
                                     required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                                >
-                                    <option value="">-- Chọn sản phẩm --</option>
-                                    {products.map((p) => (
-                                        <option key={p.id} value={p.id}>{p.name} ({p.sku || 'N/A'})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Kho lưu trữ
-                                </label>
-                                <select
-                                    value={selectedWarehouseId}
-                                    onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
-                                >
-                                    <option value="">-- Kho chính (Mặc định) --</option>
-                                    {warehouses.map((w) => (
-                                        <option key={w.id} value={w.id}>{w.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Số Serial / IMEI <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newSerial}
-                                    onChange={(e) => setNewSerial(e.target.value)}
-                                    placeholder="VD: SN-2026-WIN11-001"
-                                    required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none font-mono"
+                                    placeholder="-- Gõ tên để tìm hoặc đổi sản phẩm --"
                                 />
+                                {editProductId && (() => {
+                                    const selectedProd = products.find(p => p.id === editProductId);
+                                    return (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 text-[11px] text-amber-900 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 animate-in fade-in">
+                                            <Tag className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                            <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
+                                            {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
-                            <div>
-                                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Ghi chú
+                            {/* Serial / IMEI Input */}
+                            <div className="space-y-1.5">
+                                <label className="font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <Barcode className="w-4 h-4 text-amber-600" />
+                                    Số Serial / IMEI / Mã Thẻ <span className="text-rose-500">*</span>
+                                </label>
+                                <div className="relative flex items-center rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all p-1 shadow-2xs">
+                                    <Barcode className="w-5 h-5 text-slate-400 ml-2.5 shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={editSerialNumber}
+                                        onChange={(e) => setEditSerialNumber(e.target.value)}
+                                        required
+                                        placeholder="VD: SN-2026-WIN11-001"
+                                        className="w-full bg-transparent px-3 py-2 text-sm font-mono tracking-wider font-semibold text-slate-900 dark:text-white uppercase outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Warehouse & Status 2-col */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Warehouse className="w-4 h-4 text-amber-600" />
+                                        Kho Lưu Trữ
+                                    </label>
+                                    <select
+                                        value={editWarehouseId}
+                                        onChange={(e) => setEditWarehouseId(e.target.value)}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs font-medium text-slate-900 dark:text-white"
+                                    >
+                                        <option value="">-- Kho chính (Mặc định) --</option>
+                                        {warehouses.map((w) => (
+                                            <option key={w.id} value={w.id}>{w.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Filter className="w-4 h-4 text-amber-600" />
+                                        Trạng Thái
+                                    </label>
+                                    <select
+                                        value={editStatus}
+                                        onChange={(e) => setEditStatus(e.target.value)}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs font-semibold text-slate-900 dark:text-white"
+                                    >
+                                        <option value="IN_STOCK">Tồn kho (In Stock)</option>
+                                        <option value="SOLD">Đã xuất bán (Sold)</option>
+                                        <option value="UNDER_WARRANTY">Đang bảo hành</option>
+                                        <option value="DEFECTIVE">Lỗi / Hỏng</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Notes */}
+                            <div className="space-y-1.5">
+                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileText className="w-4 h-4 text-amber-600" />
+                                    Ghi Chú
                                 </label>
                                 <textarea
-                                    value={newNotes}
-                                    onChange={(e) => setNewNotes(e.target.value)}
-                                    placeholder="Vị trí kệ, lô sản xuất..."
-                                    rows={3}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none"
+                                    value={editNotes}
+                                    onChange={(e) => setEditNotes(e.target.value)}
+                                    placeholder="Lý do điều chỉnh hoặc ghi chú thêm..."
+                                    rows={2}
+                                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs text-slate-900 dark:text-white placeholder:text-slate-400"
                                 />
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-2">
+                            {/* Footer Buttons */}
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                 <button
                                     type="button"
-                                    onClick={() => setShowAddModal(false)}
-                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-medium"
+                                    onClick={() => {
+                                        setShowEditModal(false);
+                                        setEditingSerial(null);
+                                    }}
+                                    className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={savingSingle}
-                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-sm cursor-pointer"
+                                    disabled={savingEdit || !editProductId || !editSerialNumber.trim()}
+                                    className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer"
                                 >
-                                    {savingSingle ? 'Đang lưu...' : 'Lưu Serial'}
+                                    {savingEdit ? (
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Check className="w-4 h-4" />
+                                    )}
+                                    <span>{savingEdit ? 'Đang cập nhật...' : 'Lưu Thay Đổi'}</span>
                                 </button>
                             </div>
                         </form>

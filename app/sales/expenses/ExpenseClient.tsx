@@ -11,10 +11,11 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 import { createExpense, updateExpense, deleteExpense, createExpenseCategory } from './actions';
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ArrowUpDown, Search, DollarSign, ListPlus, Upload, Paperclip, Link as LinkIcon, Building2, UserCircle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ArrowUpDown, Search, DollarSign, ListPlus, Upload, Paperclip, Link as LinkIcon, Building2, UserCircle2, BarChart3, Receipt, Calendar, TrendingDown, Layers } from 'lucide-react';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import Link from 'next/link';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 export type ExpenseWithDetails = Expense & {
     category: ExpenseCategory;
@@ -80,6 +81,7 @@ export default function ExpenseClient({
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -155,6 +157,60 @@ export default function ExpenseClient({
     const totalExpenseAmount = React.useMemo(() => {
         return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
     }, [filteredExpenses]);
+
+    const expenseAnalytics = React.useMemo(() => {
+        const total = expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+        const count = expenses.length;
+        const avg = count > 0 ? Math.round(total / count) : 0;
+
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const thisMonthAmount = expenses.reduce((sum: number, e: any) => {
+            const d = new Date(e.date);
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                return sum + (e.amount || 0);
+            }
+            return sum;
+        }, 0);
+
+        const catMap: Record<string, { name: string; amount: number; count: number }> = {};
+        expenses.forEach((e: any) => {
+            const catName = e.category?.name || 'Khác';
+            if (!catMap[catName]) {
+                catMap[catName] = { name: catName, amount: 0, count: 0 };
+            }
+            catMap[catName].amount += (e.amount || 0);
+            catMap[catName].count++;
+        });
+
+        const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'];
+        const categoryData = Object.values(catMap)
+            .sort((a, b) => b.amount - a.amount)
+            .map((cat: any, idx: number) => ({
+                ...cat,
+                color: COLORS[idx % COLORS.length]
+            }));
+
+        const payeeMap: Record<string, number> = {};
+        expenses.forEach((e: any) => {
+            const payeeName = e.payee?.trim() || 'Chưa đặt tên';
+            payeeMap[payeeName] = (payeeMap[payeeName] || 0) + (e.amount || 0);
+        });
+
+        const topPayees = Object.entries(payeeMap)
+            .map(([name, amount]) => ({ name, amount }))
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 5);
+
+        return {
+            total,
+            count,
+            avg,
+            thisMonthAmount,
+            categoryData,
+            topPayees
+        };
+    }, [expenses]);
 
     const openModal = (expense?: ExpenseWithDetails) => {
         if (expense) {
@@ -298,16 +354,178 @@ export default function ExpenseClient({
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', border: '1px solid #fecaca' }}>
-                    <div>
-                        <p className="text-sm font-semibold text-red-600 mb-1">Tổng chi phí</p>
-                        <h3 className="text-2xl font-bold text-red-700">{formatMoney(totalExpenseAmount)}</h3>
+            {/* Expense Analytics Dashboard */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shadow-2xs">
+                            <BarChart3 className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span>Phân Tích Chi Phí Hoạt Động &amp; Dự Án</span>
+                                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                    {expenseAnalytics.count} khoản chi
+                                </span>
+                            </h3>
+                            <p className="text-[11px] text-slate-400 hidden sm:block">
+                                Theo dõi cơ cấu chi tiêu theo danh mục nghiệp vụ và xếp hạng đối tượng chi trả
+                            </p>
+                        </div>
                     </div>
-                    <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-600">
-                        <DollarSign size={24} />
+
+                    <button
+                        type="button"
+                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                    >
+                        {isChartCollapsed ? (
+                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                        ) : (
+                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                        )}
+                    </button>
+                </div>
+
+                {!isChartCollapsed && (
+                    <div className="p-4 sm:p-5 space-y-4">
+                        {/* KPI 4 Cards */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="rounded-xl p-3 bg-white border border-rose-200/90 bg-gradient-to-br from-rose-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Tổng Chi Phí</span>
+                                    <DollarSign size={14} className="text-rose-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-rose-700 truncate" title={formatMoney(expenseAnalytics.total)}>
+                                    {formatMoney(expenseAnalytics.total)}
+                                </div>
+                                <div className="text-[11px] text-rose-600 mt-0.5">Toàn bộ phiếu chi hệ thống</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-amber-200/90 bg-gradient-to-br from-amber-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Chi Phí Tháng Này</span>
+                                    <Calendar size={14} className="text-amber-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-amber-700 truncate" title={formatMoney(expenseAnalytics.thisMonthAmount)}>
+                                    {formatMoney(expenseAnalytics.thisMonthAmount)}
+                                </div>
+                                <div className="text-[11px] text-amber-600 mt-0.5">Phát sinh trong tháng hiện tại</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-blue-200/90 bg-gradient-to-br from-blue-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Bình Quân / Phiếu</span>
+                                    <TrendingDown size={14} className="text-blue-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-blue-700 truncate" title={formatMoney(expenseAnalytics.avg)}>
+                                    {formatMoney(expenseAnalytics.avg)}
+                                </div>
+                                <div className="text-[11px] text-blue-600 mt-0.5">Mức chi trung bình mỗi lần</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-slate-200/90 shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng Lượt Chi</span>
+                                    <Receipt size={14} className="text-slate-400" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-slate-900">
+                                    {expenseAnalytics.count} <span className="text-xs font-normal text-slate-400">chứng từ</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">Đã duyệt và thanh toán</div>
+                            </div>
+                        </div>
+
+                        {/* 2 Balanced Charts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            {/* Chart 1 (5 cols): Cơ cấu chi phí theo danh mục */}
+                            <div className="lg:col-span-5 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Layers className="w-3.5 h-3.5 text-rose-600" />
+                                        Cơ Cấu Chi Phí Theo Danh Mục
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">{expenseAnalytics.categoryData.length} nhóm</span>
+                                </div>
+
+                                <div className="h-52 w-full flex items-center justify-center">
+                                    {expenseAnalytics.categoryData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={expenseAnalytics.categoryData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={40}
+                                                    outerRadius={68}
+                                                    paddingAngle={3}
+                                                    dataKey="amount"
+                                                >
+                                                    {expenseAnalytics.categoryData.map((entry: any, index: number) => (
+                                                        <Cell key={"cat-cell-" + index} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    formatter={(value: any) => [formatMoney(value), 'Số tiền']}
+                                                />
+                                                <Legend 
+                                                    verticalAlign="bottom" 
+                                                    align="center" 
+                                                    iconType="circle"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Chưa có dữ liệu danh mục chi phí</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Chart 2 (7 cols): Top đối tượng nhận chi phí */}
+                            <div className="lg:col-span-7 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                                        Top Đối Tượng / Đơn Vị Thụ Hưởng
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">5 khoản chi lớn nhất</span>
+                                </div>
+
+                                <div className="h-52 w-full flex flex-col justify-around space-y-2">
+                                    {expenseAnalytics.topPayees.length > 0 ? (
+                                        expenseAnalytics.topPayees.map((payee: any, idx: number) => {
+                                            const maxAmt = expenseAnalytics.topPayees[0]?.amount || 1;
+                                            const pct = Math.min(100, Math.max(5, Math.round((payee.amount / maxAmt) * 100)));
+                                            return (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="font-bold text-slate-800 truncate max-w-[260px]" title={payee.name}>
+                                                            {idx + 1}. {payee.name}
+                                                        </span>
+                                                        <span className="font-mono font-bold text-rose-600 shrink-0">
+                                                            {formatMoney(payee.amount)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full transition-all"
+                                                            style={{ width: pct + "%" }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                                            Chưa có đối tượng chi phí
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </Card>
+                )}
             </div>
 
             <Card>

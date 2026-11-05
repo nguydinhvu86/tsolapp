@@ -199,6 +199,21 @@ export function SalesEstimateQuickViewDrawer({
                             </button>
                         )}
 
+                        {onCopy && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onClose();
+                                    onCopy(est);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+                                title="Tạo một báo giá mới sao chép toàn bộ dữ liệu này"
+                            >
+                                <Copy size={14} />
+                                <span>Tạo Bản Sao</span>
+                            </button>
+                        )}
+
                         <button
                             type="button"
                             onClick={() => {

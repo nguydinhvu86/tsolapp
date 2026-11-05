@@ -10,12 +10,13 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
-import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown, GripVertical, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
 import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount } from '@/lib/utils/formatters';
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import Link from 'next/link';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager, projects }: any) {
@@ -88,6 +89,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
 
     const handleSort = (key: string) => {
         if (sortBy === `${key}_desc`) {
@@ -493,6 +495,42 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
         };
     }, [baseFilteredOrders]);
 
+    const orderAnalytics = useMemo(() => {
+        const statusChartData = [
+            { name: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, color: '#f59e0b' },
+            { name: 'Chốt Đơn', count: stats.CONFIRMED.count, amount: stats.CONFIRMED.amount, color: '#3b82f6' },
+            { name: 'Hoàn Thành', count: stats.COMPLETED.count, amount: stats.COMPLETED.amount, color: '#10b981' },
+            { name: 'Đã Hủy', count: stats.CANCELLED.count, amount: stats.CANCELLED.amount, color: '#ef4444' }
+        ].filter(d => d.count > 0);
+
+        const customerMap: Record<string, { name: string; amount: number; count: number }> = {};
+        baseFilteredOrders.forEach((o: any) => {
+            if (o.status !== 'CANCELLED') {
+                const cName = o.customer?.name || 'Khách vãng lai';
+                if (!customerMap[cName]) {
+                    customerMap[cName] = { name: cName, amount: 0, count: 0 };
+                }
+                customerMap[cName].amount += (o.totalAmount || 0);
+                customerMap[cName].count++;
+            }
+        });
+
+        const topCustomers = Object.values(customerMap)
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 5);
+
+        const totalValidCount = stats.ALL.count - stats.CANCELLED.count;
+        const completionRate = totalValidCount > 0 
+            ? Math.round((stats.COMPLETED.count / totalValidCount) * 100) 
+            : 0;
+
+        return {
+            statusChartData,
+            topCustomers,
+            completionRate
+        };
+    }, [stats, baseFilteredOrders]);
+
     const statsCards = [
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
         { id: 'DRAFT', label: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, colorClass: 'stat-card-amber', icon: FileText },
@@ -582,6 +620,145 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                     ))}
                 </div>
 
+                {/* Sales Orders Analytics Dashboard */}
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden mb-5">
+                    <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-2xs">
+                                <BarChart3 className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                                    <span>Phân Tích Tiến Trình Đơn Đặt Hàng Bán (SO)</span>
+                                    <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                                        Tỷ lệ hoàn tất: {orderAnalytics.completionRate}%
+                                    </span>
+                                </h3>
+                                <p className="text-[11px] text-slate-400 hidden sm:block">
+                                    Trực quan hóa tỷ trọng các trạng thái đơn hàng và khách hàng đặt giá trị cao nhất
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            {isChartCollapsed ? (
+                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+                    </div>
+
+                    {!isChartCollapsed && (
+                        <div className="p-4 sm:p-5">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                {/* Chart 1 (5 cols): Tỷ lệ trạng thái đơn hàng */}
+                                <div className="lg:col-span-5 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                        <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                                            Cơ Cấu Trạng Thái Đơn Hàng
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-semibold">{stats.ALL.count} đơn</span>
+                                    </div>
+
+                                    <div className="h-52 w-full flex items-center justify-center relative">
+                                        {orderAnalytics.statusChartData.length > 0 ? (
+                                            <>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={orderAnalytics.statusChartData}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            innerRadius={44}
+                                                            outerRadius={70}
+                                                            paddingAngle={3}
+                                                            dataKey="count"
+                                                        >
+                                                            {orderAnalytics.statusChartData.map((entry: any, index: number) => (
+                                                                <Cell key={"status-cell-" + index} fill={entry.color} />
+                                                            ))}
+                                                        </Pie>
+                                                        <RechartsTooltip
+                                                            formatter={(value: any, name: any, item: any) => [
+                                                                value + " đơn (" + formatMoney(item?.payload?.amount || 0) + ")",
+                                                                'Số lượng'
+                                                            ]}
+                                                        />
+                                                        <Legend 
+                                                            verticalAlign="bottom" 
+                                                            align="center" 
+                                                            iconType="circle"
+                                                            wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                        />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-5">
+                                                    <span className="text-[9px] uppercase font-bold text-slate-400">Hoàn tất</span>
+                                                    <span className="text-sm font-black font-mono text-emerald-600">
+                                                        {orderAnalytics.completionRate}%
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-xs text-slate-400 italic">Chưa có dữ liệu đơn hàng</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Chart 2 (7 cols): Top khách hàng đặt mua nhiều nhất */}
+                                <div className="lg:col-span-7 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                        <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                                            Top Khách Hàng Đặt Mua Giá Trị Cao Nhất
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-semibold">5 đối tác lớn nhất</span>
+                                    </div>
+
+                                    <div className="h-52 w-full flex flex-col justify-around space-y-2">
+                                        {orderAnalytics.topCustomers.length > 0 ? (
+                                            orderAnalytics.topCustomers.map((cust: any, idx: number) => {
+                                                const maxAmt = orderAnalytics.topCustomers[0]?.amount || 1;
+                                                const pct = Math.min(100, Math.max(5, Math.round((cust.amount / maxAmt) * 100)));
+                                                return (
+                                                    <div key={idx} className="space-y-1">
+                                                        <div className="flex items-center justify-between text-xs">
+                                                            <span className="font-bold text-slate-800 truncate max-w-[260px]" title={cust.name}>
+                                                                {idx + 1}. {cust.name}
+                                                            </span>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <span className="text-[10px] text-slate-400">{cust.count} đơn</span>
+                                                                <span className="font-mono font-bold text-blue-600">
+                                                                    {formatMoney(cust.amount)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                                            <div 
+                                                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all"
+                                                                style={{ width: pct + "%" }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                                                Chưa có dữ liệu đặt hàng
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 {/* Filter Ribbon */}
                 <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-3 mb-5 flex gap-3 items-center flex-wrap">
                     <div className="flex-1 relative min-w-[200px]">

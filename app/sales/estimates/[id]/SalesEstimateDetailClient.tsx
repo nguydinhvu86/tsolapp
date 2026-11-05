@@ -702,14 +702,14 @@ export default function SalesEstimateDetailClient({ initialData, customers, prod
                     >
                         <Mail size={13} /> Gửi Email
                     </button>
-                    {(estimate.status === 'EXPIRED' || estimate.status === 'REJECTED') && (
+
                         <button
-                            onClick={handleClone}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer h-8"
-                        >
-                            <Copy size={13} /> Tạo Bản Sao Mới
-                        </button>
-                    )}
+                        onClick={handleClone}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer h-8"
+                        title="Tạo ra một Báo Giá Nháp mới với toàn bộ dữ liệu từ báo giá này"
+                    >
+                        <Copy size={13} /> Tạo Bản Sao Mới
+                    </button>
                     {(estimate.status === 'DRAFT' || estimate.status === 'SENT' || estimate.status === 'ACCEPTED') && (
                         <>
                             <button

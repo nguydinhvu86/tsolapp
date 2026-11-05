@@ -11,11 +11,10 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { 
     Plus, Search, Edit, Edit2, Trash2, Package, Layers, X, Eye, 
     ShieldCheck, Shield, Sparkles, Wrench, Barcode, Check, AlertCircle,
-    Boxes, Tag, DollarSign, Calendar, Info, Ruler, Settings2
-} from 'lucide-react';
+    Boxes, Tag, DollarSign, Calendar, Info, Ruler, Settings2, BarChart3, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, createProductGroup, updateProductGroup, deleteProductGroup } from '../actions';
 import { useRouter } from 'next/navigation';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { formatMoney, formatTaxRate } from '@/lib/utils/formatters';
 import { TaxBadge } from '@/app/components/ui/TaxRateSelect';
@@ -65,6 +64,8 @@ export default function ProductClient({
     const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
+    const [chartViewMode, setChartViewMode] = useState<'warehouse' | 'group'>('warehouse');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [viewingProduct, setViewingProduct] = useState<any>(null);
     const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -275,18 +276,94 @@ export default function ProductClient({
         }
     };
 
-    const warehouseStockData = React.useMemo(() => {
-        const stats: Record<string, number> = {};
+    const inventoryStats = React.useMemo(() => {
+        let totalStockQty = 0;
+        let totalStockValue = 0;
+        let safeCount = 0;
+        let lowCount = 0;
+        let outCount = 0;
+        const warehouseMap: Record<string, number> = {};
+        const groupMap: Record<string, { name: string; quantity: number; value: number }> = {};
+
+        const groupNameMap: Record<string, string> = {};
+        (productGroups || []).forEach((g: any) => {
+            if (g?.id) groupNameMap[g.id] = g.name || 'Nhóm khác';
+        });
+
+        const productRanking: Array<{ name: string; sku: string; quantity: number; value: number }> = [];
+
         initialProducts.forEach(p => {
-            if (p.type === 'PRODUCT' && p.inventories) {
-                p.inventories.forEach((inv: any) => {
-                    const wName = inv.warehouse?.name || 'Không rõ';
-                    stats[wName] = (stats[wName] || 0) + inv.quantity;
-                });
+            if (p.type === 'PRODUCT') {
+                const stock = p.inventories?.reduce((acc: number, inv: any) => acc + (inv.quantity || 0), 0) || 0;
+                totalStockQty += stock;
+                const price = canViewImportPrice && p.importPrice ? p.importPrice : (p.salePrice || 0);
+                const value = stock * price;
+                totalStockValue += value;
+
+                if (stock <= 0) {
+                    outCount++;
+                } else if (stock <= (p.minStockLevel || 0)) {
+                    lowCount++;
+                } else {
+                    safeCount++;
+                }
+
+                if (p.inventories && Array.isArray(p.inventories)) {
+                    p.inventories.forEach((inv: any) => {
+                        const wName = inv.warehouse?.name || 'Kho khác';
+                        warehouseMap[wName] = (warehouseMap[wName] || 0) + (inv.quantity || 0);
+                    });
+                }
+
+                const gName = p.groupId && groupNameMap[p.groupId] ? groupNameMap[p.groupId] : 'Chưa phân nhóm';
+                if (!groupMap[gName]) {
+                    groupMap[gName] = { name: gName, quantity: 0, value: 0 };
+                }
+                groupMap[gName].quantity += stock;
+                groupMap[gName].value += value;
+
+                if (stock > 0) {
+                    productRanking.push({
+                        name: p.name,
+                        sku: p.sku,
+                        quantity: stock,
+                        value
+                    });
+                }
             }
         });
-        return Object.entries(stats).map(([name, value]) => ({ name, value })).filter(d => d.value > 0);
-    }, [initialProducts]);
+
+        const warehouseChart = Object.entries(warehouseMap)
+            .map(([name, value]) => ({ name, value }))
+            .filter(d => d.value > 0);
+
+        const groupChart = Object.values(groupMap)
+            .map(g => ({ name: g.name, value: g.quantity, moneyValue: g.value }))
+            .filter(d => d.value > 0)
+            .sort((a, b) => b.value - a.value);
+
+        const healthChart = [
+            { name: 'Đủ tồn kho', value: safeCount, color: '#10b981' },
+            { name: 'Sắp hết hàng', value: lowCount, color: '#f59e0b' },
+            { name: 'Hết hàng', value: outCount, color: '#ef4444' }
+        ].filter(d => d.value > 0);
+
+        const topProducts = productRanking
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 5);
+
+        return {
+            totalStockQty,
+            totalStockValue,
+            safeCount,
+            lowCount,
+            outCount,
+            warehouseChart,
+            groupChart,
+            healthChart,
+            topProducts
+        };
+    }, [initialProducts, productGroups, canViewImportPrice]);
 
     const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -322,35 +399,248 @@ export default function ProductClient({
                 </div>
             </div>
 
-            {/* Inventory Chart (if has stock) */}
-            {warehouseStockData.length > 0 && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">{t('products.chartTitle')}</h3>
-                    <div className="h-[200px] w-full">
-                        <ResponsiveContainer width="100%" height="100%" minHeight={50} minWidth={50}>
-                            <PieChart>
-                                <Pie
-                                    data={warehouseStockData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={35}
-                                    outerRadius={75}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                >
-                                    {warehouseStockData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip
-                                    formatter={(value: any) => [`${new Intl.NumberFormat('vi-VN').format(value)} ${t('products.chartTooltipUnit')}`, t('products.chartTooltipLabel')]}
-                                />
-                                <Legend verticalAlign="middle" align="right" layout="vertical" />
-                            </PieChart>
-                        </ResponsiveContainer>
+            {/* Inventory Analytics Dashboard */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                {/* Header with Title & Collapse toggle */}
+                <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-2xs">
+                            <BarChart3 className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span>Phân Tích Tồn Kho &amp; Sức Khỏe Hàng Hóa</span>
+                                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                    {inventoryStats.totalStockQty.toLocaleString('vi-VN')} SP
+                                </span>
+                            </h3>
+                            <p className="text-[11px] text-slate-400 hidden sm:block">
+                                Theo dõi phân bổ theo kho, nhóm sản phẩm và các cảnh báo thiếu hụt hàng
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            {isChartCollapsed ? (
+                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
                     </div>
                 </div>
-            )}
+
+                {/* Content */}
+                {!isChartCollapsed && (
+                    <div className="p-4 sm:p-5 space-y-4">
+                        {/* KPI Stats 4 Cards */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="rounded-xl p-3 bg-white border border-slate-200/90 shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng Tồn Kho</span>
+                                    <Package size={14} className="text-slate-400" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-slate-900">
+                                    {inventoryStats.totalStockQty.toLocaleString('vi-VN')} <span className="text-xs font-normal text-slate-400">cái/bộ</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">Trên toàn hệ thống kho</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-emerald-200/80 bg-gradient-to-br from-emerald-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Giá Trị Tồn Kho</span>
+                                    <DollarSign size={14} className="text-emerald-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-emerald-700 truncate" title={formatMoney(inventoryStats.totalStockValue)}>
+                                    {formatMoney(inventoryStats.totalStockValue)}
+                                </div>
+                                <div className="text-[11px] text-emerald-600 mt-0.5">{canViewImportPrice ? 'Định giá theo giá nhập' : 'Định giá niêm yết'}</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-amber-200/80 bg-gradient-to-br from-amber-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Cảnh Báo Thiếu Hàng</span>
+                                    <AlertTriangle size={14} className="text-amber-500" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-amber-700">
+                                    {inventoryStats.lowCount + inventoryStats.outCount} <span className="text-xs font-normal text-slate-400">mặt hàng</span>
+                                </div>
+                                <div className="text-[11px] text-amber-600 mt-0.5 font-medium">
+                                    {inventoryStats.lowCount} sắp hết | {inventoryStats.outCount} hết hàng
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-blue-200/80 bg-gradient-to-br from-blue-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Tồn Kho Đạt Chuẩn</span>
+                                    <CheckCircle2 size={14} className="text-blue-500" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-blue-700">
+                                    {inventoryStats.safeCount} <span className="text-xs font-normal text-slate-400">sản phẩm</span>
+                                </div>
+                                <div className="text-[11px] text-blue-600 mt-0.5">Đủ đáp ứng đơn hàng</div>
+                            </div>
+                        </div>
+
+                        {/* 3 Balanced Charts Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Card 1: Tỷ trọng phân bổ tồn kho (Kho / Nhóm hàng) */}
+                            <div className="p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                                        Phân Bổ Tồn Kho
+                                    </span>
+                                    <div className="flex items-center bg-white rounded-lg p-0.5 border border-slate-200 text-[10px] font-semibold">
+                                        <button
+                                            type="button"
+                                            onClick={() => setChartViewMode('warehouse')}
+                                            className={"px-2 py-0.5 rounded-md transition-colors " + (chartViewMode === 'warehouse' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900')}
+                                        >
+                                            Theo Kho
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setChartViewMode('group')}
+                                            className={"px-2 py-0.5 rounded-md transition-colors " + (chartViewMode === 'group' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900')}
+                                        >
+                                            Theo Nhóm
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="h-48 w-full flex items-center justify-center">
+                                    {(chartViewMode === 'warehouse' ? inventoryStats.warehouseChart : inventoryStats.groupChart).length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={chartViewMode === 'warehouse' ? inventoryStats.warehouseChart : inventoryStats.groupChart}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={36}
+                                                    outerRadius={65}
+                                                    paddingAngle={3}
+                                                    dataKey="value"
+                                                >
+                                                    {(chartViewMode === 'warehouse' ? inventoryStats.warehouseChart : inventoryStats.groupChart).map((entry, index) => (
+                                                        <Cell key={"cell-" + index} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    formatter={(value: any) => [new Intl.NumberFormat('vi-VN').format(value) + " SP", 'Số lượng']}
+                                                />
+                                                <Legend 
+                                                    verticalAlign="bottom" 
+                                                    align="center" 
+                                                    iconType="circle"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Chưa có dữ liệu tồn kho</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card 2: Sức khỏe & Tình trạng tồn kho */}
+                            <div className="p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                        Tình Trạng &amp; Sức Khỏe Kho
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">
+                                        Định mức an toàn
+                                    </span>
+                                </div>
+
+                                <div className="h-48 w-full flex items-center justify-center">
+                                    {inventoryStats.healthChart.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={inventoryStats.healthChart}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={36}
+                                                    outerRadius={65}
+                                                    paddingAngle={3}
+                                                    dataKey="value"
+                                                >
+                                                    {inventoryStats.healthChart.map((entry, index) => (
+                                                        <Cell key={"health-cell-" + index} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    formatter={(value: any) => [value + " mặt hàng", 'Số lượng']}
+                                                />
+                                                <Legend 
+                                                    verticalAlign="bottom" 
+                                                    align="center" 
+                                                    iconType="circle"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Chưa có dữ liệu sản phẩm</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card 3: Top 5 Sản phẩm tồn kho nhiều nhất */}
+                            <div className="p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                                        Top 5 Tồn Kho Nhiều Nhất
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">
+                                        Số lượng cao nhất
+                                    </span>
+                                </div>
+
+                                <div className="h-48 w-full flex flex-col justify-around space-y-2">
+                                    {inventoryStats.topProducts.length > 0 ? (
+                                        inventoryStats.topProducts.map((prod, idx) => {
+                                            const maxQty = inventoryStats.topProducts[0]?.quantity || 1;
+                                            const pct = Math.min(100, Math.max(5, Math.round((prod.quantity / maxQty) * 100)));
+                                            return (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="font-bold text-slate-800 truncate max-w-[170px]" title={prod.name}>
+                                                            {idx + 1}. {prod.name}
+                                                        </span>
+                                                        <span className="font-mono font-bold text-slate-700 shrink-0">
+                                                            {prod.quantity.toLocaleString('vi-VN')} <span className="text-[10px] font-normal text-slate-400">cái</span>
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all"
+                                                            style={{ width: pct + "%" }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                                            Chưa có sản phẩm tồn kho
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Main Table Card */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">

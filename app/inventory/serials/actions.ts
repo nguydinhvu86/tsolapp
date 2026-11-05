@@ -187,6 +187,56 @@ export async function dispatchSerialsAction(data: {
     }
 }
 
+export async function updateSerialRecord(data: {
+    id: string;
+    productId: string;
+    serialNumber: string;
+    warehouseId?: string | null;
+    status?: string;
+    notes?: string | null;
+}) {
+    try {
+        const trimmedSerial = data.serialNumber.trim();
+        if (!trimmedSerial) {
+            return { success: false, error: 'Số Serial/IMEI không được để trống' };
+        }
+        if (!data.productId) {
+            return { success: false, error: 'Vui lòng chọn sản phẩm' };
+        }
+
+        // Kiểm tra xem số Serial có bị trùng với bản ghi khác không
+        const existing = await prisma.productSerial.findFirst({
+            where: {
+                serialNumber: trimmedSerial,
+                NOT: { id: data.id }
+            }
+        });
+        if (existing) {
+            return { success: false, error: `Số Serial "${trimmedSerial}" đã trùng với một bản ghi khác trong hệ thống!` };
+        }
+
+        const updated = await prisma.productSerial.update({
+            where: { id: data.id },
+            data: {
+                productId: data.productId,
+                serialNumber: trimmedSerial,
+                warehouseId: data.warehouseId || null,
+                status: data.status || undefined,
+                notes: data.notes || null
+            },
+            include: {
+                product: { select: { id: true, name: true, sku: true, unit: true, warrantyMonths: true } },
+                warehouse: { select: { id: true, name: true } },
+                customer: { select: { id: true, name: true, phone: true } }
+            }
+        });
+
+        return { success: true, serial: updated };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
 export async function updateSerialStatus(id: string, status: string, notes?: string) {
     try {
         await prisma.productSerial.update({
@@ -220,11 +270,14 @@ export async function lookupWarranty(serialNumber: string) {
         return { 
             success: true, 
             data: {
+                id: info.id,
                 serialNumber: info.serialNumber,
+                productId: info.product?.id,
                 productName: info.product?.name,
                 sku: info.product?.sku,
                 unit: info.product?.unit,
                 status: info.status,
+                warehouseId: info.warehouse?.id,
                 warehouseName: info.warehouse?.name,
                 warrantyMonths: info.warrantyMonths,
                 isNoWarranty: info.isNoWarranty,
@@ -237,11 +290,14 @@ export async function lookupWarranty(serialNumber: string) {
                 warrantyDetailText: info.warrantyDetailText,
                 warrantyBreakdownText: info.warrantyBreakdownText,
                 warrantyBadgeText: info.warrantyBadgeText,
+                customerId: info.customer?.id,
                 customerName: info.customer?.name,
                 customerPhone: info.customer?.phone,
                 customerEmail: info.customer?.email,
+                salesInvoiceId: info.salesInvoice?.id,
                 salesInvoiceCode: info.salesInvoice?.code,
                 salesInvoiceDate: info.salesInvoice?.date,
+                purchaseBillId: info.purchaseBill?.id,
                 purchaseBillCode: info.purchaseBill?.code,
                 notes: info.notes
             } 

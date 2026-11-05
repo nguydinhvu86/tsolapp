@@ -6,10 +6,11 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Filter, Wallet, Calendar, ArrowUpDown, Receipt, MoreVertical, Trash2, CheckCircle2, Upload, FileText, Eye, X, XCircle, RefreshCw } from 'lucide-react';
+import { Plus, Search, Filter, Wallet, Calendar, ArrowUpDown, Receipt, MoreVertical, Trash2, CheckCircle2, Upload, FileText, Eye, X, XCircle, RefreshCw, BarChart3, ChevronDown, ChevronUp, CreditCard, Banknote, DollarSign, TrendingUp } from 'lucide-react';
 import { createSalesPayment, deleteSalesPayment, cancelSalesPayment, restoreSalesPayment } from './actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices, initialAction, initialCustomerId }: any) {
     const router = useRouter();
@@ -19,6 +20,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     const [search, setSearch] = useState('');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(initialAction === 'new');
@@ -100,16 +102,66 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
         return Object.values(allocations).reduce((sum, val) => sum + (val || 0), 0);
     }, [allocations]);
 
-    const totalStats = useMemo(() => {
-        const validPayments = payments.filter((p: any) => p.status !== 'CANCELLED');
+    const paymentAnalytics = useMemo(() => {
+        const active = payments.filter((p: any) => p.status !== 'CANCELLED');
+        const totalAmount = active.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        
+        let bankAmount = 0;
+        let bankCount = 0;
+        let cashAmount = 0;
+        let cashCount = 0;
+        let otherAmount = 0;
+        let otherCount = 0;
+
+        const customerMap: Record<string, { name: string; amount: number; count: number }> = {};
+
+        active.forEach((p: any) => {
+            const amt = p.amount || 0;
+            if (p.paymentMethod === 'BANK_TRANSFER') {
+                bankAmount += amt;
+                bankCount++;
+            } else if (p.paymentMethod === 'CASH') {
+                cashAmount += amt;
+                cashCount++;
+            } else {
+                otherAmount += amt;
+                otherCount++;
+            }
+
+            const cName = p.customer?.name || 'Khách vãng lai';
+            if (!customerMap[cName]) {
+                customerMap[cName] = { name: cName, amount: 0, count: 0 };
+            }
+            customerMap[cName].amount += amt;
+            customerMap[cName].count++;
+        });
+
+        const methodData = [
+            { name: 'Chuyển khoản (Bank)', value: bankAmount, count: bankCount, color: '#3b82f6' },
+            { name: 'Tiền mặt (Cash)', value: cashAmount, count: cashCount, color: '#10b981' },
+            { name: 'Khác', value: otherAmount, count: otherCount, color: '#f59e0b' }
+        ].filter(d => d.value > 0);
+
+        const topCustomers = Object.values(customerMap)
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 5);
+
         return {
-            count: validPayments.length,
-            totalAmount: validPayments.reduce((sum: number, p: any) => sum + p.amount, 0),
-            thisMonth: validPayments
-                .filter((p: any) => new Date(p.date).getMonth() === new Date().getMonth())
-                .reduce((sum: number, p: any) => sum + p.amount, 0)
+            totalCount: active.length,
+            totalAmount,
+            bankAmount,
+            bankCount,
+            cashAmount,
+            cashCount,
+            methodData,
+            topCustomers
         };
     }, [payments]);
+
+    const totalStats = useMemo(() => ({
+        count: paymentAnalytics.totalCount,
+        totalAmount: paymentAnalytics.totalAmount
+    }), [paymentAnalytics]);
 
     // Filtering & Sorting
     const filteredPayments = useMemo(() => {
@@ -337,6 +389,183 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                     <Plus size={20} style={{ marginRight: '8px' }} />
                     <span>Tạo Phiếu Thu</span>
                 </button>
+            </div>
+
+            {/* Sales Payments Analytics Dashboard */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden mb-6">
+                <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-2xs">
+                            <BarChart3 className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span>Phân Tích Dòng Tiền Thu Bán Hàng</span>
+                                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                    {paymentAnalytics.totalCount} phiếu thu
+                                </span>
+                            </h3>
+                            <p className="text-[11px] text-slate-400 hidden sm:block">
+                                Theo dõi cơ cấu hình thức thanh toán và khách hàng đóng góp dòng tiền lớn nhất
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                    >
+                        {isChartCollapsed ? (
+                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                        ) : (
+                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                        )}
+                    </button>
+                </div>
+
+                {!isChartCollapsed && (
+                    <div className="p-4 sm:p-5 space-y-4">
+                        {/* KPI 4 Cards */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="rounded-xl p-3 bg-white border border-emerald-200/90 bg-gradient-to-br from-emerald-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Tổng Thực Thu</span>
+                                    <DollarSign size={14} className="text-emerald-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-emerald-700 truncate" title={formatMoney(paymentAnalytics.totalAmount)}>
+                                    {formatMoney(paymentAnalytics.totalAmount)}
+                                </div>
+                                <div className="text-[11px] text-emerald-600 mt-0.5">Tiền đã vào quỹ/tài khoản</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-blue-200/90 bg-gradient-to-br from-blue-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Chuyển Khoản (Bank)</span>
+                                    <CreditCard size={14} className="text-blue-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-blue-700 truncate" title={formatMoney(paymentAnalytics.bankAmount)}>
+                                    {formatMoney(paymentAnalytics.bankAmount)}
+                                </div>
+                                <div className="text-[11px] text-blue-600 mt-0.5">{paymentAnalytics.bankCount} lượt chuyển khoản</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-teal-200/90 bg-gradient-to-br from-teal-50/30 via-white to-white shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">Tiền Mặt (Cash)</span>
+                                    <Banknote size={14} className="text-teal-600" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-teal-700 truncate" title={formatMoney(paymentAnalytics.cashAmount)}>
+                                    {formatMoney(paymentAnalytics.cashAmount)}
+                                </div>
+                                <div className="text-[11px] text-teal-600 mt-0.5">{paymentAnalytics.cashCount} lượt tiền mặt</div>
+                            </div>
+
+                            <div className="rounded-xl p-3 bg-white border border-slate-200/90 shadow-2xs">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng Số Giao Dịch</span>
+                                    <Receipt size={14} className="text-slate-400" />
+                                </div>
+                                <div className="text-lg font-extrabold font-mono text-slate-900">
+                                    {paymentAnalytics.totalCount} <span className="text-xs font-normal text-slate-400">phiếu thu</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">Đã khớp trừ công nợ</div>
+                            </div>
+                        </div>
+
+                        {/* 2 Balanced Charts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            {/* Chart 1 (5 cols): Cơ cấu phương thức thanh toán */}
+                            <div className="lg:col-span-5 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Wallet className="w-3.5 h-3.5 text-blue-600" />
+                                        Hình Thức Thu Tiền
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">Tỷ trọng doanh số</span>
+                                </div>
+
+                                <div className="h-52 w-full flex items-center justify-center">
+                                    {paymentAnalytics.methodData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={paymentAnalytics.methodData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={40}
+                                                    outerRadius={68}
+                                                    paddingAngle={3}
+                                                    dataKey="value"
+                                                >
+                                                    {paymentAnalytics.methodData.map((entry: any, index: number) => (
+                                                        <Cell key={"method-cell-" + index} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    formatter={(value: any) => [formatMoney(value), 'Số tiền']}
+                                                />
+                                                <Legend 
+                                                    verticalAlign="bottom" 
+                                                    align="center" 
+                                                    iconType="circle"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Chưa có giao dịch thu tiền</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Chart 2 (7 cols): Top khách hàng đóng góp tiền thu lớn nhất */}
+                            <div className="lg:col-span-7 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                                        Top Khách Hàng Đã Thanh Toán
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">5 khách hàng lớn nhất</span>
+                                </div>
+
+                                <div className="h-52 w-full flex flex-col justify-around space-y-2">
+                                    {paymentAnalytics.topCustomers.length > 0 ? (
+                                        paymentAnalytics.topCustomers.map((cust: any, idx: number) => {
+                                            const maxAmt = paymentAnalytics.topCustomers[0]?.amount || 1;
+                                            const pct = Math.min(100, Math.max(5, Math.round((cust.amount / maxAmt) * 100)));
+                                            return (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="font-bold text-slate-800 truncate max-w-[260px]" title={cust.name}>
+                                                            {idx + 1}. {cust.name}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <span className="text-[10px] text-slate-400">{cust.count} lần thu</span>
+                                                            <span className="font-mono font-bold text-emerald-600">
+                                                                {formatMoney(cust.amount)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all"
+                                                            style={{ width: pct + "%" }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                                            Chưa có khách hàng phát sinh thanh toán
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="card search-card flex flex-col md:flex-row justify-between gap-4 md:items-center mb-6">

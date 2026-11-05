@@ -5,13 +5,15 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle, RotateCcw, Ban, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle, RotateCcw, Ban, AlertTriangle, BarChart3, ChevronDown, ChevronUp, TrendingUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchasePayment, deletePurchasePayment, cancelPurchasePayment, restorePurchasePayment } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { formatMoney } from '@/lib/utils/formatters';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
 export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills }: { initialPayments: any[], suppliers: any[], unpaidBills: any[] }) {
     const router = useRouter();
@@ -19,6 +21,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const [payments, setPayments] = useState(initialPayments);
     const [searchQuery, setSearchQuery] = useState('');
     const [methodFilter, setMethodFilter] = useState<'ALL' | 'BANK_TRANSFER' | 'CASH'>('ALL');
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
 
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -342,6 +345,32 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const bankAmount = bankPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const cashAmount = cashPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
+    const purchasePaymentAnalytics = useMemo(() => {
+        const methodData = [
+            { name: 'Chuyển khoản (Bank)', value: bankAmount, count: bankPayments.length, color: '#3b82f6' },
+            { name: 'Tiền mặt (Cash)', value: cashAmount, count: cashPayments.length, color: '#f59e0b' }
+        ].filter(d => d.value > 0);
+
+        const supplierMap: Record<string, { name: string; amount: number; count: number }> = {};
+        activePayments.forEach((p: any) => {
+            const sName = p.supplier?.name || 'Nhà cung cấp khác';
+            if (!supplierMap[sName]) {
+                supplierMap[sName] = { name: sName, amount: 0, count: 0 };
+            }
+            supplierMap[sName].amount += (p.amount || 0);
+            supplierMap[sName].count++;
+        });
+
+        const topSuppliers = Object.values(supplierMap)
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 5);
+
+        return {
+            methodData,
+            topSuppliers
+        };
+    }, [activePayments, bankAmount, bankPayments.length, cashAmount, cashPayments.length]);
+
     return (
         <div className="flex flex-col gap-4">
             {/* Top Page Tech Header */}
@@ -442,6 +471,135 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         {formatMoney(cashAmount)}
                     </div>
                 </div>
+            </div>
+
+            {/* Purchase Payments Analytics Dashboard */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-2xs">
+                            <BarChart3 className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span>Phân Tích Dòng Tiền Chi Trả Nhà Cung Cấp</span>
+                                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                    {formatMoney(totalPaidAmount)}
+                                </span>
+                            </h3>
+                            <p className="text-[11px] text-slate-400 hidden sm:block">
+                                Cơ cấu phương thức thanh toán và các nhà cung cấp giải ngân nhiều nhất
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                    >
+                        {isChartCollapsed ? (
+                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                        ) : (
+                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                        )}
+                    </button>
+                </div>
+
+                {!isChartCollapsed && (
+                    <div className="p-4 sm:p-5">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            {/* Chart 1 (5 cols): Cơ cấu phương thức thanh toán */}
+                            <div className="lg:col-span-5 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                                        Hình Thức Chi Trả
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">Tỷ trọng tiền mặt / bank</span>
+                                </div>
+
+                                <div className="h-52 w-full flex items-center justify-center relative">
+                                    {purchasePaymentAnalytics.methodData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={purchasePaymentAnalytics.methodData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={42}
+                                                    outerRadius={68}
+                                                    paddingAngle={3}
+                                                    dataKey="value"
+                                                >
+                                                    {purchasePaymentAnalytics.methodData.map((entry: any, index: number) => (
+                                                        <Cell key={"method-cell-" + index} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    formatter={(value: any) => [formatMoney(value), 'Số tiền']}
+                                                />
+                                                <Legend 
+                                                    verticalAlign="bottom" 
+                                                    align="center" 
+                                                    iconType="circle"
+                                                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-xs text-slate-400 italic">Chưa có giao dịch chi trả NCC</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Chart 2 (7 cols): Top nhà cung cấp được thanh toán nhiều nhất */}
+                            <div className="lg:col-span-7 p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 flex flex-col justify-between">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+                                    <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                        <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                                        Top Nhà Cung Cấp Giải Ngân Nhiều Nhất
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">5 đối tác lớn nhất</span>
+                                </div>
+
+                                <div className="h-52 w-full flex flex-col justify-around space-y-2">
+                                    {purchasePaymentAnalytics.topSuppliers.length > 0 ? (
+                                        purchasePaymentAnalytics.topSuppliers.map((sup: any, idx: number) => {
+                                            const maxAmt = purchasePaymentAnalytics.topSuppliers[0]?.amount || 1;
+                                            const pct = Math.min(100, Math.max(5, Math.round((sup.amount / maxAmt) * 100)));
+                                            return (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="font-bold text-slate-800 truncate max-w-[260px]" title={sup.name}>
+                                                            {idx + 1}. {sup.name}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <span className="text-[10px] text-slate-400">{sup.count} phiếu chi</span>
+                                                            <span className="font-mono font-bold text-emerald-600">
+                                                                {formatMoney(sup.amount)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all"
+                                                            style={{ width: pct + "%" }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                                            Chưa có nhà cung cấp phát sinh thanh toán
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Main Data Container */}

@@ -5,7 +5,7 @@ import { formatMoney, formatDate, formatTaxRate, calcPreTaxPrice, calcTaxAmount 
 import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown, Edit2, X, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, Calendar, FileText, ShoppingCart, ArrowUpDown, Edit2, X, GripVertical, ChevronUp, ChevronDown, BarChart3, CheckCircle2, TrendingUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@/app/purchasing/actions';
@@ -13,6 +13,7 @@ import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { useTranslation } from '@/app/i18n/LanguageContext';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
 export function PurchaseOrderClient({ initialOrders, suppliers, products }: { initialOrders: any[], suppliers: any[], products: any[] }) {
     const { t } = useTranslation();
@@ -33,6 +34,7 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     const [filterDateFrom, setFilterDateFrom] = useState('');
     const [filterDateTo, setFilterDateTo] = useState('');
     const [filterSupplierId, setFilterSupplierId] = useState('');
+    const [isChartCollapsed, setIsChartCollapsed] = useState(false);
     const [formData, setFormData] = useState({
         supplierId: '',
         date: new Date().toISOString().substring(0, 10),
@@ -456,12 +458,55 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
         let totalAmount = 0;
         let draftCount = 0;
         let completedCount = 0;
+        let sentCount = 0;
+        let partialCount = 0;
+        let cancelledCount = 0;
+
         orders.forEach(o => {
             totalAmount += (o.totalAmount || 0);
             if (o.status === 'DRAFT') draftCount++;
-            if (o.status === 'COMPLETED') completedCount++;
+            else if (o.status === 'SENT') sentCount++;
+            else if (o.status === 'PARTIAL_RECEIVED') partialCount++;
+            else if (o.status === 'COMPLETED') completedCount++;
+            else if (o.status === 'CANCELLED') cancelledCount++;
         });
-        return { total, totalAmount, draftCount, completedCount };
+
+        const statusChartData = [
+            { name: 'Dự Thảo (Draft)', count: draftCount, color: '#f59e0b' },
+            { name: 'Đã Gửi NCC', count: sentCount, color: '#3b82f6' },
+            { name: 'Nhận 1 Phần', count: partialCount, color: '#06b6d4' },
+            { name: 'Hoàn Thành', count: completedCount, color: '#10b981' },
+            { name: 'Đã Hủy', count: cancelledCount, color: '#ef4444' }
+        ].filter(d => d.count > 0);
+
+        const supplierMap: Record<string, { name: string; amount: number; count: number }> = {};
+        orders.forEach((o: any) => {
+            if (o.status !== 'CANCELLED') {
+                const sName = o.supplier?.name || 'NCC khác';
+                if (!supplierMap[sName]) {
+                    supplierMap[sName] = { name: sName, amount: 0, count: 0 };
+                }
+                supplierMap[sName].amount += (o.totalAmount || 0);
+                supplierMap[sName].count++;
+            }
+        });
+
+        const topSuppliers = Object.values(supplierMap)
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 5);
+
+        const validCount = total - cancelledCount;
+        const completionRate = validCount > 0 ? Math.round((completedCount / validCount) * 100) : 0;
+
+        return { 
+            total, 
+            totalAmount, 
+            draftCount, 
+            completedCount,
+            statusChartData,
+            topSuppliers,
+            completionRate
+        };
     }, [orders]);
 
     return (
