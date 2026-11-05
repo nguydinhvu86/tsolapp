@@ -14,6 +14,10 @@ echo " Thư mục sao lưu: $GLOBAL_BACKUP_DIR"
 echo " Thời điểm: $(date)"
 echo "========================================================"
 
+# Tối ưu hóa dung lượng ổ cứng: Duy trì tối đa 3 bản sao lưu gần nhất
+echo "--- [0] Dọn dẹp bản sao lưu cũ, duy trì 3 bản gần nhất ---"
+ls -dt /home/incall/backups_deploy_* 2>/dev/null | tail -n +4 | xargs -r rm -rf 2>/dev/null || true
+
 # ========================================================
 # [PHẦN 1/2] TRIỂN KHAI INSIDE.TSOL.VN (contract-app : Port 6688)
 # ========================================================
@@ -35,7 +39,7 @@ console.log("DB_PASS=\\"" + decodeURIComponent(u.password) + "\\"");
 console.log("DB_NAME=" + u.pathname.replace(/^\\//, "").split("?")[0]);
 ' "$DB_URL")
 
-mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$GLOBAL_BACKUP_DIR/inside_db_\${DB_NAME}.sql.gz"
+mysqldump --no-tablespaces -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$GLOBAL_BACKUP_DIR/inside_db_\${DB_NAME}.sql.gz"
 echo "✅ Đã sao lưu database inside: $(ls -lh $GLOBAL_BACKUP_DIR/inside_db_\${DB_NAME}.sql.gz | awk '{print $5}')"
 
 tar -czf "$GLOBAL_BACKUP_DIR/inside_uploads.tar.gz" uploads_data public/uploads 2>/dev/null || true
@@ -58,6 +62,7 @@ node scripts/safe-apply-db.js
 
 # 1.4 Biên dịch Next.js Production
 echo "--- [1.4] Biên dịch Next.js (npm run build) ---"
+rm -rf .next/cache 2>/dev/null || true
 (echo 'P@ssw0rdVu' | sudo -S chown -R incall:incall .next 2>/dev/null || true)
 (echo 'P@ssw0rdVu' | sudo -S chmod -R 777 .next 2>/dev/null || true)
 npm run build
@@ -94,7 +99,7 @@ console.log("DB_PASS=\\"" + decodeURIComponent(u.password) + "\\"");
 console.log("DB_NAME=" + u.pathname.replace(/^\\//, "").split("?")[0]);
 ' "$DB_URL_INCALL")
 
-mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$GLOBAL_BACKUP_DIR/incall_db_\${DB_NAME}.sql.gz"
+mysqldump --no-tablespaces -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" | gzip > "$GLOBAL_BACKUP_DIR/incall_db_\${DB_NAME}.sql.gz"
 echo "✅ Đã sao lưu database erp.incall.vn: $(ls -lh $GLOBAL_BACKUP_DIR/incall_db_\${DB_NAME}.sql.gz | awk '{print $5}')"
 
 tar -czf "$GLOBAL_BACKUP_DIR/incall_uploads.tar.gz" uploads_data public/uploads 2>/dev/null || true
@@ -117,6 +122,7 @@ node scripts/safe-apply-db.js
 
 # 2.4 Biên dịch Next.js Production
 echo "--- [2.4] Biên dịch Next.js (npm run build) ---"
+rm -rf .next/cache 2>/dev/null || true
 (echo 'P@ssw0rdVu' | sudo -S chown -R incall:incall .next 2>/dev/null || true)
 (echo 'P@ssw0rdVu' | sudo -S chmod -R 777 .next 2>/dev/null || true)
 npm run build
