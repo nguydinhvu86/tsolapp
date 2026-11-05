@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     ResponsiveContainer, 
     PieChart, 
@@ -23,6 +23,7 @@ import {
     PieChart as PieChartIcon
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import { AnalyticsTimeFilter, defaultTimeFilterValue, matchTimeFilter, getTimeFilterLabel, TimeFilterValue } from '@/app/components/analytics/AnalyticsTimeFilter';
 
 interface QuoteAnalyticsBarProps {
     quotes: any[];
@@ -40,87 +41,154 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export function QuoteAnalyticsBar({ quotes, getQuoteTotal }: QuoteAnalyticsBarProps) {
     const [isMounted, setIsMounted] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
+    // Filter quotes by selected time filter
+    const filteredQuotes = useMemo(() => {
+        return quotes.filter((q: any) => matchTimeFilter(q.date || q.createdAt, timeFilter));
+    }, [quotes, timeFilter]);
+
     // Calculate metrics
-    let totalCount = quotes.length;
-    let grandTotalValue = 0;
-    let acceptedValue = 0;
-    let acceptedCount = 0;
-    let pendingValue = 0;
-    let pendingCount = 0;
+    const stats = useMemo(() => {
+        let totalCount = filteredQuotes.length;
+        let grandTotalValue = 0;
+        let acceptedValue = 0;
+        let acceptedCount = 0;
+        let pendingValue = 0;
+        let pendingCount = 0;
 
-    const statusMap: Record<string, { count: number; total: number }> = {
-        DRAFT: { count: 0, total: 0 },
-        SENT: { count: 0, total: 0 },
-        ACCEPTED: { count: 0, total: 0 },
-        TO_CONTRACT: { count: 0, total: 0 },
-        REJECTED: { count: 0, total: 0 },
-        CANCELLED: { count: 0, total: 0 }
-    };
+        const statusMap: Record<string, { count: number; total: number }> = {
+            DRAFT: { count: 0, total: 0 },
+            SENT: { count: 0, total: 0 },
+            ACCEPTED: { count: 0, total: 0 },
+            TO_CONTRACT: { count: 0, total: 0 },
+            REJECTED: { count: 0, total: 0 },
+            CANCELLED: { count: 0, total: 0 }
+        };
 
-    // Monthly aggregation
-    const monthlyMap: Record<string, { month: string; value: number; count: number; sortKey: number }> = {};
+        // Monthly aggregation
+        const monthlyMap: Record<string, { month: string; value: number; count: number; sortKey: number }> = {};
 
-    quotes.forEach(q => {
-        const val = getQuoteTotal(q);
-        grandTotalValue += val;
+        filteredQuotes.forEach(q => {
+            const val = getQuoteTotal(q);
+            grandTotalValue += val;
 
-        const st = q.status || 'DRAFT';
-        if (!statusMap[st]) {
-            statusMap[st] = { count: 0, total: 0 };
-        }
-        statusMap[st].count += 1;
-        statusMap[st].total += val;
+            const st = q.status || 'DRAFT';
+            if (!statusMap[st]) {
+                statusMap[st] = { count: 0, total: 0 };
+            }
+            statusMap[st].count += 1;
+            statusMap[st].total += val;
 
-        if (st === 'ACCEPTED' || st === 'TO_CONTRACT') {
-            acceptedValue += val;
-            acceptedCount += 1;
-        } else if (st === 'SENT' || st === 'DRAFT') {
-            pendingValue += val;
-            pendingCount += 1;
-        }
+            if (st === 'ACCEPTED' || st === 'TO_CONTRACT') {
+                acceptedValue += val;
+                acceptedCount += 1;
+            } else if (st === 'SENT' || st === 'DRAFT') {
+                pendingValue += val;
+                pendingCount += 1;
+            }
 
-        // Aggregate by month (e.g. "T09/24")
-        if (q.createdAt) {
-            const date = new Date(q.createdAt);
-            if (!isNaN(date.getTime())) {
-                const month = `T${date.getMonth() + 1}/${String(date.getFullYear()).slice(-2)}`;
-                const sortKey = date.getFullYear() * 100 + (date.getMonth() + 1);
+            // Aggregate by month (e.g. "T09/24")
+            const d = q.date ? new Date(q.date) : (q.createdAt ? new Date(q.createdAt) : null);
+            if (d && !isNaN(d.getTime())) {
+                const month = `T${d.getMonth() + 1}/${String(d.getFullYear()).slice(-2)}`;
+                const sortKey = d.getFullYear() * 100 + (d.getMonth() + 1);
                 if (!monthlyMap[month]) {
                     monthlyMap[month] = { month, value: 0, count: 0, sortKey };
                 }
                 monthlyMap[month].value += val;
                 monthlyMap[month].count += 1;
             }
+        });
+
+        const winRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
+        const avgDealSize = totalCount > 0 ? Math.round(grandTotalValue / totalCount) : 0;
+
+        // Donut chart data
+        const pieData = Object.entries(statusMap)
+            .filter(([_, data]) => data.count > 0)
+            .map(([status, data]) => ({
+                key: status,
+                name: STATUS_CONFIG[status]?.label || status,
+                value: data.count,
+                amount: data.total,
+                color: STATUS_CONFIG[status]?.color || '#94a3b8'
+            }))
+            .sort((a, b) => b.value - a.value);
+
+        // Monthly bar chart data - when filtering by year, show all 12 months for that year
+        let monthlyData = [];
+        if (timeFilter.mode === 'YEAR') {
+            monthlyData = Array.from({ length: 12 }, (_, i) => {
+                const m = i + 1;
+                const month = `T${m}`;
+                const key = `T${m}/${String(timeFilter.year).slice(-2)}`;
+                const item = monthlyMap[key];
+                return {
+                    month,
+                    value: item ? item.value : 0,
+                    count: item ? item.count : 0,
+                    sortKey: timeFilter.year * 100 + m
+                };
+            });
+        } else {
+            monthlyData = Object.values(monthlyMap).sort((a, b) => a.sortKey - b.sortKey);
         }
-    });
 
-    const winRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
-    const avgDealSize = totalCount > 0 ? Math.round(grandTotalValue / totalCount) : 0;
+        return {
+            totalCount,
+            grandTotalValue,
+            acceptedValue,
+            acceptedCount,
+            pendingValue,
+            pendingCount,
+            winRate,
+            avgDealSize,
+            pieData,
+            monthlyData
+        };
+    }, [filteredQuotes, getQuoteTotal, timeFilter]);
 
-    // Donut chart data
-    const pieData = Object.entries(statusMap)
-        .filter(([_, data]) => data.count > 0)
-        .map(([status, data]) => ({
-            key: status,
-            name: STATUS_CONFIG[status]?.label || status,
-            value: data.count,
-            amount: data.total,
-            color: STATUS_CONFIG[status]?.color || '#94a3b8'
-        }))
-        .sort((a, b) => b.value - a.value);
-
-    // Monthly bar chart data (last 6 available months)
-    const monthlyData = Object.values(monthlyMap)
-        .sort((a, b) => a.sortKey - b.sortKey)
-        .slice(-6);
+    const {
+        totalCount,
+        grandTotalValue,
+        acceptedValue,
+        acceptedCount,
+        pendingValue,
+        pendingCount,
+        winRate,
+        avgDealSize,
+        pieData,
+        monthlyData
+    } = stats;
 
     return (
         <div className="bg-slate-50/70 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4 mb-4 transition-all">
+            {/* Header with Time Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-2xs">
+                        <BarChart3 size={16} />
+                    </div>
+                    <div>
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span>Phân Tích Cơ Hội Báo Giá</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                {getTimeFilterLabel(timeFilter)}
+                            </span>
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                            Thống kê tỷ lệ chốt đơn và quy mô chào giá
+                        </p>
+                    </div>
+                </div>
+                <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+            </div>
+
             {/* Top Stat Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* 1. Tổng giá trị chào giá */}

@@ -16,6 +16,13 @@ import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import Link from 'next/link';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
 
 export type ExpenseWithDetails = Expense & {
     category: ExpenseCategory;
@@ -82,6 +89,7 @@ export default function ExpenseClient({
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isChartCollapsed, setIsChartCollapsed] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -159,13 +167,14 @@ export default function ExpenseClient({
     }, [filteredExpenses]);
 
     const expenseAnalytics = React.useMemo(() => {
-        const total = expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-        const count = expenses.length;
+        const filtered = expenses.filter((e: any) => matchTimeFilter(e.date || e.createdAt, timeFilter));
+        const total = filtered.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+        const count = filtered.length;
         const avg = count > 0 ? Math.round(total / count) : 0;
 
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        const thisMonthAmount = expenses.reduce((sum: number, e: any) => {
+        const thisMonthAmount = filtered.reduce((sum: number, e: any) => {
             const d = new Date(e.date);
             if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
                 return sum + (e.amount || 0);
@@ -174,7 +183,7 @@ export default function ExpenseClient({
         }, 0);
 
         const catMap: Record<string, { name: string; amount: number; count: number }> = {};
-        expenses.forEach((e: any) => {
+        filtered.forEach((e: any) => {
             const catName = e.category?.name || 'Khác';
             if (!catMap[catName]) {
                 catMap[catName] = { name: catName, amount: 0, count: 0 };
@@ -192,7 +201,7 @@ export default function ExpenseClient({
             }));
 
         const payeeMap: Record<string, number> = {};
-        expenses.forEach((e: any) => {
+        filtered.forEach((e: any) => {
             const payeeName = e.payee?.trim() || 'Chưa đặt tên';
             payeeMap[payeeName] = (payeeMap[payeeName] || 0) + (e.amount || 0);
         });
@@ -206,11 +215,11 @@ export default function ExpenseClient({
             total,
             count,
             avg,
-            thisMonthAmount,
+            thisMonthAmount: thisMonthAmount || total,
             categoryData,
             topPayees
         };
-    }, [expenses]);
+    }, [expenses, timeFilter]);
 
     const openModal = (expense?: ExpenseWithDetails) => {
         if (expense) {
@@ -374,17 +383,20 @@ export default function ExpenseClient({
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
-                    >
-                        {isChartCollapsed ? (
-                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
-                        ) : (
-                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
-                        )}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+                        <button
+                            type="button"
+                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            {isChartCollapsed ? (
+                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {!isChartCollapsed && (

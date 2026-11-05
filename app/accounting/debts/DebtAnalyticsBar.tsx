@@ -31,6 +31,7 @@ import {
 interface Props {
     partnerDebts: any[];
     tab: 'customers' | 'suppliers';
+    periodLabel?: string;
 }
 
 const AGING_COLORS = {
@@ -41,7 +42,7 @@ const AGING_COLORS = {
     agingOver90: '#dc2626'  // red (trên 90 ngày)
 };
 
-export function DebtAnalyticsBar({ partnerDebts = [], tab }: Props) {
+export function DebtAnalyticsBar({ partnerDebts = [], tab, periodLabel }: Props) {
     const [isMounted, setIsMounted] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -173,7 +174,7 @@ export function DebtAnalyticsBar({ partnerDebts = [], tab }: Props) {
                         <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <span>Biểu Đồ Phân Tích Tuổi Nợ &amp; Top Đối Tác Chiếm Dụng</span>
                             <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                                {tab === 'customers' ? 'Phải thu KH (AR)' : 'Phải trả NCC (AP)'}
+                                {tab === 'customers' ? 'Phải thu KH (AR)' : 'Phải trả NCC (AP)'}{periodLabel ? ` • ${periodLabel}` : ''}
                             </span>
                         </h3>
                         <p className="text-[11px] text-slate-400 hidden sm:block">

@@ -27,6 +27,7 @@ import { Modal } from '@/app/components/ui/Modal';
 import { SalesInvoiceNotes } from '@/app/components/sales/SalesInvoiceNotes';
 import { SendEmailModal } from '@/app/components/ui/modals/SendEmailModal';
 import { InvoiceRenewalReminderModal } from '@/app/components/sales/InvoiceRenewalReminderModal';
+import { SerialsHandoverPdfModal } from '@/app/components/sales/SerialsHandoverPdfModal';
 import { useSession } from 'next-auth/react';
 import { DocumentManagersPanel } from '@/app/components/shared/DocumentManagersPanel';
 import { EmailLogTable } from '@/app/components/ui/EmailLogTable';
@@ -64,6 +65,9 @@ export default function SalesInvoiceDetailClient({
 
     // Renewal Reminder Modal State
     const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
+
+    // Serials Handover PDF Modal State
+    const [showSerialsPdfModal, setShowSerialsPdfModal] = useState(false);
 
     // Drag & drop reorder state
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -725,13 +729,13 @@ export default function SalesInvoiceDetailClient({
                 ? serialsList.join(', ') 
                 : (item.productId ? 'Không yêu cầu Serial' : '-');
 
+            // Chỉ lấy tên sản phẩm, không lấy chi tiết thông số để bảng kê gọn gàng và chuẩn mực
             const itemName = item.productName || item.customName || item.product?.name || 'Sản phẩm';
-            const desc = item.description ? `\n(${item.description})` : '';
-            const fullTitle = `${itemName}${desc}`;
+            const fullTitle = itemName;
             const warrantyText = serialsList.length > 0 ? 'Mới 100% - BH điện tử' : 'Mới 100%';
 
             // Tự động tính toán chiều cao hàng để không bao giờ bị cắt chữ
-            const titleLines = fullTitle.split('\n').reduce((acc, line) => acc + Math.max(1, Math.ceil(line.length / 30)), 0);
+            const titleLines = Math.max(1, Math.ceil(fullTitle.length / 32));
             const serialLines = serialsList.length > 0 ? Math.max(1, Math.ceil(serialText.length / 24)) : 1;
             const warrantyLines = Math.max(1, Math.ceil(warrantyText.length / 14));
             const estimatedLines = Math.max(titleLines, serialLines, warrantyLines);
@@ -1569,28 +1573,6 @@ export default function SalesInvoiceDetailClient({
                                                                                 {item.description}
                                                                             </div>
                                                                         )}
-                                                                        {(() => {
-                                                                            try {
-                                                                                const sList = item.serials ? JSON.parse(item.serials) : [];
-                                                                                if (Array.isArray(sList) && sList.length > 0) {
-                                                                                    return (
-                                                                                        <div className="mt-2 p-2 bg-blue-50/60 border border-blue-200/60 rounded-lg">
-                                                                                            <span className="text-[11px] font-bold text-blue-800 block mb-1">
-                                                                                                🏷️ Số Serial / IMEI xuất bán ({sList.length}):
-                                                                                            </span>
-                                                                                            <div className="flex flex-wrap gap-1">
-                                                                                                {sList.map((sn: string, sIdx: number) => (
-                                                                                                    <span key={sIdx} className="font-mono text-[10px] px-1.5 py-0.5 bg-white border border-blue-200 rounded text-blue-900 font-medium">
-                                                                                                        {sn}
-                                                                                                    </span>
-                                                                                                ))}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    );
-                                                                                }
-                                                                            } catch(e) {}
-                                                                            return null;
-                                                                        })()}
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -1682,6 +1664,14 @@ export default function SalesInvoiceDetailClient({
                                                     </div>
 
                                                     <div className="flex items-center gap-2.5">
+                                                        <button
+                                                            onClick={() => setShowSerialsPdfModal(true)}
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+                                                            title="Xem & Xuất File Biên bản bàn giao thiết bị & bảng kê Serial (PDF chuẩn in ấn A4)"
+                                                        >
+                                                            <FileText size={14} />
+                                                            <span>Xuất File Bàn Giao (PDF)</span>
+                                                        </button>
                                                         <button
                                                             onClick={handleExportSerialsExcel}
                                                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
@@ -2220,6 +2210,14 @@ export default function SalesInvoiceDetailClient({
                     toast.success('Đã tạo công việc nhắc gia hạn thành công!');
                     router.refresh();
                 }}
+            />
+
+            {/* Serials Handover PDF Modal */}
+            <SerialsHandoverPdfModal
+                isOpen={showSerialsPdfModal}
+                onClose={() => setShowSerialsPdfModal(false)}
+                invoice={invoice}
+                settings={settings}
             />
         </div>
     );

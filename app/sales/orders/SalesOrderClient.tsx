@@ -17,6 +17,13 @@ import { TaxRateSelect, TaxBadge } from '@/app/components/ui/TaxRateSelect';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import Link from 'next/link';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
 import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 
 export default function SalesOrderClient({ initialOrders, customers, products, nextCode, initialAction, initialCustomerId, users, currentUserId, isAdminOrManager, projects }: any) {
@@ -90,6 +97,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     const [dateTo, setDateTo] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
     const [isChartCollapsed, setIsChartCollapsed] = useState(false);
+    const [analyticsTimeFilter, setAnalyticsTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     const handleSort = (key: string) => {
         if (sortBy === `${key}_desc`) {
@@ -496,15 +504,21 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     }, [baseFilteredOrders]);
 
     const orderAnalytics = useMemo(() => {
+        const timeFilteredOrders = orders.filter((o: any) => matchTimeFilter(o.date || o.createdAt, analyticsTimeFilter));
+        const draft = timeFilteredOrders.filter((o: any) => o.status === 'DRAFT');
+        const confirmed = timeFilteredOrders.filter((o: any) => o.status === 'CONFIRMED');
+        const completed = timeFilteredOrders.filter((o: any) => o.status === 'COMPLETED');
+        const cancelled = timeFilteredOrders.filter((o: any) => o.status === 'CANCELLED');
+
         const statusChartData = [
-            { name: 'Bản Dự Thảo', count: stats.DRAFT.count, amount: stats.DRAFT.amount, color: '#f59e0b' },
-            { name: 'Chốt Đơn', count: stats.CONFIRMED.count, amount: stats.CONFIRMED.amount, color: '#3b82f6' },
-            { name: 'Hoàn Thành', count: stats.COMPLETED.count, amount: stats.COMPLETED.amount, color: '#10b981' },
-            { name: 'Đã Hủy', count: stats.CANCELLED.count, amount: stats.CANCELLED.amount, color: '#ef4444' }
+            { name: 'Bản Dự Thảo', count: draft.length, amount: draft.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0), color: '#f59e0b' },
+            { name: 'Chốt Đơn', count: confirmed.length, amount: confirmed.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0), color: '#3b82f6' },
+            { name: 'Hoàn Thành', count: completed.length, amount: completed.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0), color: '#10b981' },
+            { name: 'Đã Hủy', count: cancelled.length, amount: cancelled.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0), color: '#ef4444' }
         ].filter(d => d.count > 0);
 
         const customerMap: Record<string, { name: string; amount: number; count: number }> = {};
-        baseFilteredOrders.forEach((o: any) => {
+        timeFilteredOrders.forEach((o: any) => {
             if (o.status !== 'CANCELLED') {
                 const cName = o.customer?.name || 'Khách vãng lai';
                 if (!customerMap[cName]) {
@@ -519,17 +533,18 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
             .sort((a, b) => b.amount - a.amount)
             .slice(0, 5);
 
-        const totalValidCount = stats.ALL.count - stats.CANCELLED.count;
+        const totalValidCount = timeFilteredOrders.length - cancelled.length;
         const completionRate = totalValidCount > 0 
-            ? Math.round((stats.COMPLETED.count / totalValidCount) * 100) 
+            ? Math.round((completed.length / totalValidCount) * 100) 
             : 0;
 
         return {
+            totalCount: timeFilteredOrders.length,
             statusChartData,
             topCustomers,
             completionRate
         };
-    }, [stats, baseFilteredOrders]);
+    }, [orders, analyticsTimeFilter]);
 
     const statsCards = [
         { id: 'ALL', label: 'Tất Cả', count: stats.ALL.count, amount: stats.ALL.amount, colorClass: 'stat-card-purple', icon: LayoutList },
@@ -640,17 +655,20 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
-                        >
-                            {isChartCollapsed ? (
-                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
-                            ) : (
-                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
-                            )}
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <AnalyticsTimeFilter value={analyticsTimeFilter} onChange={setAnalyticsTimeFilter} />
+                            <button
+                                type="button"
+                                onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                            >
+                                {isChartCollapsed ? (
+                                    <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                                ) : (
+                                    <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {!isChartCollapsed && (
@@ -663,7 +681,7 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
                                             <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
                                             Cơ Cấu Trạng Thái Đơn Hàng
                                         </span>
-                                        <span className="text-[10px] text-slate-400 font-semibold">{stats.ALL.count} đơn</span>
+                                        <span className="text-[10px] text-slate-400 font-semibold">{orderAnalytics.totalCount} đơn</span>
                                     </div>
 
                                     <div className="h-52 w-full flex items-center justify-center relative">

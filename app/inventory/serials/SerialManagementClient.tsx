@@ -363,6 +363,26 @@ export default function SerialManagementClient() {
         }
     };
 
+    const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+        const text = e.clipboardData.getData('text');
+        if (!text) return;
+        const tokens = text.split(/[\r\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+        if (tokens.length > 1) {
+            e.preventDefault();
+            setSerialTags(prev => {
+                const combined = [...prev];
+                tokens.forEach(tok => {
+                    if (!combined.includes(tok)) {
+                        combined.push(tok);
+                    }
+                });
+                return combined;
+            });
+            setNewSerial('');
+            toast.success(`Đã nhận diện và thêm ${tokens.length} mã thẻ từ nội dung dán!`);
+        }
+    };
+
     const handleRemoveTag = (index: number) => {
         setSerialTags(prev => prev.filter((_, idx) => idx !== index));
     };
@@ -1038,7 +1058,7 @@ export default function SerialManagementClient() {
                         <option value="DEFECTIVE">Lỗi / Hỏng</option>
                     </select>
 
-                    <div className="w-full sm:w-[260px]">
+                    <div className="w-full sm:w-[320px] md:w-[360px]">
                         <ProductSearchSelect
                             products={products}
                             value={productFilter}
@@ -1317,8 +1337,8 @@ export default function SerialManagementClient() {
 
                         <form onSubmit={handleBulkCreateSerials} className="space-y-5 text-sm">
                             {/* Row 1: Product Selection & Warehouse */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2 space-y-1.5">
                                     <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
                                         <Package className="w-4 h-4 text-emerald-600" />
                                         Chọn Sản Phẩm Nhập Kho <span className="text-rose-500">*</span>
@@ -1537,11 +1557,11 @@ export default function SerialManagementClient() {
             {/* Modal 2: Thêm Serial / IMEI / Thẻ Bản Quyền */}
             {showAddModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-xl w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
                         {/* Header */}
                         <div className="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-3">
-                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 shrink-0">
                                     <Barcode className="w-6 h-6" />
                                 </div>
                                 <div>
@@ -1571,7 +1591,7 @@ export default function SerialManagementClient() {
                             {/* Product Combobox */}
                             <div className="space-y-1.5">
                                 <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                    <Package className="w-4 h-4 text-blue-600" />
+                                    <Package className="w-4 h-4 text-emerald-600" />
                                     Chọn Sản phẩm <span className="text-rose-500">*</span>
                                 </label>
                                 <ProductSearchSelect
@@ -1584,8 +1604,8 @@ export default function SerialManagementClient() {
                                 {selectedProductId && (() => {
                                     const selectedProd = products.find(p => p.id === selectedProductId);
                                     return (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 text-[11px] text-blue-800 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 animate-in fade-in">
-                                            <Tag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] text-emerald-900 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 animate-in fade-in">
+                                            <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                             <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
                                             {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
                                         </div>
@@ -1596,7 +1616,7 @@ export default function SerialManagementClient() {
                             {/* Warehouse Select */}
                             <div className="space-y-1.5">
                                 <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                    <Warehouse className="w-4 h-4 text-blue-600" />
+                                    <Warehouse className="w-4 h-4 text-emerald-600" />
                                     Kho Lưu Trữ Thiết Bị / Thẻ
                                 </label>
                                 <div className="relative">
@@ -1604,7 +1624,7 @@ export default function SerialManagementClient() {
                                     <select
                                         value={selectedWarehouseId}
                                         onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-900 dark:text-white"
+                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-slate-900 dark:text-white"
                                     >
                                         <option value="">-- Kho chính (Mặc định) --</option>
                                         {warehouses.map((w) => (
@@ -1615,68 +1635,85 @@ export default function SerialManagementClient() {
                             </div>
 
                             {/* Serial / IMEI / Thẻ Key Input */}
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 <div className="flex items-center justify-between">
                                     <label className="font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                        <Barcode className="w-4 h-4 text-blue-600" />
+                                        <Barcode className="w-4 h-4 text-emerald-600" />
                                         Mã Serial / IMEI / Thẻ Bản Quyền <span className="text-rose-500">*</span>
                                     </label>
                                     {serialTags.length > 0 && (
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800 animate-in fade-in">
-                                            {serialTags.length} thẻ
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 animate-in fade-in">
+                                            Đã thêm {serialTags.length} mã
                                         </span>
                                     )}
                                 </div>
 
-                                <div className="relative flex items-center rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all p-1 shadow-2xs">
-                                    <Barcode className="w-5 h-5 text-slate-400 ml-2.5 shrink-0" />
-                                    <input
-                                        type="text"
-                                        value={newSerial}
-                                        onChange={(e) => setNewSerial(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ',') {
-                                                e.preventDefault();
-                                                handleAddTag();
-                                            }
-                                        }}
-                                        placeholder="Nhập mã thẻ / serial... (Enter để tạo thẻ)"
-                                        className="w-full bg-transparent px-3 py-2 text-sm font-mono tracking-wider font-semibold text-slate-900 dark:text-white uppercase outline-none placeholder:text-slate-400 placeholder:font-sans placeholder:font-normal placeholder:tracking-normal"
-                                    />
-                                    <div className="flex items-center gap-1 shrink-0 pr-1">
-                                        <button
-                                            type="button"
-                                            onClick={handlePasteClipboard}
-                                            title="Dán từ Clipboard"
-                                            className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
-                                        >
-                                            <ClipboardPaste className="w-3.5 h-3.5" />
-                                            <span>Dán</span>
-                                        </button>
+                                {/* Clean input card with seamless styling and NO rectangular browser border */}
+                                <div className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 p-2.5 focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all shadow-2xs space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                            <Barcode className="w-4 h-4" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={newSerial}
+                                            onChange={(e) => setNewSerial(e.target.value)}
+                                            onPaste={handleInputPaste}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ',') {
+                                                    e.preventDefault();
+                                                    handleAddTag();
+                                                }
+                                            }}
+                                            placeholder="Nhập mã thẻ / serial... (Enter để tạo thẻ)"
+                                            className="w-full bg-transparent px-2 py-1 text-sm font-mono tracking-wider font-bold text-slate-900 dark:text-white uppercase border-0 border-none outline-none ring-0 focus:ring-0 focus:outline-none shadow-none placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:normal-case placeholder:text-slate-400"
+                                        />
+                                        {newSerial.trim() && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewSerial('')}
+                                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+                                                title="Xóa trắng ô nhập"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
                                             onClick={handleAddTag}
                                             disabled={!newSerial.trim()}
                                             title="Tạo thẻ mới từ mã vừa nhập"
-                                            className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-all flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                                            className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-35 disabled:cursor-not-allowed rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
                                         >
                                             <Plus className="w-3.5 h-3.5" />
                                             <span>Thêm thẻ</span>
                                         </button>
                                     </div>
-                                </div>
 
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
-                                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                    <span>Nhấn <strong>Enter</strong> hoặc phẩy <strong>(,)</strong> để tạo từng thẻ. Bạn cũng có thể dán nhiều mã cùng lúc từ Excel.</span>
-                                </p>
+                                    {/* Action toolbar & helper */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/70 text-xs">
+                                        <button
+                                            type="button"
+                                            onClick={handlePasteClipboard}
+                                            title="Dán từ Clipboard máy tính"
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-all cursor-pointer shadow-2xs"
+                                        >
+                                            <ClipboardPaste className="w-3.5 h-3.5 text-emerald-600" />
+                                            <span>Dán từ Clipboard</span>
+                                        </button>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                            <span>Nhấn <strong>Enter</strong> hoặc phẩy <strong>(,)</strong> để tạo thẻ. Hỗ trợ dán nhiều mã cùng lúc.</span>
+                                        </p>
+                                    </div>
+                                </div>
 
                                 {/* Tags Preview Area */}
                                 {serialTags.length > 0 && (
-                                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2 animate-in fade-in">
+                                    <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-800/60 space-y-2 animate-in fade-in">
                                         <div className="flex justify-between items-center text-xs">
                                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                Danh sách <strong className="text-blue-600 dark:text-blue-400">{serialTags.length}</strong> thẻ sẽ lưu vào kho:
+                                                Danh sách <strong className="text-emerald-700 dark:text-emerald-400">{serialTags.length}</strong> thẻ sẽ lưu vào kho:
                                             </span>
                                             <button
                                                 type="button"
@@ -1690,7 +1727,7 @@ export default function SerialManagementClient() {
                                             {serialTags.map((tag, idx) => (
                                                 <span
                                                     key={idx}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-700 border border-blue-200 dark:border-blue-800 text-xs font-mono font-bold text-blue-900 dark:text-blue-200 shadow-2xs"
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-xs font-mono font-bold text-emerald-950 dark:text-emerald-200 shadow-2xs"
                                                 >
                                                     <span className="text-[10px] text-slate-400 font-sans font-normal">#{idx + 1}</span>
                                                     <span>{tag}</span>
@@ -1712,7 +1749,7 @@ export default function SerialManagementClient() {
                             {/* Notes */}
                             <div className="space-y-1.5">
                                 <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                    <FileText className="w-4 h-4 text-blue-600" />
+                                    <FileText className="w-4 h-4 text-emerald-600" />
                                     Ghi Chú Lưu Kho (Tùy chọn)
                                 </label>
                                 <textarea
@@ -1720,7 +1757,7 @@ export default function SerialManagementClient() {
                                     onChange={(e) => setNewNotes(e.target.value)}
                                     placeholder="Vị trí kệ, lô sản xuất, nhà cung cấp, thông tin bổ sung..."
                                     rows={2}
-                                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
                                 />
                             </div>
 
@@ -1741,7 +1778,7 @@ export default function SerialManagementClient() {
                                 <button
                                     type="submit"
                                     disabled={savingSingle || (!selectedProductId && serialTags.length === 0 && !newSerial.trim())}
-                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
                                 >
                                     {savingSingle ? (
                                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1830,15 +1867,15 @@ export default function SerialManagementClient() {
                                     <Barcode className="w-4 h-4 text-amber-600" />
                                     Số Serial / IMEI / Mã Thẻ <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="relative flex items-center rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all p-1 shadow-2xs">
-                                    <Barcode className="w-5 h-5 text-slate-400 ml-2.5 shrink-0" />
+                                <div className="relative flex items-center rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all p-1.5 shadow-2xs">
+                                    <Barcode className="w-5 h-5 text-slate-400 ml-2 shrink-0" />
                                     <input
                                         type="text"
                                         value={editSerialNumber}
                                         onChange={(e) => setEditSerialNumber(e.target.value)}
                                         required
                                         placeholder="VD: SN-2026-WIN11-001"
-                                        className="w-full bg-transparent px-3 py-2 text-sm font-mono tracking-wider font-semibold text-slate-900 dark:text-white uppercase outline-none"
+                                        className="w-full bg-transparent px-3 py-1.5 text-sm font-mono tracking-wider font-bold text-slate-900 dark:text-white uppercase border-0 border-none outline-none ring-0 focus:ring-0 focus:outline-none shadow-none"
                                     />
                                 </div>
                             </div>

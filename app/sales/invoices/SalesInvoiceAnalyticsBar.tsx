@@ -25,6 +25,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import { AnalyticsTimeFilter, defaultTimeFilterValue, matchTimeFilter, getTimeFilterLabel, TimeFilterValue } from '@/app/components/analytics/AnalyticsTimeFilter';
 
 interface SalesInvoiceAnalyticsBarProps {
     invoices: any[];
@@ -40,6 +41,7 @@ const INVOICE_STATUS_CONFIG: Record<string, { label: string; color: string; bg: 
 
 export function SalesInvoiceAnalyticsBar({ invoices }: SalesInvoiceAnalyticsBarProps) {
     const [isMounted, setIsMounted] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setIsMounted(true);
@@ -61,7 +63,12 @@ export function SalesInvoiceAnalyticsBar({ invoices }: SalesInvoiceAnalyticsBarP
 
         const monthlyMap: Record<string, { month: string; value: number; count: number; sortKey: number }> = {};
 
-        invoices.forEach(inv => {
+        // Filter invoices by selected time filter
+        const filteredInvoices = invoices.filter(inv => 
+            matchTimeFilter(inv.date || inv.issueDate || inv.createdAt, timeFilter)
+        );
+
+        filteredInvoices.forEach(inv => {
             const amount = Number(inv.totalAmount) || 0;
             const paid = Number(inv.paidAmount) || 0;
             const st = inv.status || 'DRAFT';
@@ -106,10 +113,24 @@ export function SalesInvoiceAnalyticsBar({ invoices }: SalesInvoiceAnalyticsBarP
             }))
             .sort((a, b) => b.value - a.value);
 
-        // Monthly data (last 6 months)
-        const monthlyData = Object.values(monthlyMap)
-            .sort((a, b) => a.sortKey - b.sortKey)
-            .slice(-6);
+        // Monthly data: when filtering by Year, show all 12 months for that year
+        let monthlyData = [];
+        if (timeFilter.mode === 'YEAR') {
+            monthlyData = Array.from({ length: 12 }, (_, i) => {
+                const m = i + 1;
+                const month = `T${m}`;
+                const key = `T${m}/${String(timeFilter.year).slice(-2)}`;
+                const item = monthlyMap[key];
+                return {
+                    month,
+                    value: item ? item.value : 0,
+                    count: item ? item.count : 0,
+                    sortKey: timeFilter.year * 100 + m
+                };
+            });
+        } else {
+            monthlyData = Object.values(monthlyMap).sort((a, b) => a.sortKey - b.sortKey);
+        }
 
         return {
             totalRevenue,
@@ -120,10 +141,31 @@ export function SalesInvoiceAnalyticsBar({ invoices }: SalesInvoiceAnalyticsBarP
             pieData,
             monthlyData
         };
-    }, [invoices]);
+    }, [invoices, timeFilter]);
 
     return (
         <div className="bg-slate-50/70 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4 mb-4 transition-all">
+            {/* Header with Time Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-2xs">
+                        <BarChart3 size={16} />
+                    </div>
+                    <div>
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span>Phân Tích Hóa Đơn Bán Hàng</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                {getTimeFilterLabel(timeFilter)}
+                            </span>
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                            Thống kê doanh thu, tỷ lệ thu hồi và xu hướng dòng tiền
+                        </p>
+                    </div>
+                </div>
+                <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+            </div>
+
             {/* Top Stat Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* 1. Tổng tiền hóa đơn */}

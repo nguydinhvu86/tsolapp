@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
+import {
     ResponsiveContainer,
     BarChart,
     Bar,
@@ -51,6 +58,7 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
     const [isMounted, setIsMounted] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [viewMode, setViewMode] = useState<'MONTH' | 'SUPPLIER'>('MONTH');
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setIsMounted(true);
@@ -82,6 +90,13 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
         let activeCount = 0;
 
         const monthlyMap: Record<string, { label: string; sortKey: number; spend: number; paid: number; debt: number; count: number }> = {};
+        if (timeFilter.type === 'YEAR') {
+            for (let m = 1; m <= 12; m++) {
+                const monthKey = `T${m}`;
+                const sortKey = timeFilter.year * 100 + m;
+                monthlyMap[monthKey] = { label: monthKey, sortKey, spend: 0, paid: 0, debt: 0, count: 0 };
+            }
+        }
         const supplierMap: Record<string, { name: string; total: number; count: number }> = {};
         const statusMap: Record<string, { name: string; count: number; total: number; color: string }> = {
             PAID: { name: 'Đã thanh toán đủ', count: 0, total: 0, color: STATUS_COLORS.PAID },
@@ -91,6 +106,8 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
         };
 
         bills.forEach(bill => {
+            const billDate = bill.date || bill.billDate || bill.createdAt;
+            if (!matchTimeFilter(billDate, timeFilter)) return;
             const amount = Number(bill.totalAmount) || 0;
             const paid = Number(bill.paidAmount) || 0;
             const remaining = Math.max(0, amount - paid);
@@ -111,7 +128,9 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
                 // Monthly mapping
                 const d = bill.date ? new Date(bill.date) : new Date(bill.createdAt);
                 if (!isNaN(d.getTime())) {
-                    const monthKey = `T${d.getMonth() + 1}/${String(d.getFullYear()).slice(-2)}`;
+                    const monthKey = timeFilter.type === 'YEAR'
+                        ? `T${d.getMonth() + 1}`
+                        : `T${d.getMonth() + 1}/${String(d.getFullYear()).slice(-2)}`;
                     const sortKey = d.getFullYear() * 100 + (d.getMonth() + 1);
 
                     if (!monthlyMap[monthKey]) {
@@ -136,7 +155,7 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
         // Sorted Timeline (last 6 months)
         const timelineData = Object.values(monthlyMap)
             .sort((a, b) => a.sortKey - b.sortKey)
-            .slice(-6);
+            .slice(timeFilter.type === 'YEAR' ? -12 : -6);
 
         // Status Pie Data
         const statusPieData = Object.values(statusMap)
@@ -169,7 +188,7 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
             statusPieData,
             top5Suppliers
         };
-    }, [bills]);
+    }, [bills, timeFilter]);
 
     if (!isMounted) return null;
 
@@ -194,7 +213,8 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
                     {/* View Switcher */}
                     {!isCollapsed && (
                         <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] font-bold">
@@ -288,7 +308,7 @@ export function PurchaseBillAnalyticsBar({ bills = [] }: Props) {
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="w-4 h-4 text-emerald-600" />
                                     <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                                        Xu Hướng Mua Hàng &amp; Dòng Tiền Trả ({stats.timelineData.length} Kỳ gần nhất)
+                                        Xu Hướng Mua Hàng &amp; Dòng Tiền Trả ({getTimeFilterLabel(timeFilter)})
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-3 text-[10px] font-semibold">

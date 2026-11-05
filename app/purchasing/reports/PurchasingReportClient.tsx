@@ -15,9 +15,9 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export function PurchasingReportClient({ bills, payments, orders, suppliers }: { bills: any[], payments: any[], orders: any[], suppliers: any[] }) {
     const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
 
-    const [startDate, setStartDate] = useState(firstDayOfMonth.toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(firstDayOfYear.toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
     const [activeTab, setActiveTab] = useState<'overview' | 'supplier' | 'product' | 'bill' | 'order' | 'payment'>('overview');
 

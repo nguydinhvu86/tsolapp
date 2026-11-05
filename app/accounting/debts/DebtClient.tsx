@@ -74,7 +74,7 @@ export default function DebtClient({
 
     // Date Range & Preset State
     const [datePreset, setDatePreset] = useState<DatePreset>(
-        initialStartDate || initialEndDate ? 'CUSTOM' : 'ALL'
+        initialStartDate || initialEndDate ? 'CUSTOM' : 'THIS_YEAR'
     );
     const [startDate, setStartDate] = useState<string>(initialStartDate);
     const [endDate, setEndDate] = useState<string>(initialEndDate);
@@ -451,7 +451,7 @@ export default function DebtClient({
             </div>
 
             {/* Debt Aging & Top Debtor Analytics Chart Bar */}
-            <DebtAnalyticsBar partnerDebts={currentList} tab={tab} />
+            <DebtAnalyticsBar partnerDebts={currentList} tab={tab} periodLabel={activePeriodLabel} />
 
             {/* Reconciliation Period & Filter Toolbar */}
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

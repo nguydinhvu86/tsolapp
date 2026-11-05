@@ -19,8 +19,9 @@ export default async function DebtPage({
     const canView = permissions.includes('ACCOUNTING_VIEW') || permissions.includes('ACCOUNTING_VIEW_ALL') || role === 'ADMIN';
     if (!canView) redirect('/dashboard');
 
-    const startDate = searchParams?.startDate;
-    const endDate = searchParams?.endDate;
+    const currentYear = new Date().getFullYear();
+    const startDate = searchParams?.startDate || `${currentYear}-01-01`;
+    const endDate = searchParams?.endDate || `${currentYear}-12-31`;
 
     const [data, companyInfo] = await Promise.all([
         getDebtOverviewData({ startDate, endDate }),

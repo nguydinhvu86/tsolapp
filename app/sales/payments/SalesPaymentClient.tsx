@@ -11,6 +11,13 @@ import { createSalesPayment, deleteSalesPayment, cancelSalesPayment, restoreSale
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
 
 export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices, initialAction, initialCustomerId }: any) {
     const router = useRouter();
@@ -21,6 +28,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
     const [isChartCollapsed, setIsChartCollapsed] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(initialAction === 'new');
@@ -103,7 +111,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     }, [allocations]);
 
     const paymentAnalytics = useMemo(() => {
-        const active = payments.filter((p: any) => p.status !== 'CANCELLED');
+        const active = payments.filter((p: any) => p.status !== 'CANCELLED' && matchTimeFilter(p.paymentDate || p.createdAt, timeFilter));
         const totalAmount = active.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
         
         let bankAmount = 0;
@@ -156,7 +164,7 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
             methodData,
             topCustomers
         };
-    }, [payments]);
+    }, [payments, timeFilter]);
 
     const totalStats = useMemo(() => ({
         count: paymentAnalytics.totalCount,
@@ -411,17 +419,20 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
-                    >
-                        {isChartCollapsed ? (
-                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
-                        ) : (
-                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
-                        )}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+                        <button
+                            type="button"
+                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            {isChartCollapsed ? (
+                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {!isChartCollapsed && (

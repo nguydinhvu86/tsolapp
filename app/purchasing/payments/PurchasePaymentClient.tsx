@@ -14,6 +14,13 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { formatMoney } from '@/lib/utils/formatters';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
 
 export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills }: { initialPayments: any[], suppliers: any[], unpaidBills: any[] }) {
     const router = useRouter();
@@ -22,6 +29,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const [searchQuery, setSearchQuery] = useState('');
     const [methodFilter, setMethodFilter] = useState<'ALL' | 'BANK_TRANSFER' | 'CASH'>('ALL');
     const [isChartCollapsed, setIsChartCollapsed] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     // Sort logic
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
@@ -346,30 +354,47 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
     const cashAmount = cashPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     const purchasePaymentAnalytics = useMemo(() => {
-        const methodData = [
-            { name: 'Chuyển khoản (Bank)', value: bankAmount, count: bankPayments.length, color: '#3b82f6' },
-            { name: 'Tiền mặt (Cash)', value: cashAmount, count: cashPayments.length, color: '#f59e0b' }
-        ].filter(d => d.value > 0);
+        const filtered = activePayments.filter((p: any) => matchTimeFilter(p.paymentDate || p.createdAt, timeFilter));
+        let bAmount = 0;
+        let bCount = 0;
+        let cAmount = 0;
+        let cCount = 0;
+        let total = 0;
 
         const supplierMap: Record<string, { name: string; amount: number; count: number }> = {};
-        activePayments.forEach((p: any) => {
+        filtered.forEach((p: any) => {
+            const amt = p.amount || 0;
+            total += amt;
+            if (p.paymentMethod === 'BANK_TRANSFER') {
+                bAmount += amt;
+                bCount++;
+            } else if (p.paymentMethod === 'CASH') {
+                cAmount += amt;
+                cCount++;
+            }
             const sName = p.supplier?.name || 'Nhà cung cấp khác';
             if (!supplierMap[sName]) {
                 supplierMap[sName] = { name: sName, amount: 0, count: 0 };
             }
-            supplierMap[sName].amount += (p.amount || 0);
+            supplierMap[sName].amount += amt;
             supplierMap[sName].count++;
         });
+
+        const methodData = [
+            { name: 'Chuyển khoản (Bank)', value: bAmount, count: bCount, color: '#3b82f6' },
+            { name: 'Tiền mặt (Cash)', value: cAmount, count: cCount, color: '#f59e0b' }
+        ].filter(d => d.value > 0);
 
         const topSuppliers = Object.values(supplierMap)
             .sort((a, b) => b.amount - a.amount)
             .slice(0, 5);
 
         return {
+            filteredTotal: total,
             methodData,
             topSuppliers
         };
-    }, [activePayments, bankAmount, bankPayments.length, cashAmount, cashPayments.length]);
+    }, [activePayments, timeFilter]);
 
     return (
         <div className="flex flex-col gap-4">
@@ -484,7 +509,7 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                             <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
                                 <span>Phân Tích Dòng Tiền Chi Trả Nhà Cung Cấp</span>
                                 <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                                    {formatMoney(totalPaidAmount)}
+                                    {formatMoney(purchasePaymentAnalytics.filteredTotal)}
                                 </span>
                             </h3>
                             <p className="text-[11px] text-slate-400 hidden sm:block">
@@ -493,17 +518,20 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsChartCollapsed(!isChartCollapsed)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
-                    >
-                        {isChartCollapsed ? (
-                            <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
-                        ) : (
-                            <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
-                        )}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+                        <button
+                            type="button"
+                            onClick={() => setIsChartCollapsed(!isChartCollapsed)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            {isChartCollapsed ? (
+                                <><span>Xem Biểu Đồ</span><ChevronDown className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <><span>Thu Gọn</span><ChevronUp className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {!isChartCollapsed && (

@@ -9,6 +9,13 @@ import {
     ExternalLink, Upload, Layers, CheckCircle2
 } from 'lucide-react';
 import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
+import {
     importInventoryFromInvoice,
     triggerManualScan,
     uploadInvoiceFiles,
@@ -29,6 +36,7 @@ export default function InvoiceDashboardClient({
     const [invoices, setInvoices] = useState(initialInvoices);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showCharts, setShowCharts] = useState(true);
+    const [chartTimeFilter, setChartTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setInvoices(initialInvoices);
@@ -72,7 +80,7 @@ export default function InvoiceDashboardClient({
             }
         });
         return Array.from(months).sort((a, b) => b.localeCompare(a));
-    }, [invoices]);
+    }, [invoices, chartTimeFilter]);
 
     // Derived processed items
     const processedInvoices = useMemo(() => {
@@ -143,12 +151,22 @@ export default function InvoiceDashboardClient({
     // Analytics Data 1: Monthly Spend & VAT Trend (Last 6 available months in chronological order)
     const monthlyChartData = useMemo(() => {
         const map = new Map<string, { month: string; label: string; totalAmount: number; taxAmount: number; count: number }>();
+        if (chartTimeFilter.type === 'YEAR') {
+            for (let m = 1; m <= 12; m++) {
+                const key = `${chartTimeFilter.year}-${String(m).padStart(2, '0')}`;
+                const label = `T${String(m).padStart(2, '0')}`;
+                map.set(key, { month: key, label, totalAmount: 0, taxAmount: 0, count: 0 });
+            }
+        }
         invoices.forEach((inv: any) => {
             if (!inv.issueDate) return;
+            if (!matchTimeFilter(inv.issueDate, chartTimeFilter)) return;
             const d = new Date(inv.issueDate);
             if (isNaN(d.getTime())) return;
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            const label = `T${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
+            const label = chartTimeFilter.type === 'YEAR'
+                ? `T${String(d.getMonth() + 1).padStart(2, '0')}`
+                : `T${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
             const cur = map.get(key) || { month: key, label, totalAmount: 0, taxAmount: 0, count: 0 };
             cur.totalAmount += inv.totalAmount || 0;
             cur.taxAmount += inv.taxAmount || 0;
@@ -156,8 +174,8 @@ export default function InvoiceDashboardClient({
             map.set(key, cur);
         });
         const sorted = Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
-        return sorted.slice(-6);
-    }, [invoices]);
+        return sorted.slice(chartTimeFilter.type === 'YEAR' ? -12 : -6);
+    }, [invoices, chartTimeFilter]);
 
     const maxMonthlyAmount = useMemo(() => {
         return Math.max(...monthlyChartData.map(d => d.totalAmount), 1);
@@ -167,6 +185,7 @@ export default function InvoiceDashboardClient({
     const topSuppliersData = useMemo(() => {
         const map = new Map<string, { name: string; taxCode: string; totalAmount: number; count: number }>();
         invoices.forEach((inv: any) => {
+            if (inv.issueDate && !matchTimeFilter(inv.issueDate, chartTimeFilter)) return;
             const key = inv.supplierTaxCode || inv.supplierName || 'UNKNOWN';
             const cur = map.get(key) || {
                 name: inv.supplierName || 'Chưa xác định',
@@ -583,7 +602,16 @@ export default function InvoiceDashboardClient({
 
             {/* 3. Visual Analytics Charts Section */}
             {showCharts && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                        <div className="flex items-center gap-2">
+                            <BarChart3 size={15} className="text-indigo-600" />
+                            <span className="text-xs font-bold text-slate-800">Biểu Đồ Thống Kê Hóa Đơn Đầu Vào</span>
+                            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">({getTimeFilterLabel(chartTimeFilter)})</span>
+                        </div>
+                        <AnalyticsTimeFilter value={chartTimeFilter} onChange={setChartTimeFilter} />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                     {/* Chart 1: Monthly Spend & VAT Trend (5 cols) */}
                     <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 flex flex-col justify-between">
                         <div>
@@ -861,6 +889,7 @@ export default function InvoiceDashboardClient({
                             </span>
                         </div>
                     </div>
+                </div>
                 </div>
             )}
 

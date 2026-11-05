@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+    AnalyticsTimeFilter,
+    TimeFilterValue,
+    defaultTimeFilterValue,
+    matchTimeFilter,
+    getTimeFilterLabel
+} from '@/app/components/analytics/AnalyticsTimeFilter';
+import {
     ResponsiveContainer,
     BarChart,
     Bar,
@@ -52,6 +59,7 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
     const [isMounted, setIsMounted] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [chartMode, setChartMode] = useState<'MONTH' | 'ACCOUNT'>('MONTH');
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setIsMounted(true);
@@ -80,9 +88,17 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
         let totalReceipt = 0;
         let totalPayment = 0;
         const timelineMap: Record<string, { label: string; sortKey: number; receipt: number; payment: number; net: number }> = {};
+        if (timeFilter.type === 'YEAR') {
+            for (let m = 1; m <= 12; m++) {
+                const monthKey = `T${m}`;
+                const sortKey = timeFilter.year * 100 + m;
+                timelineMap[monthKey] = { label: monthKey, sortKey, receipt: 0, payment: 0, net: 0 };
+            }
+        }
         const accountMap: Record<string, { name: string; receipt: number; payment: number; total: number }> = {};
 
         transactions.forEach(tx => {
+            if (!matchTimeFilter(tx.transactionDate || tx.createdAt, timeFilter)) return;
             const amount = Number(tx.amount) || 0;
             const isReceipt = tx.type === 'RECEIPT';
             const isPayment = tx.type === 'PAYMENT';
@@ -93,7 +109,9 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
             // Timeline key (Group by Month or Date)
             const dateObj = tx.transactionDate ? new Date(tx.transactionDate) : new Date();
             if (!isNaN(dateObj.getTime())) {
-                const monthKey = `T${dateObj.getMonth() + 1}/${String(dateObj.getFullYear()).slice(-2)}`;
+                const monthKey = timeFilter.type === 'YEAR'
+                    ? `T${dateObj.getMonth() + 1}`
+                    : `T${dateObj.getMonth() + 1}/${String(dateObj.getFullYear()).slice(-2)}`;
                 const sortKey = dateObj.getFullYear() * 100 + (dateObj.getMonth() + 1);
 
                 if (!timelineMap[monthKey]) {
@@ -117,7 +135,7 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
         // Sorted Timeline (last 6 - 12 months)
         const timelineData = Object.values(timelineMap)
             .sort((a, b) => a.sortKey - b.sortKey)
-            .slice(-6);
+            .slice(timeFilter.type === 'YEAR' ? -12 : -6);
 
         // Account Donut Data
         const accountPieData = Object.values(accountMap)
@@ -134,6 +152,7 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
         const netDifference = totalReceipt - totalPayment;
         const burnRate = totalReceipt > 0 ? Math.round((totalPayment / totalReceipt) * 100) : 0;
 
+        const filteredCount = transactions.filter(tx => matchTimeFilter(tx.transactionDate || tx.createdAt, timeFilter)).length;
         return {
             totalReceipt,
             totalPayment,
@@ -141,9 +160,9 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
             burnRate,
             timelineData,
             accountPieData,
-            transactionCount: transactions.length
+            transactionCount: filteredCount
         };
-    }, [transactions]);
+    }, [transactions, timeFilter]);
 
     if (!isMounted) return null;
 
@@ -168,7 +187,8 @@ export function CashBookAnalyticsBar({ transactions = [], accounts = [] }: Props
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
                     {/* View Switcher */}
                     {!isCollapsed && (
                         <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] font-bold">

@@ -26,6 +26,7 @@ import {
     Target
 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils/formatters';
+import { AnalyticsTimeFilter, defaultTimeFilterValue, matchTimeFilter, getTimeFilterLabel, TimeFilterValue } from '@/app/components/analytics/AnalyticsTimeFilter';
 
 interface SalesEstimateAnalyticsBarProps {
     estimates: any[];
@@ -43,6 +44,7 @@ const ESTIMATE_STATUS_CONFIG: Record<string, { label: string; color: string; bg:
 
 export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsBarProps) {
     const [isMounted, setIsMounted] = useState(false);
+    const [timeFilter, setTimeFilter] = useState<TimeFilterValue>(defaultTimeFilterValue);
 
     useEffect(() => {
         setIsMounted(true);
@@ -66,7 +68,12 @@ export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsB
 
         const monthlyMap: Record<string, { month: string; value: number; count: number; sortKey: number }> = {};
 
-        estimates.forEach(est => {
+        // Filter estimates by time filter
+        const filteredEstimates = estimates.filter(est =>
+            matchTimeFilter(est.date || est.createdAt, timeFilter)
+        );
+
+        filteredEstimates.forEach(est => {
             const amount = Number(est.totalAmount) || 0;
             const st = est.status || 'DRAFT';
 
@@ -101,8 +108,8 @@ export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsB
             }
         });
 
-        const winRate = estimates.length > 0 
-            ? Math.round(((statusMap.ACCEPTED.count + statusMap.ORDERED.count + statusMap.INVOICED.count) / estimates.length) * 100) 
+        const winRate = filteredEstimates.length > 0 
+            ? Math.round(((statusMap.ACCEPTED.count + statusMap.ORDERED.count + statusMap.INVOICED.count) / filteredEstimates.length) * 100) 
             : 0;
 
         // Pie chart data
@@ -117,10 +124,24 @@ export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsB
             }))
             .sort((a, b) => b.value - a.value);
 
-        // Bar chart data - last 6 months
-        const barData = Object.values(monthlyMap)
-            .sort((a, b) => a.sortKey - b.sortKey)
-            .slice(-6);
+        // Bar chart data - when filtering by year, show all 12 months for that year
+        let barData = [];
+        if (timeFilter.mode === 'YEAR') {
+            barData = Array.from({ length: 12 }, (_, i) => {
+                const m = i + 1;
+                const month = `T${m}`;
+                const key = `T${m}/${String(timeFilter.year).slice(-2)}`;
+                const item = monthlyMap[key];
+                return {
+                    month,
+                    value: item ? item.value : 0,
+                    count: item ? item.count : 0,
+                    sortKey: timeFilter.year * 100 + m
+                };
+            });
+        } else {
+            barData = Object.values(monthlyMap).sort((a, b) => a.sortKey - b.sortKey);
+        }
 
         return {
             totalPipeline,
@@ -131,7 +152,7 @@ export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsB
             pieData,
             barData
         };
-    }, [estimates]);
+    }, [estimates, timeFilter]);
 
     const formatShortMoney = (val: number) => {
         if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)} Tỷ`;
@@ -142,7 +163,28 @@ export function SalesEstimateAnalyticsBar({ estimates }: SalesEstimateAnalyticsB
     if (!isMounted) return null;
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs transition-all duration-300 space-y-4 mb-4">
+            {/* Header with Time Filter */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shadow-2xs">
+                        <BarChart3 size={16} />
+                    </div>
+                    <div>
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span>Phân Tích Cơ Hội & Báo Giá ERP</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                                {getTimeFilterLabel(timeFilter)}
+                            </span>
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                            Hiệu suất chuyển đổi và quy mô chào giá khách hàng
+                        </p>
+                    </div>
+                </div>
+                <AnalyticsTimeFilter value={timeFilter} onChange={setTimeFilter} />
+            </div>
+
             {/* Top Insight Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100/60 transition-colors">
