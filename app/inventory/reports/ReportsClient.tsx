@@ -2,7 +2,7 @@
 
 
 import { toast } from '@/app/components/providers/ToastProvider';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
@@ -23,7 +23,7 @@ const getFirstDayOfMonth = () => {
     return new Date(d.getFullYear(), d.getMonth(), 1);
 };
 
-export default function ReportsClient({ initialValuation, products, warehouses, productGroups = [] }: { initialValuation: any[], products: any[], warehouses: any[], productGroups?: any[] }) {
+export default function ReportsClient({ initialValuation, products, warehouses, productGroups = [], initialSearch = '' }: { initialValuation: any[], products: any[], warehouses: any[], productGroups?: any[], initialSearch?: string }) {
     const [activeTab, setActiveTab] = useState<'VALUATION' | 'LEDGER' | 'TRANSACTIONS' | 'IN_OUT_BALANCE'>('VALUATION');
 
     // Global Date Filter
@@ -33,7 +33,13 @@ export default function ReportsClient({ initialValuation, products, warehouses, 
     // Valuation State
     const [warehouseFilter, setWarehouseFilter] = useState('');
     const [groupFilter, setGroupFilter] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(initialSearch || '');
+
+    useEffect(() => {
+        if (initialSearch) {
+            setSearchTerm(initialSearch);
+        }
+    }, [initialSearch]);
 
     const [ledgerProduct, setLedgerProduct] = useState('');
     const [ledgerWarehouse, setLedgerWarehouse] = useState('');

@@ -17,6 +17,7 @@ export default async function ReportsPage(props: { searchParams: Promise<any> })
     const searchParams = await props.searchParams;
     const warehouseId = searchParams?.warehouseId || undefined;
     const groupId = searchParams?.groupId || undefined;
+    const initialSearch = (searchParams?.search as string) || '';
 
     // Server fetch for initial dashboard data
     const valuationData = await getStockValuation(warehouseId, undefined, groupId);
@@ -33,6 +34,7 @@ export default async function ReportsPage(props: { searchParams: Promise<any> })
                 products={products}
                 warehouses={warehouses}
                 productGroups={productGroups}
+                initialSearch={initialSearch}
             />
         </div>
     );

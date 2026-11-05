@@ -879,7 +879,7 @@ export default function SerialManagementClient() {
                                     <div>
                                         <span className="text-slate-400">Sản phẩm:</span>
                                         <a
-                                            href={`/inventory/products?search=${encodeURIComponent(lookupResult.sku || lookupResult.productName || '')}`}
+                                            href={`/inventory/reports?search=${encodeURIComponent(lookupResult.sku || lookupResult.productName || '')}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
@@ -1155,15 +1155,15 @@ export default function SerialManagementClient() {
                                             <td className="py-3 px-4">
                                                 {s.product ? (
                                                     <a
-                                                        href={`/inventory/products?search=${encodeURIComponent(s.product.sku || s.product.name)}`}
+                                                        href={`/inventory/reports?search=${encodeURIComponent(s.product.sku || s.product.name)}`}
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="group flex flex-col items-start hover:text-blue-600 transition-colors"
-                                                        title="Nhấp để mở chi tiết / quản lý sản phẩm này"
+                                                        className="group flex flex-col items-start hover:text-emerald-600 transition-colors"
+                                                        title="Nhấp để xem báo cáo tồn kho của sản phẩm này"
                                                     >
-                                                        <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:underline flex items-center gap-1">
+                                                        <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:underline flex items-center gap-1">
                                                             {s.product.name}
-                                                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 shrink-0" />
+                                                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500 shrink-0" />
                                                         </span>
                                                         <span className="text-xs text-slate-400 font-mono">Mã: {s.product.sku || 'N/A'}</span>
                                                     </a>
@@ -1557,7 +1557,7 @@ export default function SerialManagementClient() {
             {/* Modal 2: Thêm Serial / IMEI / Thẻ Bản Quyền */}
             {showAddModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-xl w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl max-w-3xl w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
                         {/* Header */}
                         <div className="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3.5">
@@ -1587,50 +1587,53 @@ export default function SerialManagementClient() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateSerial} className="space-y-4 text-sm">
-                            {/* Product Combobox */}
-                            <div className="space-y-1.5">
-                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                    <Package className="w-4 h-4 text-emerald-600" />
-                                    Chọn Sản phẩm <span className="text-rose-500">*</span>
-                                </label>
-                                <ProductSearchSelect
-                                    products={products}
-                                    value={selectedProductId}
-                                    onChange={setSelectedProductId}
-                                    required
-                                    placeholder="-- Gõ tên hoặc chọn sản phẩm --"
-                                />
-                                {selectedProductId && (() => {
-                                    const selectedProd = products.find(p => p.id === selectedProductId);
-                                    return (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] text-emerald-900 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 animate-in fade-in">
-                                            <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                            <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
-                                            {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
+                        <form onSubmit={handleCreateSerial} className="space-y-5 text-sm">
+                            {/* Product & Warehouse Row (2 columns for wide spacious layout) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                {/* Product Combobox */}
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Package className="w-4 h-4 text-emerald-600" />
+                                        Chọn Sản phẩm <span className="text-rose-500">*</span>
+                                    </label>
+                                    <ProductSearchSelect
+                                        products={products}
+                                        value={selectedProductId}
+                                        onChange={setSelectedProductId}
+                                        required
+                                        placeholder="-- Gõ tên hoặc chọn sản phẩm --"
+                                    />
+                                    {selectedProductId && (() => {
+                                        const selectedProd = products.find(p => p.id === selectedProductId);
+                                        return (
+                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] text-emerald-900 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 animate-in fade-in">
+                                                <Tag className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                <span>Mã SKU: <strong>{selectedProd?.sku || 'N/A'}</strong></span>
+                                                {selectedProd?.unit && <span>• ĐVT: <strong>{selectedProd.unit}</strong></span>}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
 
-                            {/* Warehouse Select */}
-                            <div className="space-y-1.5">
-                                <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                    <Warehouse className="w-4 h-4 text-emerald-600" />
-                                    Kho Lưu Trữ Thiết Bị / Thẻ
-                                </label>
-                                <div className="relative">
-                                    <Warehouse className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                                    <select
-                                        value={selectedWarehouseId}
-                                        onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-slate-900 dark:text-white"
-                                    >
-                                        <option value="">-- Kho chính (Mặc định) --</option>
-                                        {warehouses.map((w) => (
-                                            <option key={w.id} value={w.id}>{w.name}</option>
-                                        ))}
-                                    </select>
+                                {/* Warehouse Select */}
+                                <div className="space-y-1.5">
+                                    <label className="block font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                        <Warehouse className="w-4 h-4 text-emerald-600" />
+                                        Kho Lưu Trữ Thiết Bị / Thẻ
+                                    </label>
+                                    <div className="relative">
+                                        <Warehouse className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                                        <select
+                                            value={selectedWarehouseId}
+                                            onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-slate-900 dark:text-white"
+                                        >
+                                            <option value="">-- Kho chính (Mặc định) --</option>
+                                            {warehouses.map((w) => (
+                                                <option key={w.id} value={w.id}>{w.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1723,7 +1726,7 @@ export default function SerialManagementClient() {
                                                 Xóa tất cả
                                             </button>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                        <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
                                             {serialTags.map((tag, idx) => (
                                                 <span
                                                     key={idx}
