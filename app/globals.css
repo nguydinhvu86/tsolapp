@@ -11,9 +11,12 @@ If you remove these generic classes (e.g. `stat-card`, `btn-primary`,
 =============================================================================
 */
 
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind utilities;
 
 :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
     --primary: #059669;
     --primary-hover: #047857;
     --primary-light: #ecfdf5;
