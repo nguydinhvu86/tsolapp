@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { toast } from '@/app/components/providers/ToastProvider';
 import { FileText, Download, Printer, X, ShieldCheck, UserCheck } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatters';
+import { Watermark } from '@/app/components/ui/Watermark';
 
 interface SerialsHandoverPdfModalProps {
     isOpen: boolean;
@@ -85,11 +86,11 @@ export function SerialsHandoverPdfModal({
             const opt = {
                 margin: [8, 10, 8, 10] as [number, number, number, number],
                 filename: `Bien_Ban_Ban_Giao_Serial_${invoice.code || 'DonHang'}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
+                image: { type: 'jpeg' as const, quality: 1.0 },
                 html2canvas: {
-                    scale: 2.5,
+                    scale: 3,
                     useCORS: true,
-                    letterRendering: true,
+                    letterRendering: false,
                     logging: false,
                     backgroundColor: '#ffffff'
                 },
@@ -200,8 +201,10 @@ export function SerialsHandoverPdfModal({
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/50 flex justify-center">
                     <div 
                         id="serials-handover-pdf-content"
-                        className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl shadow-md w-full max-w-[760px] text-xs leading-relaxed border border-slate-200"
+                        style={{ position: 'relative' }}
+                        className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl shadow-md w-full max-w-[760px] text-xs leading-relaxed border border-slate-200 overflow-hidden"
                     >
+                        <Watermark settings={settings} documentType="SERIAL_HANDOVER" />
                         {/* Self-contained Embedded Stylesheet for Both Screen & Print */}
                         <style dangerouslySetInnerHTML={{ __html: `
                             @page {
@@ -214,17 +217,20 @@ export function SerialsHandoverPdfModal({
                                 print-color-adjust: exact !important;
                             }
                             #serials-handover-pdf-content, .handover-root {
-                                font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                                font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif !important;
                                 font-size: 10.5px;
                                 line-height: 1.45;
                                 color: #0f172a;
                                 background-color: #ffffff;
+                                -webkit-font-smoothing: antialiased !important;
+                                -moz-osx-font-smoothing: grayscale !important;
+                                text-rendering: optimizeLegibility !important;
                             }
                             .ho-header-table {
                                 width: 100%;
                                 border-collapse: collapse;
                                 margin-bottom: 10px;
-                                border-bottom: 2px solid ${brandColor};
+                                border-bottom: 2.5px solid ${brandColor};
                                 padding-bottom: 6px;
                             }
                             .ho-header-table td {
@@ -233,7 +239,7 @@ export function SerialsHandoverPdfModal({
                                 padding: 0 0 6px 0;
                             }
                             .ho-company-title {
-                                font-size: 13.5px;
+                                font-size: 14px;
                                 font-weight: 800;
                                 color: ${brandColor};
                                 letter-spacing: 0.3px;
@@ -241,140 +247,184 @@ export function SerialsHandoverPdfModal({
                                 line-height: 1.3;
                             }
                             .ho-company-meta {
-                                font-size: 10px;
-                                color: #475569;
-                                margin: 2px 0;
+                                font-size: 10.5px;
+                                color: #1e293b;
+                                margin: 2.5px 0;
                                 line-height: 1.4;
+                                font-weight: 500;
+                            }
+                            .ho-company-meta strong {
+                                color: #0f172a;
+                                font-weight: 700;
                             }
                             .ho-ref-card {
-                                display: inline-block;
-                                text-align: left;
-                                background-color: #f8fafc;
-                                border: 1px solid #cbd5e1;
-                                border-radius: 6px;
-                                padding: 5px 8px;
-                                font-size: 9.5px;
-                                line-height: 1.35;
-                                white-space: nowrap;
+                                display: block !important;
+                                width: 100% !important;
+                                box-sizing: border-box !important;
+                                background-color: #f8fafc !important;
+                                border: 1.5px solid #64748b !important;
+                                border-radius: 6px !important;
+                                padding: 6px 10px !important;
+                                text-align: left !important;
+                            }
+                            .ho-ref-label {
+                                font-size: 8.5px !important;
+                                font-weight: 700 !important;
+                                color: #475569 !important;
+                                text-transform: uppercase !important;
+                                letter-spacing: 0.4px !important;
+                                margin-bottom: 1px !important;
+                                line-height: 1.2 !important;
+                            }
+                            .ho-ref-val-main {
+                                font-family: Consolas, 'Courier New', monospace !important;
+                                font-weight: 800 !important;
+                                color: #0f172a !important;
+                                font-size: 11px !important;
+                                margin-bottom: 4px !important;
+                                line-height: 1.3 !important;
+                                word-break: break-all !important;
+                            }
+                            .ho-ref-val {
+                                font-family: Consolas, 'Courier New', monospace !important;
+                                font-weight: 700 !important;
+                                color: #0f172a !important;
+                                font-size: 11px !important;
+                                margin-bottom: 4px !important;
+                                line-height: 1.3 !important;
+                                word-break: break-all !important;
+                            }
+                            .ho-ref-val-date {
+                                font-size: 10px !important;
+                                font-weight: 700 !important;
+                                color: #0f172a !important;
+                                line-height: 1.3 !important;
                             }
                             .ho-doc-title-box {
                                 text-align: center;
                                 margin: 10px 0 12px 0;
                             }
                             .ho-doc-title {
-                                font-size: 15px;
+                                font-size: 15.5px;
                                 font-weight: 900;
                                 color: ${brandColor};
                                 text-transform: uppercase;
                                 letter-spacing: 0.6px;
-                                margin: 0 0 2px 0;
+                                margin: 0 0 3px 0;
                             }
                             .ho-doc-subtitle {
-                                font-size: 10px;
+                                font-size: 10.5px;
                                 font-style: italic;
-                                color: #64748b;
+                                color: #334155;
                                 margin: 0;
+                                font-weight: 600;
                             }
                             .ho-parties-table {
                                 width: 100%;
                                 border-collapse: collapse;
                                 margin-bottom: 12px;
                                 background-color: #f8fafc;
-                                border: 1px solid #cbd5e1;
+                                border: 1.5px solid #64748b;
                                 border-radius: 6px;
                             }
                             .ho-parties-table td {
                                 vertical-align: top;
                                 padding: 8px 10px;
-                                font-size: 10px;
+                                font-size: 10.5px;
                                 border: none;
                                 width: 50%;
                             }
                             .ho-parties-divider {
-                                border-left: 1px solid #e2e8f0 !important;
+                                border-left: 1.5px solid #cbd5e1 !important;
                             }
                             .ho-party-header {
-                                font-size: 10px;
+                                font-size: 11px;
                                 font-weight: 800;
                                 color: ${brandColor};
                                 text-transform: uppercase;
                                 letter-spacing: 0.5px;
-                                padding-bottom: 3px;
-                                margin-bottom: 4px;
-                                border-bottom: 1px solid #e2e8f0;
+                                padding-bottom: 4px;
+                                margin-bottom: 5px;
+                                border-bottom: 1px solid #cbd5e1;
                             }
                             .ho-party-line {
-                                margin: 2px 0;
-                                color: #334155;
+                                margin: 3px 0;
+                                color: #0f172a;
+                                font-size: 10.5px;
+                                font-weight: 500;
                             }
                             .ho-party-label {
-                                color: #64748b;
+                                color: #334155;
+                                font-weight: 600;
                                 display: inline-block;
-                                min-width: 78px;
+                                min-width: 82px;
                             }
                             .ho-main-table {
                                 width: 100%;
                                 border-collapse: collapse;
                                 table-layout: fixed;
-                                margin-bottom: 10px;
+                                margin-bottom: 12px;
                             }
                             .ho-main-table th {
                                 background-color: ${brandColor} !important;
                                 color: #ffffff !important;
-                                font-size: 9.5px;
+                                font-size: 10px;
                                 font-weight: 800;
                                 text-transform: uppercase;
                                 letter-spacing: 0.4px;
-                                padding: 6px 5px;
+                                padding: 7px 5px;
                                 border: 1px solid #0f766e;
                                 text-align: center;
                                 vertical-align: middle;
                             }
                             .ho-main-table td {
-                                border: 1px solid #cbd5e1;
+                                border: 1px solid #64748b;
                                 padding: 6px 6px;
-                                font-size: 10px;
+                                font-size: 10.5px;
                                 vertical-align: middle;
-                                line-height: 1.35;
+                                line-height: 1.4;
+                                color: #0f172a;
+                                font-weight: 500;
                             }
                             .ho-main-table tbody tr:nth-child(even) {
-                                background-color: #fafbfd;
+                                background-color: #f8fafc;
                             }
                             .ho-main-table tfoot td {
                                 background-color: #f0fdfa !important;
-                                border: 1px solid #cbd5e1;
+                                border: 1.5px solid #0f766e;
                                 font-weight: 800;
-                                padding: 6px 6px;
-                                font-size: 10px;
+                                padding: 7px 6px;
+                                font-size: 10.5px;
                             }
                             .ho-prod-title {
                                 font-weight: 700;
                                 color: #0f172a;
-                                font-size: 10.5px;
+                                font-size: 11px;
                                 word-break: break-word;
                             }
                             .ho-serial-tag {
                                 display: inline-block !important;
-                                font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace !important;
-                                font-size: 9px !important;
+                                font-family: Consolas, 'Courier New', monospace !important;
+                                font-size: 9.5px !important;
                                 font-weight: 700 !important;
-                                color: #0f172a !important;
+                                color: #000000 !important;
                                 background-color: #ffffff !important;
-                                border: 1px solid #94a3b8 !important;
-                                border-radius: 3px !important;
-                                padding: 1px 5px !important;
-                                margin: 1.5px 2px !important;
+                                border: 1px solid #475569 !important;
+                                border-radius: 4px !important;
+                                padding: 1.5px 6px !important;
+                                margin: 2px 2.5px !important;
                                 letter-spacing: 0.3px !important;
                                 white-space: nowrap !important;
                             }
                             .ho-commitments {
-                                padding: 6px 10px;
+                                padding: 7px 12px;
                                 background-color: #fafaf9;
-                                border: 1px dashed #cbd5e1;
-                                border-radius: 5px;
-                                font-size: 9.5px;
-                                color: #334155;
-                                line-height: 1.4;
+                                border: 1.5px dashed #64748b;
+                                border-radius: 6px;
+                                font-size: 10px;
+                                color: #0f172a;
+                                font-weight: 500;
+                                line-height: 1.45;
                                 margin-bottom: 12px;
                                 page-break-inside: avoid;
                             }
@@ -382,9 +432,9 @@ export function SerialsHandoverPdfModal({
                                 font-weight: 800;
                                 color: ${brandColor};
                                 text-transform: uppercase;
-                                margin: 0 0 3px 0;
-                                font-size: 9.5px;
-                                letter-spacing: 0.3px;
+                                margin: 0 0 4px 0;
+                                font-size: 10px;
+                                letter-spacing: 0.4px;
                             }
                             .ho-signatures {
                                 width: 100%;
@@ -400,31 +450,32 @@ export function SerialsHandoverPdfModal({
                                 border: none;
                             }
                             .ho-sig-date {
-                                font-size: 9.5px;
+                                font-size: 10px;
                                 font-style: italic;
-                                color: #64748b;
-                                margin-bottom: 2px;
+                                color: #334155;
+                                margin-bottom: 3px;
+                                font-weight: 500;
                             }
                             .ho-sig-role {
-                                font-size: 10px;
+                                font-size: 10.5px;
                                 font-weight: 800;
                                 color: #0f172a;
                                 text-transform: uppercase;
-                                letter-spacing: 0.3px;
+                                letter-spacing: 0.4px;
                                 margin: 0 0 2px 0;
                             }
                             .ho-sig-hint {
-                                font-size: 9px;
+                                font-size: 9.5px;
                                 font-style: italic;
-                                color: #64748b;
+                                color: #475569;
                                 margin: 0;
                             }
                             .ho-sig-blank {
-                                height: 58px;
+                                height: 56px;
                             }
                             .ho-sig-name {
-                                font-size: 10.5px;
-                                font-weight: 700;
+                                font-size: 11px;
+                                font-weight: 800;
                                 color: #0f172a;
                                 margin: 0;
                             }
@@ -469,15 +520,19 @@ export function SerialsHandoverPdfModal({
                                             </div>
                                         )}
                                     </td>
-                                    <td style={{ textAlign: 'right', width: '190px' }}>
+                                    <td style={{ width: '220px', verticalAlign: 'top', paddingLeft: '12px' }}>
                                         <div className="ho-ref-card">
-                                            <div style={{ color: '#64748b', fontSize: '9px' }}>MÃ CHỨNG TỪ:</div>
-                                            <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '10.5px', marginBottom: '3px' }}>
+                                            <div className="ho-ref-label">SỐ BIÊN BẢN:</div>
+                                            <div className="ho-ref-val-main">
                                                 {docRefCode}
                                             </div>
-                                            <div style={{ color: '#64748b', fontSize: '9px' }}>HÓA ĐƠN LIÊN KẾT:</div>
-                                            <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0f172a' }}>
+                                            <div className="ho-ref-label">HÓA ĐƠN LIÊN KẾT:</div>
+                                            <div className="ho-ref-val">
                                                 {invoice.code}
+                                            </div>
+                                            <div className="ho-ref-label">NGÀY BÀN GIAO:</div>
+                                            <div className="ho-ref-val-date">
+                                                {handoverDateStr}
                                             </div>
                                         </div>
                                     </td>
@@ -514,7 +569,7 @@ export function SerialsHandoverPdfModal({
                                         </div>
                                         <div className="ho-party-line">
                                             <span className="ho-party-label">Chứng từ gốc:</span>
-                                            <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>HĐ {invoice.code}</span>
+                                            <strong style={{ color: '#0f172a' }}>HĐ {invoice.code}</strong>
                                         </div>
                                     </td>
                                     <td className="ho-parties-divider">
@@ -568,16 +623,16 @@ export function SerialsHandoverPdfModal({
 
                                     return (
                                         <tr key={item.id || idx}>
-                                            <td style={{ textAlign: 'center', fontFamily: 'monospace', color: '#64748b' }}>
+                                            <td style={{ textAlign: 'center', fontFamily: 'monospace', color: '#0f172a', fontWeight: 700 }}>
                                                 {idx + 1}
                                             </td>
                                             <td style={{ textAlign: 'left' }}>
                                                 <div className="ho-prod-title">{productName}</div>
                                             </td>
-                                            <td style={{ textAlign: 'center', color: '#475569' }}>
+                                            <td style={{ textAlign: 'center', color: '#0f172a', fontWeight: 600 }}>
                                                 {item.unit || item.product?.unit || 'Cái'}
                                             </td>
-                                            <td style={{ textAlign: 'center', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a' }}>
+                                            <td style={{ textAlign: 'center', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', fontSize: '11px' }}>
                                                 {Number(item.quantity) || snList.length || 1}
                                             </td>
                                             <td style={{ textAlign: 'left' }}>
@@ -590,14 +645,14 @@ export function SerialsHandoverPdfModal({
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Không có mã Serial</span>
+                                                    <span style={{ color: '#64748b', fontStyle: 'italic' }}>Không có mã Serial</span>
                                                 )}
                                             </td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <span style={{ fontWeight: 800, color: brandColor, display: 'block', fontSize: '9.5px' }}>
+                                                <span style={{ fontWeight: 800, color: brandColor, display: 'block', fontSize: '10.5px' }}>
                                                     {warrantyMonths} tháng
                                                 </span>
-                                                <span style={{ color: '#64748b', fontSize: '8.5px', display: 'block' }}>BH điện tử</span>
+                                                <span style={{ color: '#334155', fontSize: '9px', fontWeight: 600, display: 'block' }}>BH điện tử</span>
                                             </td>
                                         </tr>
                                     );
@@ -605,13 +660,13 @@ export function SerialsHandoverPdfModal({
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colSpan={3} style={{ textAlign: 'right', textTransform: 'uppercase', color: '#334155' }}>
+                                    <td colSpan={3} style={{ textAlign: 'right', textTransform: 'uppercase', color: '#0f172a', fontWeight: 800 }}>
                                         Tổng cộng thiết bị bàn giao:
                                     </td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: brandColor }}>
+                                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: brandColor, fontWeight: 800 }}>
                                         {totalQty}
                                     </td>
-                                    <td colSpan={2} style={{ textAlign: 'left', color: brandColor }}>
+                                    <td colSpan={2} style={{ textAlign: 'left', color: brandColor, fontWeight: 700 }}>
                                         Tổng số: <strong>{totalSerialsCount}</strong> mã Serial / IMEI đã kiểm tra & bàn giao
                                     </td>
                                 </tr>

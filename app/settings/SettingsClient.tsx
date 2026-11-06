@@ -16,7 +16,12 @@ import {
     Settings,
     UploadCloud,
     Radio,
-    Sparkles
+    Sparkles,
+    CheckSquare,
+    Square,
+    Eye,
+    RotateCw,
+    Check
 } from 'lucide-react';
 import { updateSystemSettings } from './actions';
 import { useRouter } from 'next/navigation';
@@ -58,7 +63,7 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
         WATERMARK_ROTATION: initialSettings.WATERMARK_ROTATION || '-45',
         WATERMARK_COLOR: initialSettings.WATERMARK_COLOR || '#000000',
         WATERMARK_SIZE: initialSettings.WATERMARK_SIZE || '150',
-        WATERMARK_DOCUMENTS: initialSettings.WATERMARK_DOCUMENTS || '["SALES_ESTIMATE","SALES_INVOICE","SALES_ORDER","SALES_PAYMENT","PURCHASE_ORDER","PURCHASE_BILL","PURCHASE_PAYMENT","CONTRACT","CONTRACT_APPENDIX","HANDOVER","PAYMENT_REQUEST","DISPATCH","QUOTE"]',
+        WATERMARK_DOCUMENTS: initialSettings.WATERMARK_DOCUMENTS || '["SALES_ESTIMATE","SALES_INVOICE","SALES_ORDER","SALES_PAYMENT","PURCHASE_ORDER","PURCHASE_BILL","PURCHASE_PAYMENT","CONTRACT","CONTRACT_APPENDIX","HANDOVER","SERIAL_HANDOVER","PAYMENT_REQUEST","DISPATCH","QUOTE"]',
         BANK_INFO_ENABLED: initialSettings.BANK_INFO_ENABLED || 'false',
         BANK_INFO_CONTENT: initialSettings.BANK_INFO_CONTENT || 'Số tài khoản (Bank account): \nCTK: '
     });
@@ -430,44 +435,307 @@ export function SettingsClient({ initialSettings }: { initialSettings: Record<st
                                         </label>
                                     </div>
 
-                                    {formData.WATERMARK_ENABLED === 'true' && (
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Loại Dấu Chìm</label>
-                                                    <select 
-                                                        value={formData.WATERMARK_TYPE} 
-                                                        onChange={e => setFormData({ ...formData, WATERMARK_TYPE: e.target.value })} 
-                                                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                                    >
-                                                        <option value="TEXT">Văn bản (Chữ)</option>
-                                                        <option value="IMAGE">Hình ảnh (Logo)</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Kích Thước (px)</label>
-                                                    <input 
-                                                        type="number" 
-                                                        value={formData.WATERMARK_SIZE} 
-                                                        onChange={e => setFormData({ ...formData, WATERMARK_SIZE: e.target.value })} 
-                                                        min="10" 
-                                                        max="1000" 
-                                                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                                    />
-                                                </div>
-                                            </div>
+                                    {formData.WATERMARK_ENABLED === 'true' && (() => {
+                                        const WATERMARK_DOCUMENT_GROUPS = [
+                                            {
+                                                id: 'sales',
+                                                title: 'Bán Hàng & Khách Hàng (Sales & CRM)',
+                                                desc: 'Báo giá, dự toán, đơn đặt hàng bán, hóa đơn, phiếu thu',
+                                                documents: [
+                                                    { key: 'QUOTE', label: 'Báo giá', sub: 'Mẫu báo giá gửi khách hàng' },
+                                                    { key: 'SALES_ESTIMATE', label: 'Bảng dự toán chi tiết', sub: 'Dự toán bán hàng / Báo giá chiết tính' },
+                                                    { key: 'SALES_ORDER', label: 'Đơn đặt hàng bán', sub: 'Đơn bán hàng xác nhận' },
+                                                    { key: 'SALES_INVOICE', label: 'Hóa đơn bán hàng', sub: 'Hóa đơn bán hàng / VAT' },
+                                                    { key: 'SALES_PAYMENT', label: 'Phiếu thu tiền bán hàng', sub: 'Chứng từ thanh toán bán hàng' },
+                                                ]
+                                            },
+                                            {
+                                                id: 'purchasing',
+                                                title: 'Mua Hàng & Chi Phí (Purchasing & Bills)',
+                                                desc: 'Đơn đặt hàng mua, hóa đơn đầu vào, phiếu chi',
+                                                documents: [
+                                                    { key: 'PURCHASE_ORDER', label: 'Đơn đặt hàng mua', sub: 'Đơn mua hàng gửi nhà cung cấp' },
+                                                    { key: 'PURCHASE_BILL', label: 'Hóa đơn mua hàng / Chi phí', sub: 'Chi phí mua hàng / Nhập hàng' },
+                                                    { key: 'PURCHASE_PAYMENT', label: 'Phiếu chi mua hàng', sub: 'Chứng từ thanh toán mua hàng' },
+                                                ]
+                                            },
+                                            {
+                                                id: 'contracts_handovers',
+                                                title: 'Hợp Đồng & Bàn Giao (Contracts & Handovers)',
+                                                desc: 'Hợp đồng, phụ lục, biên bản bàn giao & bảng kê Serial',
+                                                documents: [
+                                                    { key: 'CONTRACT', label: 'Hợp đồng kinh tế', sub: 'Hợp đồng mua bán / Dịch vụ' },
+                                                    { key: 'CONTRACT_APPENDIX', label: 'Phụ lục hợp đồng', sub: 'Văn bản bổ sung / Thay đổi hợp đồng' },
+                                                    { key: 'HANDOVER', label: 'Biên bản bàn giao thiết bị', sub: 'Nghiệm thu & bàn giao tổng thể' },
+                                                    { key: 'SERIAL_HANDOVER', label: 'Biên bản bàn giao Serial / IMEI', sub: 'Biên bản xuất PDF bảng kê Serial' },
+                                                ]
+                                            },
+                                            {
+                                                id: 'administrative',
+                                                title: 'Hành Chính & Kế Toán (Admin & Accounting)',
+                                                desc: 'Đề nghị thanh toán, công văn văn bản đi',
+                                                documents: [
+                                                    { key: 'PAYMENT_REQUEST', label: 'Giấy đề nghị thanh toán', sub: 'Phiếu đề nghị chi tiền nội bộ' },
+                                                    { key: 'DISPATCH', label: 'Công văn / Văn bản đi', sub: 'Công văn hành chính gửi đối tác' },
+                                                ]
+                                            }
+                                        ];
 
-                                            {formData.WATERMARK_TYPE === 'TEXT' && (
+                                        let selectedDocs: string[] = [];
+                                        try {
+                                            selectedDocs = formData.WATERMARK_DOCUMENTS ? JSON.parse(formData.WATERMARK_DOCUMENTS) : [];
+                                            if (!Array.isArray(selectedDocs)) selectedDocs = [];
+                                        } catch {
+                                            selectedDocs = [];
+                                        }
+
+                                        const allDocKeys = WATERMARK_DOCUMENT_GROUPS.flatMap(g => g.documents.map(d => d.key));
+
+                                        const toggleDoc = (key: string) => {
+                                            const next = selectedDocs.includes(key)
+                                                ? selectedDocs.filter(k => k !== key)
+                                                : [...selectedDocs, key];
+                                            setFormData({ ...formData, WATERMARK_DOCUMENTS: JSON.stringify(next) });
+                                        };
+
+                                        const toggleGroup = (keys: string[]) => {
+                                            const allInGroup = keys.every(k => selectedDocs.includes(k));
+                                            let next: string[];
+                                            if (allInGroup) {
+                                                next = selectedDocs.filter(k => !keys.includes(k));
+                                            } else {
+                                                next = Array.from(new Set([...selectedDocs, ...keys]));
+                                            }
+                                            setFormData({ ...formData, WATERMARK_DOCUMENTS: JSON.stringify(next) });
+                                        };
+
+                                        const selectAll = () => {
+                                            setFormData({ ...formData, WATERMARK_DOCUMENTS: JSON.stringify(allDocKeys) });
+                                        };
+
+                                        const deselectAll = () => {
+                                            setFormData({ ...formData, WATERMARK_DOCUMENTS: JSON.stringify([]) });
+                                        };
+
+                                        return (
+                                            <div className="space-y-6 pt-2">
+                                                {/* Kiểu dáng & Thông số */}
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <Input label="Nội dung hiển thị" value={formData.WATERMARK_TEXT} onChange={e => setFormData({ ...formData, WATERMARK_TEXT: e.target.value })} />
                                                     <div>
-                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Màu chữ</label>
-                                                        <input type="color" value={formData.WATERMARK_COLOR} onChange={e => setFormData({ ...formData, WATERMARK_COLOR: e.target.value })} className="h-10 w-full p-1 border border-slate-200 rounded-xl cursor-pointer" />
+                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Loại Dấu Chìm</label>
+                                                        <select 
+                                                            value={formData.WATERMARK_TYPE} 
+                                                            onChange={e => setFormData({ ...formData, WATERMARK_TYPE: e.target.value })} 
+                                                            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                                        >
+                                                            <option value="TEXT">Văn bản (Chữ)</option>
+                                                            <option value="IMAGE">Hình ảnh (Logo)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Kích Thước (px)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            value={formData.WATERMARK_SIZE} 
+                                                            onChange={e => setFormData({ ...formData, WATERMARK_SIZE: e.target.value })} 
+                                                            min="10" 
+                                                            max="1000" 
+                                                            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                                        />
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+
+                                                {formData.WATERMARK_TYPE === 'TEXT' ? (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <Input label="Nội dung hiển thị" value={formData.WATERMARK_TEXT} onChange={e => setFormData({ ...formData, WATERMARK_TEXT: e.target.value })} placeholder="VD: BẢN SAO, CONFIDENTIAL..." />
+                                                        <div>
+                                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Màu chữ</label>
+                                                            <input type="color" value={formData.WATERMARK_COLOR} onChange={e => setFormData({ ...formData, WATERMARK_COLOR: e.target.value })} className="h-10 w-full p-1 border border-slate-200 rounded-xl cursor-pointer" />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <Input label="Đường dẫn ảnh Logo (URL)" value={formData.WATERMARK_IMAGE_URL} onChange={e => setFormData({ ...formData, WATERMARK_IMAGE_URL: e.target.value })} placeholder="https://... hoặc /logo.png" />
+                                                    </div>
+                                                )}
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                                            Độ mờ đục ({Math.round(parseFloat(formData.WATERMARK_OPACITY || '0.1') * 100)}%)
+                                                        </label>
+                                                        <input 
+                                                            type="range" 
+                                                            min="0.03" 
+                                                            max="0.5" 
+                                                            step="0.01" 
+                                                            value={formData.WATERMARK_OPACITY} 
+                                                            onChange={e => setFormData({ ...formData, WATERMARK_OPACITY: e.target.value })} 
+                                                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                        />
+                                                        <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                                                            <span>Rất mờ (3%)</span>
+                                                            <span>Vừa phải (10% - 15%)</span>
+                                                            <span>Rõ nét (50%)</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Góc xoay ({formData.WATERMARK_ROTATION || '-45'}°)</label>
+                                                        <select 
+                                                            value={formData.WATERMARK_ROTATION} 
+                                                            onChange={e => setFormData({ ...formData, WATERMARK_ROTATION: e.target.value })} 
+                                                            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                                        >
+                                                            <option value="-45">-45° (Nghiêng chéo trái - Tiêu chuẩn)</option>
+                                                            <option value="-30">-30° (Nghiêng chéo nhẹ)</option>
+                                                            <option value="0">0° (Nằm ngang thẳng)</option>
+                                                            <option value="30">30° (Nghiêng chéo phải nhẹ)</option>
+                                                            <option value="45">45° (Nghiêng chéo phải)</option>
+                                                            <option value="-90">-90° (Dọc thẳng đứng)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mini Live Preview */}
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                                            <Eye size={14} className="text-indigo-600" /> Minh họa dấu chìm (Trực quan)
+                                                        </span>
+                                                        <span className="text-[11px] text-slate-400 font-mono">
+                                                            {formData.WATERMARK_TYPE === 'TEXT' ? `"${formData.WATERMARK_TEXT || 'BẢN SAO'}"` : 'Logo Image'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-28 bg-white border border-dashed border-slate-300 rounded-lg relative overflow-hidden flex items-center justify-center p-3 select-none">
+                                                        {formData.WATERMARK_TYPE === 'TEXT' ? (
+                                                            <div 
+                                                                style={{
+                                                                    color: formData.WATERMARK_COLOR || '#000000',
+                                                                    opacity: parseFloat(formData.WATERMARK_OPACITY || '0.1'),
+                                                                    transform: `rotate(${formData.WATERMARK_ROTATION || '-45'}deg)`,
+                                                                    fontSize: `${Math.min(parseInt(formData.WATERMARK_SIZE || '150', 10) * 0.25, 42)}px`,
+                                                                    fontWeight: 'bold',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                            >
+                                                                {formData.WATERMARK_TEXT || 'BẢN SAO'}
+                                                            </div>
+                                                        ) : (
+                                                            formData.WATERMARK_IMAGE_URL ? (
+                                                                <img 
+                                                                    src={formData.WATERMARK_IMAGE_URL} 
+                                                                    alt="Watermark preview" 
+                                                                    style={{
+                                                                        maxHeight: '60px',
+                                                                        opacity: parseFloat(formData.WATERMARK_OPACITY || '0.1'),
+                                                                        transform: `rotate(${formData.WATERMARK_ROTATION || '-45'}deg)`
+                                                                    }} 
+                                                                />
+                                                            ) : (
+                                                                <span className="text-xs text-slate-400 italic">Chưa nhập URL hình ảnh</span>
+                                                            )
+                                                        )}
+                                                        <div className="absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">
+                                                            Mẫu văn bản chứng từ minh họa...
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* DOCUMENT APPLICABILITY SECTION */}
+                                                <div className="pt-4 border-t border-slate-200">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                                <span>Nơi Cho Phép Xuất Hiện Dấu Chìm</span>
+                                                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                                    Đang áp dụng: {selectedDocs.length} / {allDocKeys.length} chứng từ
+                                                                </span>
+                                                            </h4>
+                                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                                Chỉ những chứng từ được tích chọn bên dưới mới hiển thị dấu chìm (không chọn sẽ không hiển thị).
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={selectAll}
+                                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer border border-indigo-200"
+                                                            >
+                                                                Chọn tất cả
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={deselectAll}
+                                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer border border-slate-200"
+                                                            >
+                                                                Bỏ chọn tất cả
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        {WATERMARK_DOCUMENT_GROUPS.map(group => {
+                                                            const groupKeys = group.documents.map(d => d.key);
+                                                            const allSelected = groupKeys.every(k => selectedDocs.includes(k));
+
+                                                            return (
+                                                                <div key={group.id} className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-3">
+                                                                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                                                                        <div>
+                                                                            <h5 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                                                                                {group.title}
+                                                                            </h5>
+                                                                            <p className="text-[11px] text-slate-500">{group.desc}</p>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => toggleGroup(groupKeys)}
+                                                                            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                                                                        >
+                                                                            {allSelected ? 'Bỏ chọn nhóm' : 'Chọn cả nhóm'}
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                                                        {group.documents.map(doc => {
+                                                                            const isChecked = selectedDocs.includes(doc.key);
+                                                                            return (
+                                                                                <div
+                                                                                    key={doc.key}
+                                                                                    onClick={() => toggleDoc(doc.key)}
+                                                                                    className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                                                                                        isChecked
+                                                                                            ? 'bg-white border-indigo-500 shadow-xs ring-1 ring-indigo-500/20'
+                                                                                            : 'bg-white/80 border-slate-200 hover:border-slate-300 text-slate-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    <div className="mt-0.5 shrink-0">
+                                                                                        {isChecked ? (
+                                                                                            <CheckSquare size={16} className="text-indigo-600" />
+                                                                                        ) : (
+                                                                                            <Square size={16} className="text-slate-400" />
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <div className={`text-xs font-bold leading-tight ${isChecked ? 'text-indigo-950' : 'text-slate-700'}`}>
+                                                                                            {doc.label}
+                                                                                        </div>
+                                                                                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                                            {doc.sub}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         )}

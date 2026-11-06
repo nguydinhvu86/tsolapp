@@ -9,14 +9,32 @@ export function Watermark({ settings, documentType }: WatermarkProps) {
     if (!settings) return null;
     if (settings.WATERMARK_ENABLED !== 'true') return null;
 
-    if (documentType && settings.WATERMARK_DOCUMENTS) {
-        try {
-            const allowedDocs = JSON.parse(settings.WATERMARK_DOCUMENTS);
-            if (!Array.isArray(allowedDocs) || !allowedDocs.includes(documentType)) {
-                return null;
-            }
-        } catch (error) {
-            console.error("Failed to parse WATERMARK_DOCUMENTS", error);
+    let allowedDocs: string[] = [];
+    try {
+        if (settings.WATERMARK_DOCUMENTS) {
+            allowedDocs = JSON.parse(settings.WATERMARK_DOCUMENTS);
+        }
+    } catch (error) {
+        console.error("Failed to parse WATERMARK_DOCUMENTS", error);
+    }
+
+    if (!Array.isArray(allowedDocs)) {
+        allowedDocs = [];
+    }
+
+    // Kiểm tra tài liệu có nằm trong danh sách cho phép hay không
+    if (documentType) {
+        const isAllowed = allowedDocs.includes(documentType) || 
+            (documentType === 'SERIAL_HANDOVER' && (allowedDocs.includes('SERIAL_HANDOVER') || allowedDocs.includes('HANDOVER'))) ||
+            (documentType === 'SALES_ESTIMATE' && (allowedDocs.includes('SALES_ESTIMATE') || allowedDocs.includes('QUOTE')));
+
+        if (!isAllowed) {
+            return null;
+        }
+    } else {
+        // Nếu không truyền loại chứng từ nhưng hệ thống có cấu hình danh sách hạn chế
+        if (allowedDocs.length > 0) {
+            return null;
         }
     }
 
