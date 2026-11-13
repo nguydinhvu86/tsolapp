@@ -30,10 +30,33 @@ import {
     Mail,
     Calendar,
     Copy,
-    Check
+    Check,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    BellRing,
+    Wrench,
+    ArrowRightLeft,
+    RotateCcw,
+    History,
+    MessageSquare,
+    SlidersHorizontal,
+    Sparkles,
+    ChevronDown,
+    ChevronUp,
+    Barcode,
+    ClipboardPaste,
+    Tag,
+    KeyRound,
+    Pencil,
+    Scale,
+    ClipboardCheck,
+    AlertTriangle
 } from 'lucide-react';
-import { 
-    AlertTriangle, ClipboardCheck, Scale, ArrowRightLeft, Sparkles, ChevronDown, ChevronUp, Barcode, ClipboardPaste, Tag, KeyRound, Pencil } from 'lucide-react';
 import ProductSearchSelect from '@/app/components/inventory/ProductSearchSelect';
 import { 
     fetchSerials,
@@ -50,12 +73,19 @@ import {
 } from './actions';
 import { calculateWarrantyRemaining } from '@/lib/warranty';
 
+// Modal components
+import ReceiveDefectiveModal from './components/ReceiveDefectiveModal';
+import SwapSerialModal from './components/SwapSerialModal';
+import RepairCompleteModal from './components/RepairCompleteModal';
+import SerialTimelineCareModal from './components/SerialTimelineCareModal';
+import WarrantyAlertsModal from './components/WarrantyAlertsModal';
+
 export default function SerialManagementClient() {
     const [serials, setSerials] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [stats, setStats] = useState({ total: 0, inStock: 0, sold: 0, other: 0 });
+    const [stats, setStats] = useState({ total: 0, inStock: 0, sold: 0, other: 0, underWarranty: 0, defective: 0, expiringSoon: 0 });
     const [loading, setLoading] = useState(true);
 
     // Filters
@@ -64,8 +94,53 @@ export default function SerialManagementClient() {
     const [productFilter, setProductFilter] = useState('');
     const [warehouseFilter, setWarehouseFilter] = useState('');
 
+    // Pagination
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState<number | string>(20);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalFilteredCount, setTotalFilteredCount] = useState(0);
+
+    // Sorting
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+    // New Modals State
+    const [showRmaModal, setShowRmaModal] = useState(false);
+    const [rmaTargetSerial, setRmaTargetSerial] = useState<any | null>(null);
+
+    const [showSwapModal, setShowSwapModal] = useState(false);
+    const [swapOldSerial, setSwapOldSerial] = useState<any | null>(null);
+
+    const [showRepairModal, setShowRepairModal] = useState(false);
+    const [repairTargetSerial, setRepairTargetSerial] = useState<any | null>(null);
+
+    const [showTimelineModal, setShowTimelineModal] = useState(false);
+    const [timelineTargetSerial, setTimelineTargetSerial] = useState<any | null>(null);
+
+    const [showWarrantyAlertsModal, setShowWarrantyAlertsModal] = useState(false);
+
     // Selection
     const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<string[]>([]);
+
+    // Sorting column handler
+    const handleSort = (column: string) => {
+        if (sortBy === column) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortOrder('asc');
+        }
+        setPage(1);
+    };
+
+    const renderSortIcon = (column: string) => {
+        if (sortBy !== column) {
+            return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 inline ml-1 transition-colors" />;
+        }
+        return sortOrder === 'asc' 
+            ? <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 inline ml-1 font-bold" />
+            : <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 inline ml-1 font-bold" />;
+    };
 
     // Đối Soát & Cảnh Báo Lệch Tồn Kho vs Serial
     const [discrepancies, setDiscrepancies] = useState<any[]>([]);
@@ -238,20 +313,29 @@ export default function SerialManagementClient() {
     };
     const [lookingUp, setLookingUp] = useState(false);
 
-    const loadData = async () => {
+    const loadData = async (targetPage?: number) => {
         setLoading(true);
+        const currentPage = targetPage !== undefined ? targetPage : page;
         const res = await fetchSerials({
             search,
             status: statusFilter,
             productId: productFilter || undefined,
-            warehouseId: warehouseFilter || undefined
+            warehouseId: warehouseFilter || undefined,
+            page: currentPage,
+            pageSize,
+            sortBy,
+            sortOrder
         });
         if (res.success) {
             setSerials(res.serials || []);
             setProducts(res.products || []);
             setCustomers(res.customers || []);
             setWarehouses(res.warehouses || []);
-            if (res.stats) setStats(res.stats);
+            if (res.stats) setStats(res.stats as any);
+            if (res.pagination) {
+                setTotalPages(res.pagination.totalPages || 1);
+                setTotalFilteredCount(res.pagination.total || 0);
+            }
         } else {
             toast.error(res.error || 'Lỗi khi tải dữ liệu');
         }
@@ -260,8 +344,11 @@ export default function SerialManagementClient() {
 
     useEffect(() => {
         loadData();
+    }, [page, pageSize, sortBy, sortOrder, statusFilter, productFilter, warehouseFilter]);
+
+    useEffect(() => {
         loadDiscrepancies();
-    }, [statusFilter, productFilter, warehouseFilter]);
+    }, []);
 
     // Parse bulk text into distinct serials
     const parsedBulkSerials = useMemo(() => {
@@ -595,9 +682,12 @@ export default function SerialManagementClient() {
             case 'SOLD':
                 return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">Đã xuất bán</span>;
             case 'UNDER_WARRANTY':
+            case 'WARRANTY_RETURN':
                 return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Đang bảo hành</span>;
             case 'DEFECTIVE':
                 return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Lỗi / Hỏng</span>;
+            case 'REPLACED':
+                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">Đã đổi mới</span>;
             default:
                 return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{status}</span>;
         }
@@ -613,10 +703,23 @@ export default function SerialManagementClient() {
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">Quản Lý Mã Định Danh Serial / IMEI & Bảo Hành</h1>
                     <p className="text-slate-500 text-sm mt-1">
-                        Theo dõi vòng đời từng thiết bị: Nhập hàng loạt từ NCC, lưu kho, xuất bán cho đúng khách hàng & bảo hành điện tử chính xác
+                        Theo dõi vòng đời từng thiết bị: Nhập hàng loạt từ NCC, lưu kho, xuất bán, tiếp nhận hàng lỗi bảo hành & đổi mới thiết bị
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={() => setShowWarrantyAlertsModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all cursor-pointer relative"
+                        title="Quản lý cảnh báo hết hạn bảo hành & gửi email tự động / bằng tay"
+                    >
+                        <BellRing className="w-4 h-4 animate-pulse" />
+                        <span>Cảnh Báo Hết Hạn BH</span>
+                        {stats.expiringSoon > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-white text-orange-600 font-extrabold text-[10px] shadow-xs">
+                                {stats.expiringSoon}
+                            </span>
+                        )}
+                    </button>
                     <button
                         onClick={() => setShowBulkModal(true)}
                         className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
@@ -633,7 +736,7 @@ export default function SerialManagementClient() {
             </div>
 
             {/* Quick Stats Banner */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs font-medium text-slate-400">Tổng mã định danh</span>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
@@ -643,12 +746,24 @@ export default function SerialManagementClient() {
                     <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">{stats.inStock}</p>
                 </div>
                 <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800/40 shadow-sm">
-                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Đã xuất bán cho khách</span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Đã xuất bán</span>
                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">{stats.sold}</p>
                 </div>
                 <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/40 shadow-sm">
-                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Bảo hành / Đang xử lý</span>
-                    <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">{stats.other}</p>
+                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Đang bảo hành / Lỗi</span>
+                    <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+                        {stats.underWarranty || 0} <span className="text-xs font-normal text-slate-400">BH</span> • {stats.defective || 0} <span className="text-xs font-normal text-rose-500">Lỗi</span>
+                    </p>
+                </div>
+                <div 
+                    onClick={() => setShowWarrantyAlertsModal(true)}
+                    className="bg-orange-50/50 dark:bg-orange-950/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800/40 shadow-sm cursor-pointer hover:border-orange-400 transition-all col-span-2 sm:col-span-1"
+                >
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 flex items-center justify-between">
+                        <span>Sắp hết hạn (&le; 30 ngày)</span>
+                        <BellRing className="w-3.5 h-3.5 text-orange-500" />
+                    </span>
+                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-300 mt-1">{stats.expiringSoon || 0}</p>
                 </div>
             </div>
 
@@ -1040,29 +1155,41 @@ export default function SerialManagementClient() {
                         type="text"
                         placeholder="Tìm theo Serial, tên sản phẩm, tên khách hàng, số điện thoại..."
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(1);
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && loadData(1)}
                         className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div className="flex flex-wrap gap-3">
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none"
+                        onChange={(e) => {
+                            setStatusFilter(e.target.value);
+                            setPage(1);
+                        }}
+                        className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none font-medium cursor-pointer"
                     >
                         <option value="ALL">Tất cả trạng thái</option>
                         <option value="IN_STOCK">Tồn kho (In Stock)</option>
                         <option value="SOLD">Đã xuất bán (Sold)</option>
-                        <option value="UNDER_WARRANTY">Đang bảo hành</option>
-                        <option value="DEFECTIVE">Lỗi / Hỏng</option>
+                        <option value="UNDER_WARRANTY">Đang bảo hành (RMA)</option>
+                        <option value="DEFECTIVE">Lỗi / Hỏng (Defective)</option>
+                        <option value="REPLACED">Đã đổi máy mới</option>
+                        <option value="EXPIRING_SOON">⏰ Sắp hết hạn BH (&le; 30 ngày)</option>
+                        <option value="EXPIRED">⌛ Đã quá hạn bảo hành</option>
                     </select>
 
-                    <div className="w-full sm:w-[320px] md:w-[360px]">
+                    <div className="w-full sm:w-[300px] md:w-[320px]">
                         <ProductSearchSelect
                             products={products}
                             value={productFilter}
-                            onChange={setProductFilter}
+                            onChange={(val) => {
+                                setProductFilter(val);
+                                setPage(1);
+                            }}
                             allOptionLabel="Tất cả sản phẩm"
                             placeholder="Tất cả sản phẩm"
                         />
@@ -1071,8 +1198,11 @@ export default function SerialManagementClient() {
                     {warehouses.length > 0 && (
                         <select
                             value={warehouseFilter}
-                            onChange={(e) => setWarehouseFilter(e.target.value)}
-                            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none max-w-[180px]"
+                            onChange={(e) => {
+                                setWarehouseFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none max-w-[170px] cursor-pointer"
                         >
                             <option value="">Tất cả kho</option>
                             {warehouses.map((w) => (
@@ -1082,9 +1212,9 @@ export default function SerialManagementClient() {
                     )}
 
                     <button
-                        onClick={loadData}
+                        onClick={() => loadData()}
                         title="Tải lại dữ liệu"
-                        className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-colors"
+                        className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
@@ -1108,8 +1238,8 @@ export default function SerialManagementClient() {
                                         <button 
                                             type="button" 
                                             onClick={handleSelectAllInStock} 
-                                            title="Chọn tất cả số Serial đang tồn kho"
-                                            className="text-slate-400 hover:text-blue-600"
+                                            title="Chọn tất cả số Serial đang tồn kho trên trang này"
+                                            className="text-slate-400 hover:text-blue-600 cursor-pointer"
                                         >
                                             {selectedSerialNumbers.length > 0 && selectedSerialNumbers.length === serials.filter(s => s.status === 'IN_STOCK').length ? (
                                                 <CheckSquare className="w-4 h-4 text-blue-600" />
@@ -1118,12 +1248,66 @@ export default function SerialManagementClient() {
                                             )}
                                         </button>
                                     </th>
-                                    <th className="py-3 px-4">Số Serial / IMEI</th>
-                                    <th className="py-3 px-4">Sản Phẩm</th>
-                                    <th className="py-3 px-4">Kho Lưu Trữ</th>
-                                    <th className="py-3 px-4">Trạng Thái</th>
-                                    <th className="py-3 px-4">Khách Hàng Mua</th>
-                                    <th className="py-3 px-4">Hạn Bảo Hành</th>
+                                    <th 
+                                        onClick={() => handleSort('serialNumber')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Số Serial/IMEI"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Số Serial / IMEI</span>
+                                            {renderSortIcon('serialNumber')}
+                                        </div>
+                                    </th>
+                                    <th 
+                                        onClick={() => handleSort('product')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Sản phẩm"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Sản Phẩm</span>
+                                            {renderSortIcon('product')}
+                                        </div>
+                                    </th>
+                                    <th 
+                                        onClick={() => handleSort('warehouse')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Kho lưu trữ"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Kho Lưu Trữ</span>
+                                            {renderSortIcon('warehouse')}
+                                        </div>
+                                    </th>
+                                    <th 
+                                        onClick={() => handleSort('status')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Trạng thái"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Trạng Thái</span>
+                                            {renderSortIcon('status')}
+                                        </div>
+                                    </th>
+                                    <th 
+                                        onClick={() => handleSort('customer')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Khách hàng"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Khách Hàng Mua</span>
+                                            {renderSortIcon('customer')}
+                                        </div>
+                                    </th>
+                                    <th 
+                                        onClick={() => handleSort('warrantyEndDate')}
+                                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none group"
+                                        title="Bấm để sắp xếp theo Hạn bảo hành"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>Hạn Bảo Hành</span>
+                                            {renderSortIcon('warrantyEndDate')}
+                                        </div>
+                                    </th>
                                     <th className="py-3 px-4 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
@@ -1268,16 +1452,73 @@ export default function SerialManagementClient() {
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-right">
-                                                <div className="flex items-center justify-end gap-1.5">
+                                                <div className="flex items-center justify-end gap-1 flex-wrap">
+                                                    {/* Xuất bán nếu còn trong kho */}
                                                     {s.status === 'IN_STOCK' && (
                                                         <button
                                                             onClick={() => openDispatchModalForSingle(s.serialNumber)}
-                                                            className="px-2.5 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                                            className="px-2 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                                                             title="Xuất bán cho khách hàng"
                                                         >
                                                             <ArrowUpRight className="w-3.5 h-3.5" /> Xuất bán
                                                         </button>
                                                     )}
+
+                                                    {/* Tiếp nhận BH / Hàng lỗi trả về (khi đã xuất bán hoặc đang dùng) */}
+                                                    {s.status !== 'IN_STOCK' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setRmaTargetSerial(s);
+                                                                setShowRmaModal(true);
+                                                            }}
+                                                            className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-colors cursor-pointer"
+                                                            title="Tiếp nhận hàng lỗi / Yêu cầu bảo hành (RMA)"
+                                                        >
+                                                            <Wrench className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {/* Đổi mới thiết bị 1-1 */}
+                                                    {s.status !== 'IN_STOCK' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSwapOldSerial(s);
+                                                                setShowSwapModal(true);
+                                                            }}
+                                                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors cursor-pointer"
+                                                            title="Đổi mới 1-1 / Thay thế thiết bị mới"
+                                                        >
+                                                            <ArrowRightLeft className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {/* Hoàn tất bảo hành trả khách */}
+                                                    {(s.status === 'UNDER_WARRANTY' || s.status === 'WARRANTY_RETURN') && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setRepairTargetSerial(s);
+                                                                setShowRepairModal(true);
+                                                            }}
+                                                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors cursor-pointer"
+                                                            title="Hoàn tất sửa chữa bảo hành & Trả máy cho khách"
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {/* Vòng đời & Ghi chú CSKH */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setTimelineTargetSerial(s);
+                                                            setShowTimelineModal(true);
+                                                        }}
+                                                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer"
+                                                        title="Xem toàn bộ vòng đời & Ghi chú chăm sóc khách hàng (CRM)"
+                                                    >
+                                                        <History className="w-4 h-4" />
+                                                    </button>
+
+                                                    {/* Chỉnh sửa */}
                                                     <button
                                                         onClick={() => handleOpenEditModal(s)}
                                                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 rounded-lg transition-colors cursor-pointer"
@@ -1285,6 +1526,8 @@ export default function SerialManagementClient() {
                                                     >
                                                         <Pencil className="w-4 h-4" />
                                                     </button>
+
+                                                    {/* Xóa */}
                                                     <button
                                                         onClick={() => handleDeleteSerial(s.id, s.serialNumber)}
                                                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors cursor-pointer"
@@ -1301,6 +1544,108 @@ export default function SerialManagementClient() {
                         </table>
                     </div>
                 )}
+
+                {/* Pagination Controls Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                    {/* Left: Summary & Page Size Selector */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-slate-500">
+                            Hiển thị <strong>{totalFilteredCount === 0 ? 0 : (page - 1) * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)) + 1}</strong> - <strong>{Math.min(page * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)), totalFilteredCount)}</strong> trên tổng số <strong>{totalFilteredCount}</strong> thiết bị
+                        </span>
+
+                        <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200 dark:border-slate-700">
+                            <span className="text-slate-500 font-medium">Hiển thị:</span>
+                            <select
+                                value={String(pageSize)}
+                                onChange={(e) => {
+                                    const val = e.target.value === 'ALL' ? 'ALL' : Number(e.target.value);
+                                    setPageSize(val);
+                                    setPage(1);
+                                }}
+                                className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+                            >
+                                <option value="15">15 dòng</option>
+                                <option value="20">20 dòng</option>
+                                <option value="25">25 dòng</option>
+                                <option value="50">50 dòng</option>
+                                <option value="100">100 dòng</option>
+                                <option value="ALL">Tất cả</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Right: Navigation Buttons */}
+                    {pageSize !== 'ALL' && totalPages > 1 && (
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setPage(1)}
+                                disabled={page <= 1}
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Trang đầu"
+                            >
+                                <ChevronsLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                                disabled={page <= 1}
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Trang trước"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+
+                            {/* Page numbers */}
+                            {(() => {
+                                const pages = [];
+                                const maxButtons = 5;
+                                let startPage = Math.max(1, page - 2);
+                                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                                if (endPage - startPage < maxButtons - 1) {
+                                    startPage = Math.max(1, endPage - maxButtons + 1);
+                                }
+
+                                for (let i = startPage; i <= endPage; i++) {
+                                    pages.push(
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => setPage(i)}
+                                            className={`min-w-[32px] h-8 px-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                                                page === i
+                                                    ? 'bg-blue-600 text-white shadow-xs'
+                                                    : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                        >
+                                            {i}
+                                        </button>
+                                    );
+                                }
+                                return pages;
+                            })()}
+
+                            <button
+                                type="button"
+                                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={page >= totalPages}
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Trang tiếp"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPage(totalPages)}
+                                disabled={page >= totalPages}
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Trang cuối"
+                            >
+                                <ChevronsRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Modal 1: Nhập Hàng Loạt (Bulk Import 100 - 500+ serial từ NCC) */}
@@ -2072,6 +2417,59 @@ export default function SerialManagementClient() {
                     </div>
                 </div>
             )}
+
+            {/* Modal: Cảnh Báo Hết Hạn Bảo Hành & Gửi Email */}
+            <WarrantyAlertsModal
+                isOpen={showWarrantyAlertsModal}
+                onClose={() => setShowWarrantyAlertsModal(false)}
+                onSuccess={() => loadData()}
+            />
+
+            {/* Modal: Tiếp Nhận Hàng Lỗi / Yêu Cầu Bảo Hành (RMA) */}
+            <ReceiveDefectiveModal
+                isOpen={showRmaModal}
+                onClose={() => {
+                    setShowRmaModal(false);
+                    setRmaTargetSerial(null);
+                }}
+                serial={rmaTargetSerial}
+                warehouses={warehouses}
+                onSuccess={() => loadData()}
+            />
+
+            {/* Modal: Đổi Mới Thiết Bị 1-1 / Thay Thế Serial */}
+            <SwapSerialModal
+                isOpen={showSwapModal}
+                onClose={() => {
+                    setShowSwapModal(false);
+                    setSwapOldSerial(null);
+                }}
+                serial={swapOldSerial}
+                warehouses={warehouses}
+                onSuccess={() => loadData()}
+            />
+
+            {/* Modal: Hoàn Tất Bảo Hành & Trả Thiết Bị */}
+            <RepairCompleteModal
+                isOpen={showRepairModal}
+                onClose={() => {
+                    setShowRepairModal(false);
+                    setRepairTargetSerial(null);
+                }}
+                serial={repairTargetSerial}
+                onSuccess={() => loadData()}
+            />
+
+            {/* Modal: Vòng Đời Thiết Bị & Chăm Sóc Khách Hàng (CRM) */}
+            <SerialTimelineCareModal
+                isOpen={showTimelineModal}
+                onClose={() => {
+                    setShowTimelineModal(false);
+                    setTimelineTargetSerial(null);
+                }}
+                serial={timelineTargetSerial}
+                onSuccess={() => loadData()}
+            />
         </div>
     );
 }
