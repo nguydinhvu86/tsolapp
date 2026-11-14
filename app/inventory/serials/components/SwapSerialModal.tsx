@@ -93,6 +93,7 @@ export default function SwapSerialModal({
                 warrantyPolicy,
                 customWarrantyMonths: warrantyPolicy === 'CUSTOM' ? customMonths : undefined,
                 reason,
+                oldSerialStatus: 'REPLACED',
                 warehouseIdForOld: warehouseIdForOld || undefined
             });
 

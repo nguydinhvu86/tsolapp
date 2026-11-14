@@ -857,10 +857,37 @@ model ProductSerial {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  serviceHistories ProductSerialHistory[]
+
   @@index([productId, status])
   @@index([customerId])
   @@index([salesInvoiceId])
   @@index([purchaseBillId])
+}
+
+model ProductSerialHistory {
+  id                      String        @id @default(cuid())
+  serialId                String
+  serial                  ProductSerial @relation(fields: [serialId], references: [id], onDelete: Cascade)
+  actionType              String        // 'RECEIVE_WARRANTY', 'REPAIR_COMPLETE', 'SWAP_REPLACE', 'DEFECTIVE_RETURN', 'CARE_NOTE', 'DISPATCH'
+  status                  String?       // 'UNDER_WARRANTY', 'COMPLETED', 'REPLACED', 'DEFECTIVE', 'SOLD', 'IN_STOCK'
+  receivedDate            DateTime?
+  returnDate              DateTime?
+  defectReason            String?       @db.Text
+  appearanceCondition     String?       @db.Text
+  accessoriesIncluded     String?       @db.Text
+  repairResult            String?       @db.Text
+  replacementSerialId     String?
+  replacementSerialNumber String?
+  swapType                String?       // 'SWAP_OUT_OLD', 'SWAP_IN_NEW'
+  technicianName          String?
+  staffNotes              String?       @db.Text
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  @@index([serialId])
+  @@index([actionType])
+  @@index([createdAt])
 }
 
 // --- PROCUREMENT & SUPPLIER MANAGEMENT MODULE ---

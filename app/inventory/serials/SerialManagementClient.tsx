@@ -55,7 +55,9 @@ import {
     Pencil,
     Scale,
     ClipboardCheck,
-    AlertTriangle
+    AlertTriangle,
+    FileSpreadsheet,
+    Printer
 } from 'lucide-react';
 import ProductSearchSelect from '@/app/components/inventory/ProductSearchSelect';
 import { 
@@ -79,13 +81,14 @@ import SwapSerialModal from './components/SwapSerialModal';
 import RepairCompleteModal from './components/RepairCompleteModal';
 import SerialTimelineCareModal from './components/SerialTimelineCareModal';
 import WarrantyAlertsModal from './components/WarrantyAlertsModal';
+import WarrantyReturnSlipModal from './components/WarrantyReturnSlipModal';
 
 export default function SerialManagementClient() {
     const [serials, setSerials] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [stats, setStats] = useState({ total: 0, inStock: 0, sold: 0, other: 0, underWarranty: 0, defective: 0, expiringSoon: 0 });
+    const [stats, setStats] = useState({ total: 0, inStock: 0, sold: 0, other: 0, underWarranty: 0, defective: 0, replaced: 0, expiringSoon: 0 });
     const [loading, setLoading] = useState(true);
 
     // Filters
@@ -118,6 +121,10 @@ export default function SerialManagementClient() {
     const [timelineTargetSerial, setTimelineTargetSerial] = useState<any | null>(null);
 
     const [showWarrantyAlertsModal, setShowWarrantyAlertsModal] = useState(false);
+
+    // Phiếu trả bảo hành & Biên bản bàn giao thiết bị
+    const [showSlipModal, setShowSlipModal] = useState(false);
+    const [selectedSlipSerial, setSelectedSlipSerial] = useState<any | null>(null);
 
     // Selection
     const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<string[]>([]);
@@ -675,22 +682,68 @@ export default function SerialManagementClient() {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'IN_STOCK':
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">Tồn kho</span>;
-            case 'SOLD':
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">Đã xuất bán</span>;
-            case 'UNDER_WARRANTY':
-            case 'WARRANTY_RETURN':
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Đang bảo hành</span>;
-            case 'DEFECTIVE':
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Lỗi / Hỏng</span>;
-            case 'REPLACED':
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">Đã đổi mới</span>;
-            default:
-                return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{status}</span>;
+    const getStatusBadge = (status: string, extra?: { currentServiceState?: string; warrantyCount?: number; replacementInfo?: any }) => {
+        // Ưu tiên hiển thị ĐÃ ĐỔI MỚI nếu máy đã được đổi trả 1-1
+        if (
+            status === 'REPLACED' || 
+            extra?.currentServiceState === 'REPLACED' || 
+            (status === 'DEFECTIVE' && (extra?.replacementInfo?.swapType === 'SWAP_OUT_OLD' || extra?.replacementInfo?.replacementSerialNumber))
+        ) {
+            const newSn = extra?.replacementInfo?.replacementSerialNumber;
+            return (
+                <span 
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 shadow-2xs" 
+                    title={newSn ? `Đã thu hồi đổi mới 1-1 sang Serial: ${newSn}` : 'Đã đổi mới thiết bị 1-1'}
+                >
+                    <RotateCcw className="w-3 h-3 text-purple-600 shrink-0" />
+                    Đã đổi mới
+                    {newSn && (
+                        <span className="text-[10px] text-purple-700 dark:text-purple-300 font-mono font-bold ml-0.5">
+                            (➜ {newSn})
+                        </span>
+                    )}
+                </span>
+            );
         }
+        if (status === 'UNDER_WARRANTY' || status === 'WARRANTY_RETURN' || extra?.currentServiceState === 'UNDER_WARRANTY') {
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 shadow-2xs animate-pulse">
+                    <Wrench className="w-3 h-3 text-amber-600 shrink-0" />
+                    Đang bảo hành
+                </span>
+            );
+        }
+        if (status === 'DEFECTIVE') {
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-900/40 dark:text-rose-300">
+                    <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
+                    Lỗi / Hỏng
+                </span>
+            );
+        }
+        if (status === 'SOLD') {
+            if (extra?.currentServiceState === 'WARRANTY_COMPLETED' || (extra?.warrantyCount && extra.warrantyCount > 0)) {
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 border border-teal-300 dark:bg-teal-900/40 dark:text-teal-300" title={`Đã hoàn tất bảo hành (${extra.warrantyCount} lần)`}>
+                        <CheckCircle2 className="w-3 h-3 text-teal-600 shrink-0" />
+                        Đã trả BH ({extra.warrantyCount} lần)
+                    </span>
+                );
+            }
+            return (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                    Đã xuất bán
+                </span>
+            );
+        }
+        if (status === 'IN_STOCK') {
+            return (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                    Tồn kho
+                </span>
+            );
+        }
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{status}</span>;
     };
 
     return (
@@ -750,9 +803,17 @@ export default function SerialManagementClient() {
                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">{stats.sold}</p>
                 </div>
                 <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/40 shadow-sm">
-                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Đang bảo hành / Lỗi</span>
-                    <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
-                        {stats.underWarranty || 0} <span className="text-xs font-normal text-slate-400">BH</span> • {stats.defective || 0} <span className="text-xs font-normal text-rose-500">Lỗi</span>
+                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Đang BH / Lỗi / Đã đổi</span>
+                    <p className="text-xl sm:text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1 flex items-baseline gap-1.5 flex-wrap">
+                        <span>{stats.underWarranty || 0} <span className="text-xs font-normal text-slate-400">BH</span></span>
+                        <span>•</span>
+                        <span>{stats.defective || 0} <span className="text-xs font-normal text-rose-500">Lỗi</span></span>
+                        {(stats.replaced || 0) > 0 && (
+                            <>
+                                <span>•</span>
+                                <span>{stats.replaced} <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">Đã đổi</span></span>
+                            </>
+                        )}
                     </p>
                 </div>
                 <div 
@@ -888,25 +949,49 @@ export default function SerialManagementClient() {
                 </form>
 
                 {lookupResult && (
-                    <div className="mt-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-500/40 shadow-lg space-y-4 animate-in fade-in">
+                    <div className="mt-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-500/40 shadow-xl space-y-5 animate-in fade-in">
                         {/* Certificate Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+                                <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                                     <ShieldCheck className="w-6 h-6" />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-mono font-extrabold text-lg text-slate-900 dark:text-white tracking-wider">
+                                        <span className="font-mono font-black text-lg text-slate-900 dark:text-white tracking-wider">
                                             {lookupResult.serialNumber}
                                         </span>
-                                        {getStatusBadge(lookupResult.status)}
+                                        {/* Tình trạng vận hành bảo hành chi tiết */}
+                                        {lookupResult.currentServiceState === 'UNDER_WARRANTY' ? (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-sm animate-pulse">
+                                                <Wrench className="w-3.5 h-3.5" /> ĐANG BẢO HÀNH (RMA)
+                                            </span>
+                                        ) : lookupResult.currentServiceState === 'WARRANTY_COMPLETED' ? (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-600 text-white shadow-sm">
+                                                <CheckCircle2 className="w-3.5 h-3.5" /> HOÀN TẤT BẢO HÀNH (ĐÃ TRẢ MÁY)
+                                            </span>
+                                        ) : lookupResult.currentServiceState === 'REPLACED' ? (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white shadow-sm">
+                                                <RotateCcw className="w-3.5 h-3.5" /> ĐÃ ĐỔI MỚI THIẾT BỊ 1-1
+                                                {lookupResult.replacementInfo?.replacementSerialNumber && (
+                                                    <span className="font-mono text-purple-200 text-[11px] font-semibold">
+                                                        (➜ {lookupResult.replacementInfo.replacementSerialNumber})
+                                                    </span>
+                                                )}
+                                            </span>
+                                        ) : (
+                                            getStatusBadge(lookupResult.status, { 
+                                                currentServiceState: lookupResult.currentServiceState, 
+                                                warrantyCount: lookupResult.warrantyCount,
+                                                replacementInfo: lookupResult.replacementInfo 
+                                            })
+                                        )}
                                     </div>
-                                    <span className="text-xs text-slate-500 font-medium">Chứng nhận bảo hành điện tử chính hãng</span>
+                                    <span className="text-xs text-slate-500 font-medium">Chứng nhận bảo hành điện tử chính hãng & Giám sát vòng đời</span>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 {lookupResult.isNoWarranty ? (
                                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-300">
                                         Không áp dụng bảo hành (KBH)
@@ -929,33 +1014,63 @@ export default function SerialManagementClient() {
                                 )}
                                 <button 
                                     onClick={() => setLookupResult(null)} 
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Đóng kết quả tra cứu"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Certificate Details 3-Column Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        {/* Lifecycle Metrics Bar */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-xs">
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] text-slate-400 block font-medium">Số lần bảo hành:</span>
+                                <div className="font-black text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                    <Wrench className="w-3.5 h-3.5" />
+                                    <span>{lookupResult.warrantyCount || 0} lần</span>
+                                </div>
+                            </div>
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] text-slate-400 block font-medium">Tiếp nhận gần nhất:</span>
+                                <div className="font-bold text-slate-800 dark:text-slate-200 font-mono" suppressHydrationWarning>
+                                    {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                </div>
+                            </div>
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] text-slate-400 block font-medium">Ngày trả bảo hành:</span>
+                                <div className={`font-bold font-mono ${lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'text-amber-600 animate-pulse' : 'text-emerald-700 dark:text-emerald-400'}`} suppressHydrationWarning>
+                                    {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng KT' : 'Chưa có')}
+                                </div>
+                            </div>
+                            <div className="space-y-0.5">
+                                <span className="text-[11px] text-slate-400 block font-medium">Phụ kiện nhận kèm:</span>
+                                <div className="font-medium text-slate-800 dark:text-slate-200 truncate" title={lookupResult.latestAccessories || 'Thân máy'}>
+                                    {lookupResult.latestAccessories || 'Thân máy'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Certificate Details 4-Column Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                             {/* Card 1: Warranty Period & Range */}
                             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
                                 <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
                                     <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                                    Thời Gian Bảo Hành Từ Ngày - Đến Ngày
+                                    Thời Gian Bảo Hành
                                 </span>
                                 
                                 <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Chính sách bảo hành:</span>
+                                        <span className="text-slate-400">Chính sách BH:</span>
                                         <span className="font-bold text-slate-900 dark:text-white">
-                                            {lookupResult.isNoWarranty ? 'Không bảo hành (KBH)' : `${lookupResult.warrantyMonths || 12} Tháng`}
+                                            {lookupResult.isNoWarranty ? 'KBH' : `${lookupResult.warrantyMonths || 12} Tháng`}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Từ ngày (Kích hoạt/Xuất):</span>
+                                        <span className="text-slate-400">Từ ngày (Xuất/Kích):</span>
                                         <span className="font-bold font-mono text-slate-900 dark:text-white" suppressHydrationWarning>
-                                            {lookupResult.warrantyStartDate ? new Date(lookupResult.warrantyStartDate).toLocaleDateString('vi-VN') : (lookupResult.salesInvoiceDate ? new Date(lookupResult.salesInvoiceDate).toLocaleDateString('vi-VN') : (lookupResult.status === 'IN_STOCK' ? 'Kích hoạt khi xuất bán' : 'Chưa có'))}
+                                            {lookupResult.warrantyStartDate ? new Date(lookupResult.warrantyStartDate).toLocaleDateString('vi-VN') : (lookupResult.salesInvoiceDate ? new Date(lookupResult.salesInvoiceDate).toLocaleDateString('vi-VN') : (lookupResult.status === 'IN_STOCK' ? 'Kích hoạt khi bán' : 'Chưa có'))}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
@@ -983,140 +1098,265 @@ export default function SerialManagementClient() {
                                 </div>
                             </div>
 
-                            {/* Card 2: Product & Warehouse Info */}
+                            {/* Card 2: Warranty History & Reception Progress */}
                             <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
                                 <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
-                                    <Package className="w-3.5 h-3.5 text-blue-600" />
-                                    Thông Tin Sản Phẩm & Chứng Từ
+                                    <History className="w-3.5 h-3.5 text-amber-600" />
+                                    Lịch Sử & Tiến Độ Bảo Hành
+                                </span>
+
+                                <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400">Số lần bảo hành:</span>
+                                        <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                                            {lookupResult.warrantyCount || 0} lần
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400">Ngày tiếp nhận:</span>
+                                        <span className="font-bold font-mono text-slate-800 dark:text-slate-200" suppressHydrationWarning>
+                                            {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400">Ngày hoàn trả:</span>
+                                        <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400" suppressHydrationWarning>
+                                            {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý' : 'Chưa có')}
+                                        </span>
+                                    </div>
+                                    <div className="pt-1 border-t border-slate-200/60 dark:border-slate-700">
+                                        <span className="text-slate-400 block text-[10px]">Phụ kiện nhận kèm:</span>
+                                        <span className="font-semibold text-slate-900 dark:text-white line-clamp-1" title={lookupResult.latestAccessories || 'Thân máy'}>
+                                            {lookupResult.latestAccessories || 'Thân máy'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 3: Inspection Notes & Staff Remarks */}
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
+                                <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                                    Lưu Ý & Kiểm Tra Của Kỹ Thuật
+                                </span>
+
+                                <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
+                                    {lookupResult.latestDefectReason && (
+                                        <div>
+                                            <span className="text-slate-400 block text-[10px]">Hiện tượng lỗi:</span>
+                                            <p className="font-medium text-rose-600 dark:text-rose-400 line-clamp-1" title={lookupResult.latestDefectReason}>
+                                                {lookupResult.latestDefectReason}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {lookupResult.latestAppearance && (
+                                        <div>
+                                            <span className="text-slate-400 block text-[10px]">Ngoại quan máy:</span>
+                                            <p className="font-medium text-slate-800 dark:text-slate-200 line-clamp-1" title={lookupResult.latestAppearance}>
+                                                {lookupResult.latestAppearance}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {lookupResult.latestRepairResult && (
+                                        <div>
+                                            <span className="text-slate-400 block text-[10px]">Kết quả sửa / Linh kiện:</span>
+                                            <p className="font-semibold text-emerald-700 dark:text-emerald-400 line-clamp-1" title={lookupResult.latestRepairResult}>
+                                                {lookupResult.latestRepairResult}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {lookupResult.latestStaffNotes ? (
+                                        <div className="pt-1 border-t border-slate-200/60 dark:border-slate-700">
+                                            <span className="text-slate-400 block text-[10px]">Lưu ý nhân viên:</span>
+                                            <p className="text-[11px] text-slate-700 dark:text-slate-300 italic line-clamp-2" title={lookupResult.latestStaffNotes}>
+                                                {lookupResult.latestStaffNotes}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[11px] text-slate-400 italic">Chưa có ghi chú kiểm tra</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card 4: Customer, Invoices & Replacement */}
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
+                                <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
+                                    <Package className="w-3.5 h-3.5 text-purple-600" />
+                                    Khách Hàng & Thiết Bị Thay Thế
                                 </span>
 
                                 <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
                                     <div>
                                         <span className="text-slate-400">Sản phẩm:</span>
-                                        <a
-                                            href={`/inventory/reports?search=${encodeURIComponent(lookupResult.sku || lookupResult.productName || '')}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
-                                            title="Nhấp để mở chi tiết / quản lý sản phẩm này"
-                                        >
-                                            <span className="line-clamp-1">{lookupResult.productName}</span>
-                                            <ExternalLink className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 shrink-0" />
-                                        </a>
+                                        <p className="font-bold text-slate-900 dark:text-white line-clamp-1" title={lookupResult.productName}>
+                                            {lookupResult.productName}
+                                        </p>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Mã SKU:</span>
-                                        <span className="font-bold font-mono text-slate-800 dark:text-slate-200">{lookupResult.sku || 'N/A'}</span>
+                                        <span className="text-slate-400">SKU:</span>
+                                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{lookupResult.sku || 'N/A'}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Kho hàng:</span>
-                                        <span className="font-medium text-slate-800 dark:text-slate-200">{lookupResult.warehouseName || 'Kho chính'}</span>
+                                        <span className="text-slate-400">Khách hàng:</span>
+                                        <span className="font-bold text-slate-900 dark:text-white truncate max-w-[130px]" title={lookupResult.customerName || 'Tồn kho'}>
+                                            {lookupResult.customerName || 'Chưa xuất bán'}
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between items-center pt-1 border-t border-slate-200/60 dark:border-slate-700">
-                                        <span className="text-slate-400">Chứng từ hóa đơn:</span>
-                                        {lookupResult.salesInvoiceId ? (
-                                            <a
-                                                href={`/sales/invoices/${lookupResult.salesInvoiceId}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold text-xs hover:underline transition-all shadow-2xs"
-                                                title="Mở chi tiết Hóa đơn bán hàng xuất thiết bị này"
+                                    {lookupResult.replacementInfo && (
+                                        <div className="pt-1 border-t border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/30 p-1.5 rounded-lg">
+                                            <span className="text-purple-800 dark:text-purple-300 font-bold block text-[10px]">
+                                                {lookupResult.replacementInfo.swapType === 'SWAP_OUT_OLD' ? '🔄 Đã đổi sang Serial:' : '✨ Đổi thay thế cho Serial:'}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setLookupSearch(lookupResult.replacementInfo.replacementSerialNumber);
+                                                    lookupWarranty(lookupResult.replacementInfo.replacementSerialNumber).then(res => {
+                                                        if (res.success) setLookupResult(res.data);
+                                                    });
+                                                }}
+                                                className="font-mono font-black text-xs text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1 cursor-pointer"
+                                                title="Nhấp để tra cứu tức thì thiết bị thay thế này"
                                             >
-                                                <FileText className="w-3.5 h-3.5 text-blue-600" />
-                                                <span>HĐ: {lookupResult.salesInvoiceCode}</span>
-                                                <ExternalLink className="w-3 h-3 text-blue-500" />
-                                            </a>
-                                        ) : lookupResult.purchaseBillId ? (
-                                            <a
-                                                href={`/purchasing/bills/${lookupResult.purchaseBillId}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-mono font-bold text-xs hover:underline transition-all shadow-2xs"
-                                                title="Mở chi tiết Hóa đơn mua hàng nhập thiết bị này"
-                                            >
-                                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                                                <span>HĐ Mua: {lookupResult.purchaseBillCode}</span>
-                                                <ExternalLink className="w-3 h-3 text-emerald-500" />
-                                            </a>
-                                        ) : (
-                                            <span className="font-medium text-slate-400 italic">Chưa xuất bán</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Card 3: Customer & Ownership */}
-                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
-                                <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
-                                    <User className="w-3.5 h-3.5 text-purple-600" />
-                                    Khách Hàng Sở Hữu & Ghi Chú
-                                </span>
-
-                                <div className="space-y-1.5 pt-1 text-slate-600 dark:text-slate-300">
-                                    {lookupResult.customerName ? (
-                                        <>
-                                            <div>
-                                                <span className="text-slate-400">Khách hàng:</span>
-                                                {lookupResult.customerId ? (
-                                                    <a
-                                                        href={`/customers/${lookupResult.customerId}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="font-bold text-slate-900 dark:text-white text-xs mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 group"
-                                                        title="Nhấp để xem hồ sơ và công nợ khách hàng này"
-                                                    >
-                                                        <span>{lookupResult.customerName}</span>
-                                                        <ExternalLink className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 shrink-0" />
-                                                    </a>
-                                                ) : (
-                                                    <p className="font-bold text-slate-900 dark:text-white text-xs mt-0.5">{lookupResult.customerName}</p>
-                                                )}
-                                            </div>
-                                            {lookupResult.customerPhone && (
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-slate-400">Số điện thoại:</span>
-                                                    <a href={`tel:${lookupResult.customerPhone}`} className="font-bold font-mono text-blue-600 dark:text-blue-400 hover:underline">
-                                                        {lookupResult.customerPhone}
-                                                    </a>
-                                                </div>
-                                            )}
-                                            {lookupResult.customerEmail && (
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-slate-400">Email:</span>
-                                                    <a href={`mailto:${lookupResult.customerEmail}`} className="text-slate-700 dark:text-slate-300 hover:underline">
-                                                        {lookupResult.customerEmail}
-                                                    </a>
-                                                </div>
-                                            )}
-                                            {lookupResult.customerId && (
-                                                <div className="pt-1">
-                                                    <a
-                                                        href={`/customers/${lookupResult.customerId}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] font-semibold hover:underline transition-colors"
-                                                    >
-                                                        <User className="w-3 h-3" />
-                                                        <span>Mở Hồ Sơ Khách Hàng</span>
-                                                        <ExternalLink className="w-2.5 h-2.5" />
-                                                    </a>
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className="py-2 text-slate-400 italic">
-                                            Thiết bị đang tồn trong kho, chưa xuất bán cho khách hàng.
-                                        </div>
-                                    )}
-                                    {lookupResult.notes && (
-                                        <div className="pt-1 border-t border-slate-200/60 dark:border-slate-700">
-                                            <span className="text-slate-400">Ghi chú:</span>
-                                            <p className="text-[11px] text-slate-600 dark:text-slate-400 italic mt-0.5">{lookupResult.notes}</p>
+                                                <span>{lookupResult.replacementInfo.replacementSerialNumber}</span>
+                                                <ExternalLink className="w-3 h-3" />
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
+
+                        {/* Quick Action Toolbar for Looked-up Serial */}
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {/* Button: Tiếp nhận bảo hành */}
+                                {lookupResult.status !== 'IN_STOCK' && lookupResult.status !== 'UNDER_WARRANTY' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRmaTargetSerial(lookupResult);
+                                            setShowRmaModal(true);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                    >
+                                        <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Tiếp Nhận Bảo Hành (RMA)</span>
+                                    </button>
+                                )}
+
+                                {/* Button: Hoàn tất bảo hành trả máy */}
+                                {lookupResult.status === 'UNDER_WARRANTY' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRepairTargetSerial(lookupResult);
+                                            setShowRepairModal(true);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
+                                    >
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>Hoàn Tất Bảo Hành & Trả Khách</span>
+                                    </button>
+                                )}
+
+                                {/* Button: Đổi mới 1-1 */}
+                                {lookupResult.status !== 'IN_STOCK' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSwapOldSerial(lookupResult);
+                                            setShowSwapModal(true);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
+                                        <span>Đổi Mới Thiết Bị 1-1</span>
+                                    </button>
+                                )}
+
+                                {/* Button: Mở timeline đầy đủ */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTimelineTargetSerial(lookupResult);
+                                        setShowTimelineModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                >
+                                    <History className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Toàn Bộ Vòng Đời & Ghi Chú ({lookupResult.historyItems?.length || 0})</span>
+                                </button>
+
+                                {/* Button: Phiếu Trả Bảo Hành & Biên Bản Bàn Giao */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedSlipSerial(lookupResult);
+                                        setShowSlipModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                    title="Xem, in hoặc xuất file PDF/Excel Phiếu trả bảo hành & Biên bản bàn giao thiết bị"
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600" />
+                                    <span>Phiếu Trả BH (A4/PDF/Excel)</span>
+                                </button>
+                            </div>
+
+                            {lookupResult.salesInvoiceId && (
+                                <a
+                                    href={`/sales/invoices/${lookupResult.salesInvoiceId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 font-mono text-xs font-bold text-blue-600 hover:underline"
+                                >
+                                    <FileText className="w-3.5 h-3.5" /> HĐ: {lookupResult.salesInvoiceCode} <ExternalLink className="w-3 h-3" />
+                                </a>
+                            )}
+                        </div>
+
+                        {/* Integrated History Timeline Preview */}
+                        {lookupResult.historyItems && lookupResult.historyItems.length > 0 && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                                    Nhật Ký Bảo Hành & Đổi Trả Đã Lưu Trữ ({lookupResult.historyItems.length})
+                                </span>
+                                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                                    {lookupResult.historyItems.map((h: any, idx: number) => (
+                                        <div
+                                            key={h.id || idx}
+                                            className={`p-3 rounded-xl border text-xs space-y-1.5 ${h.badgeColor || 'bg-slate-50 border-slate-200'}`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-extrabold text-slate-900 dark:text-white">
+                                                    {h.title}
+                                                </span>
+                                                <span className="text-[10px] text-slate-500 font-mono">
+                                                    {new Date(h.date).toLocaleString('vi-VN')}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px]">
+                                                {h.defectReason && (
+                                                    <div>Lỗi: <strong className="text-rose-600">{h.defectReason}</strong></div>
+                                                )}
+                                                {h.accessoriesIncluded && (
+                                                    <div>Phụ kiện kèm: <strong className="text-slate-800 dark:text-slate-200">{h.accessoriesIncluded}</strong></div>
+                                                )}
+                                                {h.repairResult && (
+                                                    <div className="sm:col-span-2 text-emerald-700 dark:text-emerald-400 font-semibold">Kết quả: {h.repairResult}</div>
+                                                )}
+                                                {h.replacementSerialNumber && (
+                                                    <div className="sm:col-span-2 text-purple-700 dark:text-purple-300 font-bold">Serial thay thế: {h.replacementSerialNumber}</div>
+                                                )}
+                                                {h.staffNotes && (
+                                                    <div className="sm:col-span-2 text-slate-600 dark:text-slate-400 italic">Lưu ý nhân viên: {h.staffNotes}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -1176,8 +1416,8 @@ export default function SerialManagementClient() {
                         <option value="IN_STOCK">Tồn kho (In Stock)</option>
                         <option value="SOLD">Đã xuất bán (Sold)</option>
                         <option value="UNDER_WARRANTY">Đang bảo hành (RMA)</option>
-                        <option value="DEFECTIVE">Lỗi / Hỏng (Defective)</option>
-                        <option value="REPLACED">Đã đổi máy mới</option>
+                        <option value="DEFECTIVE">Lỗi / Hỏng (Chưa đổi mới)</option>
+                        <option value="REPLACED">Đã đổi mới (1-1)</option>
                         <option value="EXPIRING_SOON">⏰ Sắp hết hạn BH (&le; 30 ngày)</option>
                         <option value="EXPIRED">⌛ Đã quá hạn bảo hành</option>
                     </select>
@@ -1359,7 +1599,11 @@ export default function SerialManagementClient() {
                                                 {s.warehouse?.name || 'Kho chính'}
                                             </td>
                                             <td className="py-3 px-4">
-                                                {getStatusBadge(s.status)}
+                                                {getStatusBadge(s.status, { 
+                                                    currentServiceState: s.currentServiceState, 
+                                                    warrantyCount: s.warrantyCount,
+                                                    replacementInfo: s.replacementInfo 
+                                                })}
                                             </td>
                                             <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
                                                 {s.customer ? (
@@ -1434,7 +1678,7 @@ export default function SerialManagementClient() {
                                                             <span className="font-bold text-xs text-slate-900 dark:text-white" suppressHydrationWarning>
                                                                 {new Date(s.warrantyEndDate).toLocaleDateString('vi-VN')}
                                                             </span>
-                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                                                                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${wStat.isValid ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                                                                 <span className={`text-[10px] font-bold ${wStat.isValid ? 'text-emerald-600' : 'text-rose-500'}`} suppressHydrationWarning>
                                                                     {wStat.isValid ? `Còn ${wStat.daysRemaining} ngày` : 'Hết hạn'}
@@ -1443,6 +1687,15 @@ export default function SerialManagementClient() {
                                                                     ({s.product?.warrantyMonths || 12}T)
                                                                 </span>
                                                             </div>
+                                                            {s.currentServiceState === 'UNDER_WARRANTY' ? (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 mt-1">
+                                                                    <Wrench className="w-2.5 h-2.5 text-amber-600" /> Đang BH ({s.warrantyCount || 1})
+                                                                </span>
+                                                            ) : (s.warrantyCount && s.warrantyCount > 0) ? (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 mt-1" title={`Đã bảo hành ${s.warrantyCount} lần${s.lastReturnDate ? ' - Ngày trả: ' + new Date(s.lastReturnDate).toLocaleDateString('vi-VN') : ''}`}>
+                                                                    <Check className="w-2.5 h-2.5 text-teal-600" /> Đã BH {s.warrantyCount} lần
+                                                                </span>
+                                                            ) : null}
                                                         </div>
                                                     );
                                                 })() : (
@@ -1518,6 +1771,18 @@ export default function SerialManagementClient() {
                                                         <History className="w-4 h-4" />
                                                     </button>
 
+                                                    {/* Phiếu Trả Bảo Hành & Biên Bản Bàn Giao */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedSlipSerial(s);
+                                                            setShowSlipModal(true);
+                                                        }}
+                                                        className="p-1.5 text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/40 rounded-lg transition-colors cursor-pointer"
+                                                        title="In / Xuất Phiếu Trả Bảo Hành & Biên Bản Bàn Giao Thiết Bị (A4 / PDF / Excel)"
+                                                    >
+                                                        <FileSpreadsheet className="w-4 h-4" />
+                                                    </button>
+
                                                     {/* Chỉnh sửa */}
                                                     <button
                                                         onClick={() => handleOpenEditModal(s)}
@@ -1548,13 +1813,23 @@ export default function SerialManagementClient() {
                 {/* Pagination Controls Bar */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
                     {/* Left: Summary & Page Size Selector */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-slate-500">
-                            Hiển thị <strong>{totalFilteredCount === 0 ? 0 : (page - 1) * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)) + 1}</strong> - <strong>{Math.min(page * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)), totalFilteredCount)}</strong> trên tổng số <strong>{totalFilteredCount}</strong> thiết bị
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                            <span>Hiển thị</span>
+                            <strong className="font-semibold text-slate-800 dark:text-slate-200">
+                                {totalFilteredCount === 0 ? 0 : (page - 1) * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)) + 1} - {Math.min(page * (pageSize === 'ALL' ? totalFilteredCount : Number(pageSize)), totalFilteredCount)}
+                            </strong>
+                            <span>trên tổng số</span>
+                            <strong className="font-semibold text-slate-800 dark:text-slate-200">
+                                {totalFilteredCount}
+                            </strong>
+                            <span>thiết bị</span>
                         </span>
 
-                        <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200 dark:border-slate-700">
-                            <span className="text-slate-500 font-medium">Hiển thị:</span>
+                        <span className="hidden sm:inline-block w-px h-3.5 bg-slate-300 dark:bg-slate-700" />
+
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-slate-500 font-medium">Số dòng / trang:</span>
                             <select
                                 value={String(pageSize)}
                                 onChange={(e) => {
@@ -1562,7 +1837,7 @@ export default function SerialManagementClient() {
                                     setPageSize(val);
                                     setPage(1);
                                 }}
-                                className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+                                className="h-8 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer transition-colors"
                             >
                                 <option value="15">15 dòng</option>
                                 <option value="20">20 dòng</option>
@@ -2261,6 +2536,7 @@ export default function SerialManagementClient() {
                                         <option value="SOLD">Đã xuất bán (Sold)</option>
                                         <option value="UNDER_WARRANTY">Đang bảo hành</option>
                                         <option value="DEFECTIVE">Lỗi / Hỏng</option>
+                                        <option value="REPLACED">Đã đổi mới 1-1</option>
                                     </select>
                                 </div>
                             </div>
@@ -2458,6 +2734,10 @@ export default function SerialManagementClient() {
                 }}
                 serial={repairTargetSerial}
                 onSuccess={() => loadData()}
+                onOpenSlip={(s) => {
+                    setSelectedSlipSerial(s);
+                    setShowSlipModal(true);
+                }}
             />
 
             {/* Modal: Vòng Đời Thiết Bị & Chăm Sóc Khách Hàng (CRM) */}
@@ -2469,6 +2749,20 @@ export default function SerialManagementClient() {
                 }}
                 serial={timelineTargetSerial}
                 onSuccess={() => loadData()}
+                onOpenSlip={(s) => {
+                    setSelectedSlipSerial(s);
+                    setShowSlipModal(true);
+                }}
+            />
+
+            {/* Modal: Phiếu Trả Bảo Hành & Biên Bản Bàn Giao Thiết Bị */}
+            <WarrantyReturnSlipModal
+                isOpen={showSlipModal}
+                onClose={() => {
+                    setShowSlipModal(false);
+                    setSelectedSlipSerial(null);
+                }}
+                serial={selectedSlipSerial}
             />
         </div>
     );

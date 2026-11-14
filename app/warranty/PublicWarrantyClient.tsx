@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     ShieldCheck, ShieldAlert, Search, RefreshCw, CheckCircle2, 
     AlertCircle, Clock, Calendar, Package, Tag, Phone, Mail, 
-    MapPin, Globe, Copy, Check, Printer, ExternalLink, HelpCircle
+    MapPin, Globe, Copy, Check, Printer, ExternalLink, HelpCircle,
+    Wrench, RotateCcw
 } from 'lucide-react';
 import { lookupPublicWarranty } from './actions';
 import { calculateWarrantyRemaining } from '@/lib/warranty';
@@ -24,6 +25,19 @@ interface WarrantyData {
     isExpired: boolean;
     daysRemaining: number;
     daysExpired: number;
+    currentServiceState?: string;
+    serviceStateLabel?: string;
+    serviceBadgeClass?: string;
+    warrantyCount?: number;
+    lastReceivedDate?: string | null;
+    lastReturnDate?: string | null;
+    latestAccessories?: string | null;
+    latestAppearance?: string | null;
+    latestDefectReason?: string | null;
+    latestRepairResult?: string | null;
+    latestStaffNotes?: string | null;
+    replacementInfo?: any;
+    historyItems?: any[];
     supportContact: {
         companyName: string;
         phone: string;
@@ -190,7 +204,21 @@ export default function PublicWarrantyClient({ initialSerial = '', isEmbed = fal
                                 </p>
                             </div>
 
-                            <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                {result.currentServiceState === 'UNDER_WARRANTY' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-400 text-amber-950 shadow-md animate-pulse">
+                                        <Wrench className="w-4 h-4" /> ĐANG BẢO HÀNH (RMA)
+                                    </span>
+                                ) : result.currentServiceState === 'WARRANTY_COMPLETED' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-teal-100 text-teal-950 shadow-md">
+                                        <CheckCircle2 className="w-4 h-4" /> HOÀN TẤT BẢO HÀNH (ĐÃ TRẢ MÁY)
+                                    </span>
+                                ) : result.currentServiceState === 'REPLACED' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-purple-200 text-purple-950 shadow-md">
+                                        <RotateCcw className="w-4 h-4" /> ĐÃ ĐỔI MỚI THIẾT BỊ 1-1
+                                    </span>
+                                ) : null}
+
                                 {result.isNoWarranty ? (
                                     <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-800/80 text-white border border-slate-600 shadow-md">
                                         Không áp dụng bảo hành (KBH)
@@ -294,6 +322,64 @@ export default function PublicWarrantyClient({ initialSerial = '', isEmbed = fal
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Warranty & Lifecycle Monitoring Section */}
+                            {((result.warrantyCount || 0) > 0 || result.currentServiceState === 'UNDER_WARRANTY' || result.lastReceivedDate) && (
+                                <div className="p-4.5 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                            <Wrench className="w-4 h-4 text-amber-600" />
+                                            Tiến Độ & Lịch Sử Bảo Hành Sản Phẩm
+                                        </span>
+                                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                                            Đã bảo hành: {result.warrantyCount || 0} lần
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                        <div className="p-3 rounded-xl bg-white border border-amber-200/80">
+                                            <span className="text-slate-400 block text-[10px]">Ngày tiếp nhận gần nhất:</span>
+                                            <strong className="text-slate-800 font-mono text-[11px]">
+                                                {result.lastReceivedDate ? new Date(result.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                            </strong>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-white border border-amber-200/80">
+                                            <span className="text-slate-400 block text-[10px]">Ngày hoàn trả bảo hành:</span>
+                                            <strong className={`font-mono text-[11px] ${result.currentServiceState === 'UNDER_WARRANTY' ? 'text-amber-600 animate-pulse' : 'text-emerald-700'}`}>
+                                                {result.lastReturnDate ? new Date(result.lastReturnDate).toLocaleDateString('vi-VN') : (result.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng kỹ thuật' : 'Chưa có')}
+                                            </strong>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-white border border-amber-200/80">
+                                            <span className="text-slate-400 block text-[10px]">Phụ kiện nhận kèm:</span>
+                                            <strong className="text-slate-800 text-[11px] truncate block" title={result.latestAccessories || 'Thân máy'}>
+                                                {result.latestAccessories || 'Thân máy'}
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    {(result.latestRepairResult || result.latestStaffNotes || result.replacementInfo) && (
+                                        <div className="p-3 rounded-xl bg-white border border-amber-200/80 text-xs space-y-1">
+                                            {result.latestRepairResult && (
+                                                <div>
+                                                    <span className="text-emerald-700 font-bold">Kết quả sửa chữa / Linh kiện: </span>
+                                                    <span className="text-slate-800">{result.latestRepairResult}</span>
+                                                </div>
+                                            )}
+                                            {result.latestStaffNotes && (
+                                                <div className="text-slate-600 italic">
+                                                    <span className="not-italic font-semibold text-slate-700">Lưu ý kỹ thuật: </span>
+                                                    {result.latestStaffNotes}
+                                                </div>
+                                            )}
+                                            {result.replacementInfo && (
+                                                <div className="text-purple-700 font-bold">
+                                                    Thiết bị thay thế: {result.replacementInfo.replacementSerialNumber}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Root Support & Warranty Contact (Hỗ trợ tại gốc khi không liên hệ được đại lý cũ) */}
                             <div className="p-4.5 rounded-2xl bg-gradient-to-br from-slate-50 via-slate-100/60 to-emerald-50/30 border border-slate-200 space-y-3">

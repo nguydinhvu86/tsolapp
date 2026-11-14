@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { lookupSerialWarranty } from '@/lib/inventory-serial';
+import { lookupSerialWarranty, parseFullSerialHistory } from '@/lib/inventory-serial';
 import { sendEmailWithTracking } from '@/lib/mailer';
 import { getCompanyInfo } from '@/lib/companyInfo';
 import { calculateWarrantyRemaining } from '@/lib/warranty';
@@ -35,6 +35,14 @@ export async function fetchSerials(params?: {
                 where.warrantyEndDate = { lt: now };
             } else if (params.status === 'UNDER_WARRANTY') {
                 where.status = { in: ['UNDER_WARRANTY', 'WARRANTY_RETURN'] };
+            } else if (params.status === 'REPLACED') {
+                where.OR = [
+                    { status: 'REPLACED' },
+                    { status: 'DEFECTIVE', notes: { contains: 'ĐỔI MỚI' } }
+                ];
+            } else if (params.status === 'DEFECTIVE') {
+                where.status = 'DEFECTIVE';
+                where.NOT = { notes: { contains: 'ĐỔI MỚI' } };
             } else {
                 where.status = params.status;
             }
@@ -125,16 +133,20 @@ export async function fetchSerials(params?: {
             soldCount,
             underWarrantyCount,
             defectiveCount,
+            replacedCount,
             expiringSoonCount
         ] = await Promise.all([
             prisma.productSerial.findMany({
                 where,
                 include: {
                     product: { select: { id: true, name: true, sku: true, unit: true, warrantyMonths: true } },
-                    customer: { select: { id: true, name: true, phone: true, email: true } },
+                    customer: { select: { id: true, name: true, phone: true, email: true, address: true } },
                     salesInvoice: { select: { id: true, code: true } },
                     purchaseBill: { select: { id: true, code: true } },
                     warehouse: { select: { id: true, name: true } },
+                    serviceHistories: {
+                        orderBy: { createdAt: 'desc' }
+                    }
                 },
                 orderBy,
                 skip,
@@ -159,7 +171,15 @@ export async function fetchSerials(params?: {
             prisma.productSerial.count({ where: { status: 'IN_STOCK' } }),
             prisma.productSerial.count({ where: { status: 'SOLD' } }),
             prisma.productSerial.count({ where: { status: { in: ['UNDER_WARRANTY', 'WARRANTY_RETURN'] } } }),
-            prisma.productSerial.count({ where: { status: 'DEFECTIVE' } }),
+            prisma.productSerial.count({ where: { status: 'DEFECTIVE', NOT: { notes: { contains: 'ĐỔI MỚI' } } } }),
+            prisma.productSerial.count({ 
+                where: { 
+                    OR: [
+                        { status: 'REPLACED' },
+                        { status: 'DEFECTIVE', notes: { contains: 'ĐỔI MỚI' } }
+                    ]
+                } 
+            }),
             prisma.productSerial.count({ 
                 where: { 
                     status: 'SOLD', 
@@ -170,9 +190,26 @@ export async function fetchSerials(params?: {
 
         const totalPages = isAll ? 1 : Math.max(1, Math.ceil(filteredCount / pageSize));
 
+        const enrichedSerials = serials.map(s => {
+            const analysis = parseFullSerialHistory(s);
+            return {
+                ...s,
+                warrantyCount: analysis.warrantyCount,
+                currentServiceState: analysis.currentServiceState,
+                serviceStateLabel: analysis.serviceStateLabel,
+                serviceBadgeClass: analysis.serviceBadgeClass,
+                lastReceivedDate: analysis.lastReceivedDate,
+                lastReturnDate: analysis.lastReturnDate,
+                latestAccessories: analysis.latestAccessories,
+                latestStaffNotes: analysis.latestStaffNotes,
+                replacementInfo: analysis.replacementInfo,
+                serviceHistories: analysis.historyItems
+            };
+        });
+
         return { 
             success: true, 
-            serials, 
+            serials: enrichedSerials, 
             products, 
             customers, 
             warehouses,
@@ -188,6 +225,7 @@ export async function fetchSerials(params?: {
                 sold: soldCount,
                 underWarranty: underWarrantyCount,
                 defective: defectiveCount,
+                replaced: replacedCount,
                 expiringSoon: expiringSoonCount,
                 other: totalCount - inStockCount - soldCount
             }
@@ -412,12 +450,27 @@ export async function lookupWarranty(serialNumber: string) {
                 customerName: info.customer?.name,
                 customerPhone: info.customer?.phone,
                 customerEmail: info.customer?.email,
+                customerAddress: info.customer?.address,
                 salesInvoiceId: info.salesInvoice?.id,
                 salesInvoiceCode: info.salesInvoice?.code,
                 salesInvoiceDate: info.salesInvoice?.date,
                 purchaseBillId: info.purchaseBill?.id,
                 purchaseBillCode: info.purchaseBill?.code,
-                notes: info.notes
+                notes: info.notes,
+                // Dữ liệu mở rộng giám sát vòng đời
+                warrantyCount: info.warrantyCount,
+                currentServiceState: info.currentServiceState,
+                serviceStateLabel: info.serviceStateLabel,
+                serviceBadgeClass: info.serviceBadgeClass,
+                lastReceivedDate: info.lastReceivedDate,
+                lastReturnDate: info.lastReturnDate,
+                latestAccessories: info.latestAccessories,
+                latestAppearance: info.latestAppearance,
+                latestDefectReason: info.latestDefectReason,
+                latestRepairResult: info.latestRepairResult,
+                latestStaffNotes: info.latestStaffNotes,
+                replacementInfo: info.replacementInfo,
+                historyItems: info.historyItems
             } 
         };
     } catch (err: any) {
@@ -680,6 +733,7 @@ export async function receiveDefectiveSerialAction(data: {
     accessoriesIncluded?: string;
     receiverNotes?: string;
     warehouseId?: string;
+    receivedDate?: string | Date;
 }) {
     try {
         const session = await getServerSession(authOptions);
@@ -705,7 +759,24 @@ export async function receiveDefectiveSerialAction(data: {
         const newLog = `[${actionLabel} - ${dateStr}]: Lỗi: ${data.defectReason.trim()}${data.appearanceCondition ? ' | Ngoại quan: ' + data.appearanceCondition.trim() : ''}${data.accessoriesIncluded ? ' | Phụ kiện: ' + data.accessoriesIncluded.trim() : ''} | Tiếp nhận: ${currentUserName}${data.receiverNotes ? ' | Ghi chú: ' + data.receiverNotes.trim() : ''}`;
         
         const updatedNotes = serial.notes ? `${serial.notes}\n${newLog}` : newLog;
+        const receivedDateTime = data.receivedDate ? new Date(data.receivedDate) : new Date();
 
+        // 1. Tạo bản ghi lịch sử có cấu trúc (ProductSerialHistory)
+        await prisma.productSerialHistory.create({
+            data: {
+                serialId: serial.id,
+                actionType: data.actionType === 'UNDER_WARRANTY' ? 'RECEIVE_WARRANTY' : 'DEFECTIVE_RETURN',
+                status: data.actionType,
+                receivedDate: receivedDateTime,
+                defectReason: data.defectReason.trim(),
+                appearanceCondition: data.appearanceCondition?.trim() || null,
+                accessoriesIncluded: data.accessoriesIncluded?.trim() || null,
+                technicianName: currentUserName,
+                staffNotes: data.receiverNotes?.trim() || null,
+            }
+        });
+
+        // 2. Cập nhật trạng thái Serial
         const updated = await prisma.productSerial.update({
             where: { id: serial.id },
             data: {
@@ -822,7 +893,7 @@ export async function swapAndReplaceSerialAction(data: {
             }
         }
 
-        const oldSerialStatus = data.oldSerialStatus || 'DEFECTIVE';
+        const oldSerialStatus = data.oldSerialStatus || 'REPLACED';
         const oldLog = `[ĐỔI MỚI 1-1 THU HỒI - ${dateStr}]: Đã thu hồi đổi sang Serial mới: [${newSerial.serialNumber}]. Lý do: ${data.reason.trim()}. Người xử lý: ${currentUserName}`;
         const newLog = `[MÁY ĐỔI MỚI THAY THẾ - ${dateStr}]: Thiết bị thay thế đổi mới 1-1 cho Serial cũ: [${oldSerial.serialNumber}]. Khách hàng: ${oldSerial.customer?.name || 'N/A'}. Lý do: ${data.reason.trim()}. Chính sách BH: ${data.warrantyPolicy === 'INHERIT' ? 'Kế thừa hạn cũ' : 'Cấp mới'}. Người xử lý: ${currentUserName}`;
 
@@ -847,6 +918,34 @@ export async function swapAndReplaceSerialAction(data: {
                     warrantyStartDate: newStartDate,
                     warrantyEndDate: newEndDate,
                     notes: newSerial.notes ? `${newSerial.notes}\n${newLog}` : newLog
+                }
+            }),
+            // 3. Ghi lịch sử cho serial cũ (Thu hồi)
+            prisma.productSerialHistory.create({
+                data: {
+                    serialId: oldSerial.id,
+                    actionType: 'SWAP_REPLACE',
+                    status: oldSerialStatus,
+                    swapType: 'SWAP_OUT_OLD',
+                    replacementSerialId: newSerial.id,
+                    replacementSerialNumber: newSerial.serialNumber,
+                    defectReason: data.reason.trim(),
+                    technicianName: currentUserName,
+                    staffNotes: `Đã thu hồi máy cũ để đổi mới 1-1 sang Serial mới [${newSerial.serialNumber}]. Lý do: ${data.reason.trim()}`
+                }
+            }),
+            // 4. Ghi lịch sử cho serial mới (Cấp thay thế)
+            prisma.productSerialHistory.create({
+                data: {
+                    serialId: newSerial.id,
+                    actionType: 'SWAP_REPLACE',
+                    status: 'SOLD',
+                    swapType: 'SWAP_IN_NEW',
+                    replacementSerialId: oldSerial.id,
+                    replacementSerialNumber: oldSerial.serialNumber,
+                    defectReason: data.reason.trim(),
+                    technicianName: currentUserName,
+                    staffNotes: `Thiết bị thay thế đổi mới 1-1 cho Serial cũ [${oldSerial.serialNumber}]. Khách: ${oldSerial.customer?.name || 'Khách hàng'}`
                 }
             })
         ]);
@@ -908,6 +1007,8 @@ export async function completeWarrantyRepairAction(data: {
     serialId: string;
     repairResult: string;
     notes?: string;
+    returnDate?: string | Date;
+    accessoriesReturned?: string;
 }) {
     try {
         const session = await getServerSession(authOptions);
@@ -920,10 +1021,26 @@ export async function completeWarrantyRepairAction(data: {
         });
         if (!serial) return { success: false, error: 'Không tìm thấy Serial' };
 
-        const dateStr = new Date().toLocaleString('vi-VN');
-        const log = `[HOÀN TẤT BẢO HÀNH & TRẢ KHÁCH - ${dateStr}]: Kết quả xử lý: ${data.repairResult.trim()} | Kỹ thuật viên: ${currentUserName}${data.notes ? ' | Ghi chú: ' + data.notes.trim() : ''}`;
+        const returnDateTime = data.returnDate ? new Date(data.returnDate) : new Date();
+        const dateStr = returnDateTime.toLocaleString('vi-VN');
+        const log = `[HOÀN TẤT BẢO HÀNH & TRẢ KHÁCH - ${dateStr}]: Kết quả xử lý: ${data.repairResult.trim()}${data.accessoriesReturned ? ' | Phụ kiện bàn giao trả: ' + data.accessoriesReturned.trim() : ''} | Kỹ thuật viên: ${currentUserName}${data.notes ? ' | Ghi chú: ' + data.notes.trim() : ''}`;
         const updatedNotes = serial.notes ? `${serial.notes}\n${log}` : log;
 
+        // 1. Tạo bản ghi lịch sử hoàn tất sửa chữa và trả máy
+        await prisma.productSerialHistory.create({
+            data: {
+                serialId: serial.id,
+                actionType: 'REPAIR_COMPLETE',
+                status: 'SOLD',
+                returnDate: returnDateTime,
+                repairResult: data.repairResult.trim(),
+                accessoriesIncluded: data.accessoriesReturned?.trim() || null,
+                technicianName: currentUserName,
+                staffNotes: data.notes?.trim() || null,
+            }
+        });
+
+        // 2. Cập nhật serial
         const updated = await prisma.productSerial.update({
             where: { id: serial.id },
             data: {
@@ -982,6 +1099,17 @@ export async function addCustomerCareNoteAction(data: {
         const log = `[${typeLabel} - ${dateStr} - ${currentUserName}]: ${data.noteContent.trim()}`;
         const updatedNotes = serial.notes ? `${serial.notes}\n${log}` : log;
 
+        // 1. Tạo bản ghi lịch sử ghi chú
+        await prisma.productSerialHistory.create({
+            data: {
+                serialId: serial.id,
+                actionType: 'CARE_NOTE',
+                technicianName: currentUserName,
+                staffNotes: `[${typeLabel}]: ${data.noteContent.trim()}`
+            }
+        });
+
+        // 2. Cập nhật serial
         const updated = await prisma.productSerial.update({
             where: { id: serial.id },
             data: { notes: updatedNotes }
@@ -1396,6 +1524,120 @@ export async function triggerAutoWarrantyScanAction() {
         };
     } catch (err: any) {
         console.error('Lỗi triggerAutoWarrantyScanAction:', err);
+        return { success: false, error: err.message };
+    }
+}
+
+// ==========================================
+// 6. TRÍCH XUẤT THÔNG TIN PHIẾU TRẢ BẢO HÀNH & BÀN GIAO
+// ==========================================
+export async function getWarrantyReturnSlipDataAction(serialIdOrNumber: string) {
+    try {
+        const clean = (serialIdOrNumber || '').trim();
+        if (!clean) return { success: false, error: 'Thiếu mã Serial hoặc ID thiết bị' };
+
+        const serial = await prisma.productSerial.findFirst({
+            where: {
+                OR: [
+                    { id: clean },
+                    { serialNumber: clean }
+                ]
+            },
+            include: {
+                product: true,
+                customer: true,
+                salesInvoice: true,
+                warehouse: true,
+                serviceHistories: {
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+
+        if (!serial) {
+            return { success: false, error: `Không tìm thấy thiết bị với mã "${clean}"` };
+        }
+
+        const analysis = parseFullSerialHistory(serial);
+
+        // Lấy thông tin công ty từ SystemSetting
+        const companySettings = await prisma.systemSetting.findMany({
+            where: {
+                key: {
+                    in: ['COMPANY_NAME', 'COMPANY_PHONE', 'COMPANY_EMAIL', 'COMPANY_ADDRESS', 'COMPANY_WEBSITE', 'COMPANY_LOGO', 'COMPANY_TAX_CODE']
+                }
+            }
+        });
+        const settingsMap: Record<string, string> = {};
+        companySettings.forEach(s => { settingsMap[s.key] = s.value; });
+
+        // Tạo mã phiếu theo định dạng TBH-YYYYMMDD-Serial
+        const now = new Date();
+        const ymd = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const slipCode = `TBH-${ymd}-${serial.serialNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`;
+
+        return {
+            success: true,
+            data: {
+                slipCode,
+                issueDate: now.toISOString(),
+                company: {
+                    name: settingsMap['COMPANY_NAME'] || 'CÔNG TY TNHH PHÁT TRIỂN CÔNG NGHỆ TRỊNH GIA',
+                    phone: settingsMap['COMPANY_PHONE'] || '(0274) 999 2222',
+                    email: settingsMap['COMPANY_EMAIL'] || 'support@trinhgiatelecom.vn',
+                    address: settingsMap['COMPANY_ADDRESS'] || 'Số 147/80, Đường NTMK, Phường Phú Lợi, Tp. Thủ Dầu Một, Bình Dương',
+                    website: settingsMap['COMPANY_WEBSITE'] || 'trinhgiatelecom.vn',
+                    taxCode: settingsMap['COMPANY_TAX_CODE'] || '3702581692',
+                    logo: settingsMap['COMPANY_LOGO'] || null
+                },
+                serial: {
+                    id: serial.id,
+                    serialNumber: serial.serialNumber,
+                    status: serial.status,
+                    currentServiceState: analysis.currentServiceState,
+                    serviceStateLabel: analysis.serviceStateLabel,
+                    warrantyStartDate: serial.warrantyStartDate ? serial.warrantyStartDate.toISOString() : null,
+                    warrantyEndDate: serial.warrantyEndDate ? serial.warrantyEndDate.toISOString() : null,
+                    warehouseName: serial.warehouse?.name || 'Kho chính'
+                },
+                product: {
+                    id: serial.product.id,
+                    name: serial.product.name,
+                    sku: serial.product.sku,
+                    unit: serial.product.unit || 'Cái',
+                    warrantyMonths: serial.product.warrantyMonths ?? 12
+                },
+                customer: serial.customer ? {
+                    id: serial.customer.id,
+                    name: serial.customer.name,
+                    phone: serial.customer.phone || 'Chưa cập nhật',
+                    email: serial.customer.email || 'Chưa cập nhật',
+                    address: serial.customer.address || serial.customer.shippingAddress || 'Chưa cập nhật',
+                    taxCode: serial.customer.taxCode || null
+                } : null,
+                invoice: serial.salesInvoice ? {
+                    id: serial.salesInvoice.id,
+                    code: serial.salesInvoice.code,
+                    date: serial.salesInvoice.date ? serial.salesInvoice.date.toISOString() : null
+                } : null,
+                serviceDetails: {
+                    warrantyCount: analysis.warrantyCount,
+                    lastReceivedDate: analysis.lastReceivedDate,
+                    lastReturnDate: analysis.lastReturnDate || now.toISOString(),
+                    latestDefectReason: analysis.latestDefectReason || 'Kiểm tra & xử lý theo yêu cầu kỹ thuật',
+                    latestAppearance: analysis.latestAppearance || 'Tem bảo hành nguyên vẹn, ngoại quan đạt chuẩn',
+                    latestAccessories: analysis.latestAccessories || 'Thân máy + Phụ kiện tiêu chuẩn',
+                    latestRepairResult: analysis.latestRepairResult || (analysis.currentServiceState === 'REPLACED' ? 'Đã thu hồi máy lỗi & Đổi mới thiết bị 1-1' : 'Đã sửa chữa, thay thế linh kiện lỗi và kiểm thử chức năng đạt chuẩn xuất xưởng'),
+                    latestStaffNotes: analysis.latestStaffNotes || 'Thiết bị đã kiểm tra hoàn tất, bàn giao khách hàng hoạt động tốt',
+                    deliveryCondition: 'Thiết bị hoạt động ổn định, các chức năng đạt tiêu chuẩn chất lượng xuất xưởng, ngoại quan vệ sinh sạch sẽ, tem bảo hành dán đầy đủ.',
+                    technicianName: analysis.historyItems?.[0]?.technicianName || 'Kỹ thuật viên Trịnh Gia'
+                },
+                replacementInfo: analysis.replacementInfo,
+                historyItems: analysis.historyItems
+            }
+        };
+    } catch (err: any) {
+        console.error('Lỗi getWarrantyReturnSlipDataAction:', err);
         return { success: false, error: err.message };
     }
 }

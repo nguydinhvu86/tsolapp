@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { calculateWarrantyRemaining } from '@/lib/warranty';
+import { parseFullSerialHistory } from '@/lib/inventory-serial';
 
 export async function lookupPublicWarranty(serialNumber: string) {
     try {
@@ -26,6 +27,9 @@ export async function lookupPublicWarranty(serialNumber: string) {
                     select: {
                         date: true
                     }
+                },
+                serviceHistories: {
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         });
@@ -45,6 +49,7 @@ export async function lookupPublicWarranty(serialNumber: string) {
         const endDate = record.warrantyEndDate;
 
         const stats = calculateWarrantyRemaining(endDate, warrantyMonths);
+        const analysis = parseFullSerialHistory(record);
 
         // Lấy thông tin công ty từ SystemSetting để khách hàng có thể liên hệ tại gốc
         const companySettings = await prisma.systemSetting.findMany({
@@ -63,12 +68,13 @@ export async function lookupPublicWarranty(serialNumber: string) {
         return {
             success: true,
             data: {
+                id: record.id,
                 serialNumber: record.serialNumber,
                 productName: record.product?.name || 'Sản phẩm chính hãng',
                 sku: record.product?.sku || 'N/A',
                 unit: record.product?.unit || 'Cái',
                 description: record.product?.description || null,
-                status: record.status, // "IN_STOCK", "SOLD", etc.
+                status: record.status, // "IN_STOCK", "SOLD", "UNDER_WARRANTY", "REPLACED", "DEFECTIVE"
                 isNoWarranty,
                 warrantyMonths,
                 exportDate: exportDate ? exportDate.toISOString() : null,
@@ -80,6 +86,20 @@ export async function lookupPublicWarranty(serialNumber: string) {
                 warrantyDetailText: stats.detailText,
                 warrantyBreakdownText: stats.breakdownText,
                 warrantyBadgeText: stats.badgeText,
+                // Thông tin mở rộng giám sát vòng đời
+                currentServiceState: analysis.currentServiceState,
+                serviceStateLabel: analysis.serviceStateLabel,
+                serviceBadgeClass: analysis.serviceBadgeClass,
+                warrantyCount: analysis.warrantyCount,
+                lastReceivedDate: analysis.lastReceivedDate,
+                lastReturnDate: analysis.lastReturnDate,
+                latestAccessories: analysis.latestAccessories,
+                latestAppearance: analysis.latestAppearance,
+                latestDefectReason: analysis.latestDefectReason,
+                latestRepairResult: analysis.latestRepairResult,
+                latestStaffNotes: analysis.latestStaffNotes,
+                replacementInfo: analysis.replacementInfo,
+                historyItems: analysis.historyItems,
                 supportContact: {
                     companyName: settingsMap['COMPANY_NAME'] || 'TRUNG TÂM BẢO HÀNH CHÍNH HÃNG',
                     phone: settingsMap['COMPANY_PHONE'] || '(0274) 999 2222',

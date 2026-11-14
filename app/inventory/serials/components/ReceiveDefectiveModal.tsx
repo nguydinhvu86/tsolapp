@@ -12,7 +12,9 @@ import {
     User, 
     Calendar, 
     Warehouse as WarehouseIcon,
-    FileText
+    FileText,
+    Clock,
+    Tag
 } from 'lucide-react';
 import { receiveDefectiveSerialAction } from '../actions';
 
@@ -24,6 +26,17 @@ interface ReceiveDefectiveModalProps {
     onSuccess: () => void;
 }
 
+const COMMON_ACCESSORIES = [
+    'Thân máy',
+    'Củ sạc / Adapter',
+    'Dây nguồn / Cáp sạc',
+    'Vỏ hộp zin',
+    'Sách HDSD',
+    'Remote / Điều khiển',
+    'Tai nghe / Mic',
+    'Ăng-ten / Phụ kiện phụ'
+];
+
 export default function ReceiveDefectiveModal({
     isOpen,
     onClose,
@@ -33,13 +46,24 @@ export default function ReceiveDefectiveModal({
 }: ReceiveDefectiveModalProps) {
     const [actionType, setActionType] = useState<'UNDER_WARRANTY' | 'DEFECTIVE'>('UNDER_WARRANTY');
     const [defectReason, setDefectReason] = useState('');
-    const [appearanceCondition, setAppearanceCondition] = useState('Mới 98-99%, xước dăm nhẹ viền máy');
-    const [accessoriesIncluded, setAccessoriesIncluded] = useState('Thân máy + củ sạc + cáp zin');
+    const [appearanceCondition, setAppearanceCondition] = useState('Mới 98-99%, xước dăm nhẹ viền máy, tem bảo hành còn nguyên');
+    const [accessoriesIncluded, setAccessoriesIncluded] = useState('Thân máy + Củ sạc + Dây cáp nguồn');
+    const [receivedDate, setReceivedDate] = useState(() => new Date().toISOString().slice(0, 16));
     const [warehouseId, setWarehouseId] = useState(serial?.warehouseId || '');
     const [receiverNotes, setReceiverNotes] = useState('');
     const [loading, setLoading] = useState(false);
 
     if (!isOpen || !serial) return null;
+
+    const toggleAccessory = (acc: string) => {
+        let current = accessoriesIncluded.split('+').map(s => s.trim()).filter(Boolean);
+        if (current.includes(acc)) {
+            current = current.filter(item => item !== acc);
+        } else {
+            current.push(acc);
+        }
+        setAccessoriesIncluded(current.join(' + '));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,7 +82,8 @@ export default function ReceiveDefectiveModal({
                 appearanceCondition,
                 accessoriesIncluded,
                 receiverNotes,
-                warehouseId: warehouseId || undefined
+                warehouseId: warehouseId || undefined,
+                receivedDate: receivedDate || new Date().toISOString()
             });
 
             if (res.success) {
@@ -89,7 +114,7 @@ export default function ReceiveDefectiveModal({
                                 Tiếp Nhận Hàng Lỗi / Yêu Cầu Bảo Hành (RMA)
                             </h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                Ghi nhận thiết bị khách hàng gửi trả bảo hành hoặc đổi trả sản phẩm lỗi
+                                Ghi nhận thiết bị khách hàng gửi trả bảo hành hoặc đổi trả sản phẩm lỗi - Giám sát chi tiết vòng đời
                             </p>
                         </div>
                     </div>
@@ -113,7 +138,7 @@ export default function ReceiveDefectiveModal({
                         <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">{serial.product?.name}</span>
                     </div>
                     <div>
-                        <span className="text-slate-400 block">Khách hàng sở hữu:</span>
+                        <span className="text-slate-400 block">Khách hàng sở hữu / Đại lý:</span>
                         <span className="font-semibold text-slate-800 dark:text-slate-200">{serial.customer?.name || 'Khách vãng lai'} ({serial.customer?.phone || 'N/A'})</span>
                     </div>
                     <div>
@@ -146,10 +171,10 @@ export default function ReceiveDefectiveModal({
                                 />
                                 <div>
                                     <span className="font-bold text-slate-900 dark:text-white block text-xs">
-                                        🛠️ Tiếp nhận Bảo Hành & Sửa Chữa
+                                        🛠️ Tiếp Nhận Bảo Hành / Sửa Chữa
                                     </span>
                                     <span className="text-[11px] text-slate-500 block mt-0.5">
-                                        Chuyển sang trạng thái "Đang bảo hành", kỹ thuật viên kiểm tra & khắc phục
+                                        Chuyển sang trạng thái "Đang bảo hành", kỹ thuật viên tiếp nhận & giám sát
                                     </span>
                                 </div>
                             </label>
@@ -179,55 +204,26 @@ export default function ReceiveDefectiveModal({
                         </div>
                     </div>
 
-                    {/* Defect Description */}
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                            Mô tả hiện tượng lỗi / Hư hỏng <span className="text-rose-500">*</span>
-                        </label>
-                        <textarea
-                            rows={3}
-                            value={defectReason}
-                            onChange={(e) => setDefectReason(e.target.value)}
-                            placeholder="Ví dụ: Thiết bị không lên nguồn, quạt tản nhiệt kêu to, cổng mạng chập chờn..."
-                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                            required
-                        />
-                    </div>
-
-                    {/* Appearance & Accessories Grid */}
+                    {/* Reception Date & Time */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                                Tình trạng ngoại quan thiết bị
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                                Ngày & Giờ tiếp nhận bảo hành <span className="text-rose-500">*</span>
                             </label>
                             <input
-                                type="text"
-                                value={appearanceCondition}
-                                onChange={(e) => setAppearanceCondition(e.target.value)}
-                                placeholder="VD: Máy mới 99%, có xước nhẹ mặt lưng..."
-                                className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                type="datetime-local"
+                                value={receivedDate}
+                                onChange={(e) => setReceivedDate(e.target.value)}
+                                className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono font-semibold"
+                                required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                                Phụ kiện đi kèm khi nhận
-                            </label>
-                            <input
-                                type="text"
-                                value={accessoriesIncluded}
-                                onChange={(e) => setAccessoriesIncluded(e.target.value)}
-                                placeholder="VD: Máy + củ sạc + dây nguồn + hộp..."
-                                className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Warehouse & Receiver Notes */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                                Kho lưu giữ thiết bị tạm thời
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                                <WarehouseIcon className="w-3.5 h-3.5 text-slate-500" />
+                                Kho lưu giữ thiết bị
                             </label>
                             <select
                                 value={warehouseId}
@@ -240,19 +236,86 @@ export default function ReceiveDefectiveModal({
                                 ))}
                             </select>
                         </div>
+                    </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                                Ghi chú người tiếp nhận
+                    {/* Defect Description */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                            Mô tả hiện tượng lỗi / Lý do gửi bảo hành <span className="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                            rows={2}
+                            value={defectReason}
+                            onChange={(e) => setDefectReason(e.target.value)}
+                            placeholder="Ví dụ: Thiết bị không lên nguồn, quạt kêu to, mất kết nối mạng..."
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            required
+                        />
+                    </div>
+
+                    {/* Appearance */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                            Tình trạng ngoại quan thiết bị khi nhận
+                        </label>
+                        <input
+                            type="text"
+                            value={appearanceCondition}
+                            onChange={(e) => setAppearanceCondition(e.target.value)}
+                            placeholder="VD: Máy mới 99%, có xước nhẹ viền máy, tem bảo hành còn nguyên..."
+                            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                    </div>
+
+                    {/* Accessories Included with Quick Pick Pills */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                <Package className="w-3.5 h-3.5 text-emerald-600" />
+                                Phụ kiện đi kèm khi nhận (Rất quan trọng khi đối soát & hoàn trả)
                             </label>
-                            <input
-                                type="text"
-                                value={receiverNotes}
-                                onChange={(e) => setReceiverNotes(e.target.value)}
-                                placeholder="VD: Hẹn khách lấy sau 3 ngày..."
-                                className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none"
-                            />
                         </div>
+                        <input
+                            type="text"
+                            value={accessoriesIncluded}
+                            onChange={(e) => setAccessoriesIncluded(e.target.value)}
+                            placeholder="VD: Thân máy + Củ sạc + Dây nguồn + Hộp zin..."
+                            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        />
+                        {/* Quick pick chips */}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {COMMON_ACCESSORIES.map(acc => {
+                                const isSelected = accessoriesIncluded.includes(acc);
+                                return (
+                                    <button
+                                        key={acc}
+                                        type="button"
+                                        onClick={() => toggleAccessory(acc)}
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                                            isSelected 
+                                                ? 'bg-emerald-600 text-white shadow-2xs' 
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        {isSelected ? '✓ ' : '+ '} {acc}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Receiver Staff Notes */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                            Lưu ý / Ghi chú của nhân viên khi tiếp nhận & kiểm tra bước đầu
+                        </label>
+                        <textarea
+                            rows={2}
+                            value={receiverNotes}
+                            onChange={(e) => setReceiverNotes(e.target.value)}
+                            placeholder="Ghi nhận lưu ý đặc biệt, hẹn ngày trả khách, lưu ý phụ kiện nhận kèm..."
+                            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
                     </div>
 
                     {/* Footer Actions */}

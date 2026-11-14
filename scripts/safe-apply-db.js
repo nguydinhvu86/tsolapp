@@ -947,6 +947,38 @@ async function main() {
         // Ignored
     }
 
+    // 9c. Khởi tạo bảng ProductSerialHistory (Lịch sử bảo hành, đổi trả, sửa chữa, thay thế Serial)
+    try {
+        await prisma.$executeRawUnsafe(`
+            CREATE TABLE IF NOT EXISTS \`ProductSerialHistory\` (
+                \`id\` VARCHAR(191) NOT NULL,
+                \`serialId\` VARCHAR(191) NOT NULL,
+                \`actionType\` VARCHAR(191) NOT NULL,
+                \`status\` VARCHAR(191) NULL,
+                \`receivedDate\` DATETIME(3) NULL,
+                \`returnDate\` DATETIME(3) NULL,
+                \`defectReason\` TEXT NULL,
+                \`appearanceCondition\` TEXT NULL,
+                \`accessoriesIncluded\` TEXT NULL,
+                \`repairResult\` TEXT NULL,
+                \`replacementSerialId\` VARCHAR(191) NULL,
+                \`replacementSerialNumber\` VARCHAR(191) NULL,
+                \`swapType\` VARCHAR(191) NULL,
+                \`technicianName\` VARCHAR(191) NULL,
+                \`staffNotes\` TEXT NULL,
+                \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+                PRIMARY KEY (\`id\`),
+                INDEX \`ProductSerialHistory_serialId_idx\` (\`serialId\`),
+                INDEX \`ProductSerialHistory_actionType_idx\` (\`actionType\`),
+                INDEX \`ProductSerialHistory_createdAt_idx\` (\`createdAt\`)
+            ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+        `);
+        console.log('✅ Đã kiểm tra/khởi tạo bảng ProductSerialHistory thành công.');
+    } catch (pshErr) {
+        console.warn('⚠️ Chú ý về ProductSerialHistory:', pshErr.message);
+    }
+
     // 10. Verification and record counts
     const taskCount = await prisma.task.count();
     const todoCount = await prisma.todo.count();
@@ -964,6 +996,7 @@ async function main() {
     const unifiedLogCount = await prisma.unifiedActivityLog.count();
     const unitConversionCount = await prisma.productUnitConversion.count();
     const serialCount = await prisma.productSerial.count();
+    const serialHistoryCount = await prisma.productSerialHistory.count();
     const accountCount = await prisma.chartOfAccount.count();
     const journalCount = await prisma.journalEntry.count();
     const approvalCount = await prisma.approvalRequest.count();
@@ -985,6 +1018,7 @@ async function main() {
     console.log(`- Nhật ký kiểm toán hợp nhất (Unified Audit Logs): ${unifiedLogCount} bản ghi`);
     console.log(`- Đơn vị tính quy đổi (Unit Conversions): ${unitConversionCount} bản ghi`);
     console.log(`- Mã định danh Serial/IMEI: ${serialCount} bản ghi`);
+    console.log(`- Lịch sử bảo hành / đổi trả Serial: ${serialHistoryCount} bản ghi`);
     console.log(`- Hệ thống tài khoản kế toán (Chart of Accounts): ${accountCount} tài khoản`);
     console.log(`- Sổ nhật ký bút toán kép (Journal Entries): ${journalCount} bút toán`);
     console.log(`- Yêu cầu phê duyệt chi tiêu (Approval Requests): ${approvalCount} yêu cầu`);
