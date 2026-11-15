@@ -670,7 +670,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                             <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight m-0">
                                 {tabs.find(t => t.id === activeTab)?.name}
                             </h3>
-                            <p className="text-xs text-slate-500 m-0 mt-0.5">Danh sách dữ liệu và các chứng từ liên quan.</p>
+                            <p className="text-xs text-slate-500 m-0 mt-0.5">{activeTab === 'statement' ? 'Bảng đối chiếu công nợ chi tiết, hóa đơn bán hàng và phiếu thu theo kỳ.' : 'Danh sách dữ liệu và các chứng từ liên quan.'}</p>
                         </div>
 
                         <div className="flex items-center gap-2 flex-wrap">
@@ -726,7 +726,7 @@ export function CustomerDetailClient({ customer, tasks, users, emailTemplates = 
                                 </Link>
                             )}
                             {activeTab === 'leads' && (
-                                <Link href={`/sales/leads/new?customerId=${customer.id}`}>
+                                <Link href={`/sales/leads?action=new&customerId=${customer.id}`}>
                                     <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap">
                                         <Plus size={14} strokeWidth={2.5} /> <span>Tạo Cơ Hội Mới</span>
                                     </button>

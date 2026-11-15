@@ -20,7 +20,28 @@ export default async function LeadsPage({ searchParams }: { searchParams: { [key
 
     const customers = await getCustomers();
     const { prisma } = await import('@/lib/prisma');
-    const users = await prisma.user.findMany({ select: { id: true, name: true, avatar: true } });
+    const users = await prisma.user.findMany({ 
+        select: { id: true, name: true, avatar: true },
+        orderBy: { name: 'asc' }
+    });
 
-    return <LeadsClient leads={leads} customers={customers} users={users} isAdminOrManager={isAdminOrManager} />;
+    const leadSources = await prisma.leadSource.findMany({
+        where: { isActive: true },
+        select: { name: true },
+        orderBy: { name: 'asc' }
+    });
+    const sources = leadSources.map(s => s.name);
+
+    return (
+        <LeadsClient 
+            leads={leads} 
+            customers={customers} 
+            users={users} 
+            isAdminOrManager={isAdminOrManager}
+            sources={sources}
+            currentUserId={session?.user?.id}
+            initialAction={typeof searchParams?.action === 'string' ? searchParams.action : undefined}
+            initialCustomerId={typeof searchParams?.customerId === 'string' ? searchParams.customerId : undefined}
+        />
+    );
 }

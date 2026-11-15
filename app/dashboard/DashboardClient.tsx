@@ -5,10 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
     DollarSign,
-    Receipt,
     CreditCard,
     Users,
-    Briefcase,
     Plus,
     X,
     Calendar as CalendarIcon,
@@ -20,8 +18,19 @@ import {
     Check,
     Clock,
     Lock,
-    Globe
+    Globe,
+    RotateCw,
+    StickyNote,
+    Sparkles,
+    CheckSquare,
+    AlertTriangle,
+    FileText,
+    CalendarDays,
+    Compass,
+    Megaphone,
+    BellRing
 } from 'lucide-react';
+import { toast } from '@/app/components/providers/ToastProvider';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -39,6 +48,7 @@ import {
 } from './components/DashboardPeriodFilter';
 import { DashboardCustomizeModal } from './components/DashboardCustomizeModal';
 import { KPICardsWidget } from './components/KPICardsWidget';
+import { BulletinBoardWidget } from './components/BulletinBoardWidget';
 import { SalesPipelineFunnelWidget } from './components/SalesPipelineFunnelWidget';
 import { CashFlowChartWidget } from './components/CashFlowChartWidget';
 import { TopCustomersWidget } from './components/TopCustomersWidget';
@@ -61,6 +71,11 @@ interface DashboardClientProps {
     currentEmployeeId?: string;
     currentUserId?: string;
     isAdminOrManager?: boolean;
+    userName?: string;
+    userRole?: string;
+    userPermissions?: string[];
+    activities?: any[];
+    announcements?: any[];
 }
 
 export function DashboardClient({
@@ -74,6 +89,11 @@ export function DashboardClient({
     currentEmployeeId = '',
     currentUserId = '',
     isAdminOrManager = false,
+    userName = 'Bạn',
+    userRole = '',
+    userPermissions = [],
+    activities = [],
+    announcements = [],
 }: DashboardClientProps) {
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
@@ -101,6 +121,99 @@ export function DashboardClient({
         setTopCustPeriodFilter(newPeriod);
         setInvoicePeriodFilter(newPeriod);
     };
+
+    // Personal scratchpad & quick focus states
+    const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
+    const [scratchpadText, setScratchpadText] = useState('');
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activeHighlightedWidget, setActiveHighlightedWidget] = useState<string | null>(null);
+
+    // Bulletin board toggle state
+    const [isBulletinOpen, setIsBulletinOpen] = useState(false);
+
+    // Filter urgent announcements for high-priority notification banner
+    const urgentAnnouncements = useMemo(() => {
+        return (announcements || []).filter((a: any) => a.isUrgent);
+    }, [announcements]);
+    const latestUrgent = urgentAnnouncements[0];
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('dashboard_personal_scratchpad');
+            if (saved) setScratchpadText(saved);
+        } catch (_) {}
+    }, []);
+
+    const handleSaveScratchpad = (val: string) => {
+        setScratchpadText(val);
+        try {
+            localStorage.setItem('dashboard_personal_scratchpad', val);
+        } catch (_) {}
+    };
+
+    const handleLiveRefresh = () => {
+        setIsRefreshing(true);
+        router.refresh();
+        setTimeout(() => {
+            setIsRefreshing(false);
+            toast.success('Dữ liệu Dashboard đã được làm mới!');
+        }, 600);
+    };
+
+    const scrollToWidget = (widgetId: string) => {
+        const el = document.getElementById(`widget-${widgetId}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setActiveHighlightedWidget(widgetId);
+            setTimeout(() => {
+                setActiveHighlightedWidget(null);
+            }, 2000);
+        }
+    };
+
+    // Calculate urgency metrics
+    const nowTime = useMemo(() => new Date().getTime(), []);
+    const urgentTasks = useMemo(() => {
+        return (userTasks || []).filter(t => {
+            if (t.status === 'DONE' || t.status === 'CANCELLED') return false;
+            if (!t.dueDate) return false;
+            return new Date(t.dueDate).getTime() <= (nowTime + 24 * 60 * 60 * 1000);
+        });
+    }, [userTasks, nowTime]);
+
+    const overdueInvoices = useMemo(() => {
+        return (invoices || []).filter(inv => {
+            if (inv.status === 'PAID' || inv.status === 'DRAFT' || inv.status === 'CANCELLED') return false;
+            if (!inv.dueDate) return false;
+            return new Date(inv.dueDate).getTime() < nowTime;
+        });
+    }, [invoices, nowTime]);
+
+    const openQuotes = useMemo(() => {
+        return (quotes || []).filter(q => q.status === 'SENT' || q.status === 'DRAFT');
+    }, [quotes]);
+
+    const todayEventsCount = useMemo(() => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const isToday = (d: any) => d ? format(new Date(d), 'yyyy-MM-dd') === todayStr : false;
+        const taskCount = (userTasks || []).filter(t => isToday(t.dueDate)).length;
+        const quoteCount = (quotes || []).filter(q => isToday(q.validUntil) || isToday(q.date)).length;
+        const invoiceCount = (invoices || []).filter(i => isToday(i.dueDate)).length;
+        return taskCount + quoteCount + invoiceCount;
+    }, [userTasks, quotes, invoices]);
+
+    const greeting = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Chào buổi sáng';
+        if (hour < 18) return 'Chào buổi chiều';
+        return 'Chào buổi tối';
+    }, []);
+
+    const dayOfWeekStr = useMemo(() => {
+        const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const d = new Date();
+        return `${days[d.getDay()]}, ${format(d, 'dd/MM/yyyy')}`;
+    }, []);
 
     // Calendar selection states
     const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
@@ -189,54 +302,29 @@ export function DashboardClient({
         <div className="bg-gray-50/50 min-h-screen p-3.5 xl:p-6 pt-3 xl:pt-4">
             <div className="w-full mx-auto space-y-5 pb-8">
                 {/* Dashboard Header Bar */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-2 -mx-1 md:mx-0">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-1 -mx-1 md:mx-0">
                     <div className="shrink-0 min-w-fit">
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
                                 Bảng Điều Khiển
-                            </h2>
-                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 whitespace-nowrap">
+                            </h1>
+                            <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 whitespace-nowrap">
                                 ERP / CRM
                             </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5 whitespace-nowrap hidden sm:block">
+                        <p className="text-xs text-slate-500 mt-1 whitespace-nowrap hidden sm:block font-medium">
                             Tổng quan hoạt động kinh doanh, tài chính và điều hành doanh nghiệp
                         </p>
                     </div>
 
                     {/* Action Controls */}
                     <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-                        {/* Quick Shortcuts */}
-                        <div className="flex items-center gap-1.5 mr-1">
-                            <Link
-                                href="/sales/estimates/new"
-                                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200/60 shadow-2xs whitespace-nowrap"
-                            >
-                                <Receipt size={14} className="shrink-0" />
-                                <span>Báo giá mới</span>
-                            </Link>
-                            <Link
-                                href="/customers"
-                                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200/60 shadow-2xs whitespace-nowrap"
-                            >
-                                <Users size={14} className="shrink-0" />
-                                <span>Khách hàng</span>
-                            </Link>
-                            <button
-                                onClick={() => setIsAddEventModalOpen(true)}
-                                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors border border-indigo-200/60 shadow-2xs whitespace-nowrap"
-                            >
-                                <Briefcase size={14} className="shrink-0" />
-                                <span>Giao việc</span>
-                            </button>
-                        </div>
-
                         {/* Employee Filter (Admin / Manager) */}
                         {isAdminOrManager && users && users.length > 0 && (
                             <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Xem theo:</span>
+                                <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Xem theo:</span>
                                 <select
-                                    className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 shadow-2xs cursor-pointer max-w-[200px]"
+                                    className="h-[34px] px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 shadow-2xs cursor-pointer max-w-[210px] transition-colors"
                                     value={currentEmployeeId || ''}
                                     onChange={(e) => {
                                         const newEmployeeId = e.target.value;
@@ -259,12 +347,12 @@ export function DashboardClient({
 
                         {/* Global Period Filter: Synchronizes Funnel, Top Customers, and Invoices widgets */}
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Thời gian:</span>
+                            <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Thời gian:</span>
                             <DashboardPeriodFilter
                                 value={globalPeriodFilter}
                                 onChange={handleGlobalPeriodChange}
                                 align="right"
-                                buttonClassName="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold whitespace-nowrap"
+                                buttonClassName="h-[34px] bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold whitespace-nowrap rounded-xl shadow-2xs"
                             />
                         </div>
 
@@ -272,7 +360,7 @@ export function DashboardClient({
                         <button
                             type="button"
                             onClick={() => setIsDragReorderMode(!isDragReorderMode)}
-                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all border flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer ${
+                            className={`h-[34px] px-3.5 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer ${
                                 isDragReorderMode
                                     ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
                                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -287,13 +375,287 @@ export function DashboardClient({
                         <button
                             type="button"
                             onClick={() => setIsCustomizeModalOpen(true)}
-                            className="px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+                            className="h-[34px] px-3.5 rounded-xl font-bold text-xs transition-all border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
                         >
                             <SlidersHorizontal size={14} />
                             <span>Tùy chỉnh Dashboard</span>
                         </button>
                     </div>
                 </div>
+
+                {/* Daily Focus & Command Bar (Smart Greeting, Urgent Metrics & Quick Scratchpad) */}
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-2xs space-y-3.5">
+                    {/* Row 1: Greeting + Date + Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                                <Sparkles size={20} strokeWidth={2.2} />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                                        {greeting}, <span className="text-emerald-700">{userName}</span>!
+                                    </h2>
+                                    {userRole && (
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                            {userRole === 'ADMIN' ? 'Ban Giám Đốc / Admin' : userRole === 'MANAGER' ? 'Quản Lý' : 'Chuyên Viên'}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+                                    <span className="text-slate-700 font-semibold">{dayOfWeekStr}</span>
+                                    <span>•</span>
+                                    <span className="text-slate-500 hidden sm:inline">Chúc bạn một ngày làm việc tràn đầy năng lượng & hiệu quả!</span>
+                                </p>
+
+                                {/* Cảnh báo Thông báo khẩn cấp ngay dưới dòng Chào Buổi sáng */}
+                                {latestUrgent && (
+                                    <div
+                                        onClick={() => setIsBulletinOpen(true)}
+                                        className="mt-2.5 inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-rose-400 bg-rose-50/90 hover:bg-rose-100/90 text-rose-950 bulletin-urgent-active cursor-pointer transition-all shadow-xs group max-w-full"
+                                        title="Nhấn để mở Bảng tin xem chi tiết thông báo khẩn cấp"
+                                    >
+                                        <span className="relative flex h-2.5 w-2.5 shrink-0">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+                                        </span>
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shrink-0 shadow-2xs flex items-center gap-1">
+                                            <BellRing size={11} className="animate-bounce" />
+                                            <span>THÔNG BÁO KHẨN CẤP</span>
+                                        </span>
+                                        <span className="text-xs font-bold text-rose-950 truncate max-w-xs sm:max-w-md md:max-w-lg group-hover:text-rose-700 transition-colors">
+                                            {latestUrgent.title}
+                                        </span>
+                                        {urgentAnnouncements.length > 1 && (
+                                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-200 text-rose-900 shrink-0">
+                                                +{urgentAnnouncements.length - 1} khác
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] font-bold text-rose-700 shrink-0 inline-flex items-center gap-0.5 ml-1">
+                                            <span className="hidden sm:inline">Xem ngay</span>
+                                            <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Live Refresh, Bulletin Board & Quick Scratchpad Buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={handleLiveRefresh}
+                                disabled={isRefreshing}
+                                className="h-[32px] px-3 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
+                                title="Làm mới toàn bộ dữ liệu chỉ số"
+                            >
+                                <RotateCw size={13} className={`text-slate-500 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
+                                <span>{isRefreshing ? 'Đang cập nhật...' : 'Làm mới số liệu'}</span>
+                            </button>
+
+                            {/* Toggle Bulletin Button (Kế bên Làm mới số liệu) */}
+                            <button
+                                type="button"
+                                onClick={() => setIsBulletinOpen(!isBulletinOpen)}
+                                className={`h-[32px] px-3 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+                                    isBulletinOpen
+                                        ? 'bg-indigo-600 text-white border border-indigo-700 shadow-xs'
+                                        : latestUrgent
+                                        ? 'text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-300 bulletin-urgent-active'
+                                        : 'text-indigo-800 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200/80'
+                                }`}
+                                title="Mở hoặc đóng Bảng tin Bulletin"
+                            >
+                                <Megaphone size={13} className={isBulletinOpen ? 'text-white' : latestUrgent ? 'text-rose-600 animate-bounce' : 'text-indigo-600'} />
+                                <span>{isBulletinOpen ? 'Đóng bảng tin' : 'Bảng tin Bulletin'}</span>
+                                {latestUrgent ? (
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                                    </span>
+                                ) : announcements.length > 0 ? (
+                                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-white/80 text-indigo-700 border border-indigo-200/60">
+                                        {announcements.length}
+                                    </span>
+                                ) : null}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsScratchpadOpen(!isScratchpadOpen)}
+                                className={`h-[32px] px-3 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+                                    isScratchpadOpen 
+                                        ? 'bg-amber-500 text-white border border-amber-600 shadow-xs' 
+                                        : 'text-amber-800 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/80'
+                                }`}
+                                title="Mở sổ ghi chú nhanh cá nhân"
+                            >
+                                <StickyNote size={13} className={isScratchpadOpen ? 'text-white' : 'text-amber-600'} />
+                                <span>{isScratchpadOpen ? 'Đóng sổ tay' : 'Sổ ghi chú nhanh'}</span>
+                                {scratchpadText.trim() && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Row 2: 4 Daily Focus KPI Chips (Click to drill down) */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => scrollToWidget('my_work_todo')}
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-slate-50/80 hover:bg-indigo-50/70 border border-slate-200/80 hover:border-indigo-300 transition-all text-left group cursor-pointer"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-100/80 text-indigo-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <CheckSquare size={16} strokeWidth={2.2} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-semibold text-slate-500 truncate">Việc gấp / Đến hạn</div>
+                                    <div className="text-sm font-bold font-mono text-slate-900 group-hover:text-indigo-700">
+                                        {urgentTasks.length} <span className="text-[11px] font-sans font-normal text-slate-500">công việc</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowRight size={13} className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => scrollToWidget('invoice_status_distribution')}
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-slate-50/80 hover:bg-rose-50/70 border border-slate-200/80 hover:border-rose-300 transition-all text-left group cursor-pointer"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-rose-100/80 text-rose-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <AlertTriangle size={16} strokeWidth={2.2} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-semibold text-slate-500 truncate">Hóa đơn quá hạn nợ</div>
+                                    <div className="text-sm font-bold font-mono text-slate-900 group-hover:text-rose-700">
+                                        {overdueInvoices.length} <span className="text-[11px] font-sans font-normal text-slate-500">hóa đơn</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowRight size={13} className="text-slate-400 group-hover:text-rose-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => scrollToWidget('sales_pipeline_funnel')}
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-slate-50/80 hover:bg-purple-50/70 border border-slate-200/80 hover:border-purple-300 transition-all text-left group cursor-pointer"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-purple-100/80 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <FileText size={16} strokeWidth={2.2} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-semibold text-slate-500 truncate">Báo giá đang mở</div>
+                                    <div className="text-sm font-bold font-mono text-slate-900 group-hover:text-purple-700">
+                                        {openQuotes.length} <span className="text-[11px] font-sans font-normal text-slate-500">báo giá</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowRight size={13} className="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => scrollToWidget('dashboard_calendar')}
+                            className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-slate-50/80 hover:bg-emerald-50/70 border border-slate-200/80 hover:border-emerald-300 transition-all text-left group cursor-pointer"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100/80 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <CalendarDays size={16} strokeWidth={2.2} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[11px] font-semibold text-slate-500 truncate">Lịch trình hôm nay</div>
+                                    <div className="text-sm font-bold font-mono text-slate-900 group-hover:text-emerald-700">
+                                        {todayEventsCount} <span className="text-[11px] font-sans font-normal text-slate-500">sự kiện</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowRight size={13} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                        </button>
+                    </div>
+
+                    {/* Collapsible Personal Scratchpad Card */}
+                    {isScratchpadOpen && (
+                        <div className="pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80">
+                                <div className="flex items-center justify-between pb-2 mb-2 border-b border-amber-200/60">
+                                    <div className="flex items-center gap-2">
+                                        <StickyNote size={15} className="text-amber-700" />
+                                        <span className="text-xs font-bold text-amber-900">Sổ Nháp Cá Nhân (Tự Động Lưu)</span>
+                                        <span className="text-[11px] text-amber-700 font-normal hidden sm:inline">• Lưu nhanh số điện thoại, ghi chú cuộc gọi, ý tưởng trong ngày</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {scratchpadText.trim() && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveScratchpad('')}
+                                                className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold px-2 py-0.5 rounded hover:bg-rose-100/60 transition-colors"
+                                            >
+                                                Xóa nháp
+                                            </button>
+                                        )}
+                                        <span className="text-[10.5px] font-mono text-amber-700">{scratchpadText.length} ký tự</span>
+                                    </div>
+                                </div>
+                                <textarea
+                                    rows={3}
+                                    value={scratchpadText}
+                                    onChange={(e) => handleSaveScratchpad(e.target.value)}
+                                    placeholder="Viết nhanh ghi chú của bạn tại đây... (Ví dụ: Gọi lại anh Tuấn 0912xxx lúc 15h30, cần gửi mẫu hợp đồng cho bên Tân Cảng...)"
+                                    className="w-full text-xs text-slate-800 bg-white/90 border border-amber-200 rounded-lg p-2.5 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-400/50 resize-y font-sans transition-all placeholder:text-amber-700/50"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quick Jump Anchor Navigator */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                            <Compass size={12} className="text-slate-400" /> Đến nhanh:
+                        </span>
+                        {[
+                            { id: 'kpi_cards', label: 'Chỉ số cốt lõi', icon: '📊' },
+                            { id: 'sales_pipeline_funnel', label: 'Phễu bán hàng', icon: '🎯' },
+                            { id: 'cash_flow_chart', label: 'Dòng tiền 12T', icon: '💰' },
+                            { id: 'top_customers_chart', label: 'Top Khách hàng', icon: '🏢' },
+                            { id: 'sales_performance_leaderboard', label: 'Bảng vinh danh', icon: '🏆' },
+                            { id: 'invoice_status_distribution', label: 'Thu nợ', icon: '⚠️' },
+                            { id: 'my_leads_status', label: 'Khách tiềm năng', icon: '👥' },
+                            { id: 'my_work_todo', label: 'Việc của tôi', icon: '📋' },
+                            { id: 'dashboard_calendar', label: 'Lịch công tác', icon: '📅' },
+                        ].filter(nav => visibleWidgets.some(w => w.id === nav.id)).map(nav => (
+                            <button
+                                key={nav.id}
+                                type="button"
+                                onClick={() => scrollToWidget(nav.id)}
+                                className="h-[26px] px-2.5 rounded-lg text-[11px] font-semibold text-slate-600 bg-slate-100/80 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/70 transition-all shrink-0 inline-flex items-center gap-1 cursor-pointer"
+                            >
+                                <span>{nav.icon}</span>
+                                <span>{nav.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Collapsible Bulletin Board (Mở/Đóng từ nút kế bên Làm mới số liệu hoặc click cảnh báo khẩn cấp) */}
+                {isBulletinOpen && (
+                    <div id="bulletin_board_collapsible" className="animate-in fade-in slide-in-from-top-3 duration-200">
+                        <BulletinBoardWidget
+                            activities={activities}
+                            announcements={announcements}
+                            isAdminOrManager={isAdminOrManager}
+                            userPermissions={userPermissions}
+                            userRole={userRole}
+                            currentUserId={currentUserId}
+                            userName={userName}
+                            onClose={() => setIsBulletinOpen(false)}
+                        />
+                    </div>
+                )}
 
                 {/* Banner when in Drag Reorder Mode */}
                 {isDragReorderMode && (
@@ -333,13 +695,18 @@ export function DashboardClient({
                                                     <div
                                                         ref={provided.innerRef}
                                                         {...provided.draggableProps}
-                                                        className={`transition-all ${
+                                                        id={`widget-${item.id}`}
+                                                        className={`transition-all duration-300 ${
                                                             snapshot.isDragging
                                                                 ? 'opacity-90 z-50 rounded-2xl shadow-2xl scale-[1.01]'
                                                                 : ''
                                                         } ${
                                                             isDragReorderMode
                                                                 ? 'ring-2 ring-dashed ring-amber-400/80 bg-amber-50/20 p-2 sm:p-3 rounded-2xl relative'
+                                                                : ''
+                                                        } ${
+                                                            activeHighlightedWidget === item.id
+                                                                ? 'ring-4 ring-emerald-500/80 ring-offset-2 rounded-2xl shadow-xl'
                                                                 : ''
                                                         }`}
                                                     >
@@ -380,6 +747,7 @@ export function DashboardClient({
                                                                 debtLastMonth={kpiData?.debtLastMonth || 0}
                                                             />
                                                         )}
+
 
                                                         {/* Widget 2: Sales Funnel */}
                                                         {item.id === 'sales_pipeline_funnel' && (

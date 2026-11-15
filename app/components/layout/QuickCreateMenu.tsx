@@ -26,7 +26,7 @@ export function QuickCreateMenu() {
         { label: 'Thêm Khách Hàng', href: '/customers?action=new', icon: <Users size={16} />, perm: 'CUSTOMERS_CREATE' },
         { label: 'Thêm Báo Giá ERP', href: '/sales/estimates?action=new', icon: <FileText size={16} />, perm: 'SALES_ESTIMATES_CREATE' },
         { label: 'Thêm Đơn Đặt Hàng (Bán)', href: '/sales/orders?action=new', icon: <ShoppingCart size={16} />, perm: 'SALES_ORDERS_CREATE' },
-        { label: 'Thêm Lead', href: '/sales/leads/new', icon: <ExternalLink size={16} />, perm: 'CUSTOMERS_CREATE' },
+        { label: 'Thêm Lead', href: '/sales/leads?action=new', icon: <ExternalLink size={16} />, perm: 'CUSTOMERS_CREATE' },
         { label: 'Thêm Hóa Đơn (Bán)', href: '/sales/invoices?action=new', icon: <FileSpreadsheet size={16} />, perm: 'SALES_INVOICES_CREATE' },
         { label: 'Thêm Sản Phẩm Mới', href: '/inventory/products?action=new', icon: <Box size={16} />, perm: 'PRODUCTS_CREATE' },
         { label: 'Thêm Nhà Cung Cấp', href: '/suppliers?action=new', icon: <Building size={16} />, perm: 'SUPPLIERS_CREATE' },

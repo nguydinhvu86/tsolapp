@@ -229,8 +229,8 @@ export default function PortalWarrantyClient({
                 </div>
             </div>
 
-            {/* Stats Overview Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {/* Stats Overview Cards (Co - Giãn Responsive chuẩn trên mọi thiết bị) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                         <Package size={22} />
@@ -369,14 +369,14 @@ export default function PortalWarrantyClient({
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
                                 <span className="text-[11px] text-slate-400 font-medium">Ngày tiếp nhận BH:</span>
                                 <p className="font-bold font-mono text-slate-800" suppressHydrationWarning>
-                                    {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                    {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : ((lookupResult.warrantyCount || 0) > 0 ? 'Theo phiếu tiếp nhận' : 'Chưa phát sinh')}
                                 </p>
                                 <span className="text-[10px] text-slate-500 block">Tiếp nhận tại trung tâm</span>
                             </div>
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
                                 <span className="text-[11px] text-slate-400 font-medium">Ngày trả bảo hành:</span>
                                 <p className={`font-bold font-mono ${lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'text-amber-600 animate-pulse' : 'text-emerald-700'}`} suppressHydrationWarning>
-                                    {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng KT' : 'Chưa có')}
+                                    {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng KT' : (lookupResult.currentServiceState === 'REPLACED' ? 'Đã đổi mới 1-1' : 'Chưa phát sinh'))}
                                 </p>
                                 <span className="text-[10px] text-slate-500 block">Hoàn trả đại lý</span>
                             </div>
@@ -542,8 +542,8 @@ export default function PortalWarrantyClient({
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs whitespace-nowrap">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full min-w-[940px] text-left text-xs whitespace-nowrap">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
                                 <th className="px-4 py-3.5">Số Serial / IMEI</th>
@@ -723,13 +723,13 @@ export default function PortalWarrantyClient({
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                                 <span className="text-slate-400 block text-[10px]">Tiếp nhận gần nhất:</span>
                                 <strong className="text-slate-800 font-mono text-[11px]" suppressHydrationWarning>
-                                    {selectedSerialHistory.lastReceivedDate ? new Date(selectedSerialHistory.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                    {selectedSerialHistory.lastReceivedDate ? new Date(selectedSerialHistory.lastReceivedDate).toLocaleDateString('vi-VN') : ((selectedSerialHistory.warrantyCount || 0) > 0 ? 'Theo phiếu tiếp nhận' : 'Chưa phát sinh')}
                                 </strong>
                             </div>
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                                 <span className="text-slate-400 block text-[10px]">Ngày trả gần nhất:</span>
                                 <strong className="text-emerald-700 font-mono text-[11px]" suppressHydrationWarning>
-                                    {selectedSerialHistory.lastReturnDate ? new Date(selectedSerialHistory.lastReturnDate).toLocaleDateString('vi-VN') : (selectedSerialHistory.status === 'UNDER_WARRANTY' ? 'Đang xử lý' : 'Chưa có')}
+                                    {selectedSerialHistory.lastReturnDate ? new Date(selectedSerialHistory.lastReturnDate).toLocaleDateString('vi-VN') : (selectedSerialHistory.status === 'UNDER_WARRANTY' ? 'Đang xử lý' : (selectedSerialHistory.status === 'REPLACED' ? 'Đã đổi mới 1-1' : 'Chưa phát sinh'))}
                                 </strong>
                             </div>
                         </div>

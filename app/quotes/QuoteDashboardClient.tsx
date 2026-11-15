@@ -15,6 +15,7 @@ import { QuoteQuickViewDrawer } from './QuoteQuickViewDrawer';
 import { Modal } from '@/app/components/ui/Modal';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 import { Button } from '@/app/components/ui/Button';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 
 import { 
     Plus, 
@@ -304,59 +305,45 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
 
     return (
         <div className="space-y-4">
-            {/* 1. ERP Header Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            BÁO GIÁ &amp; THƯƠNG MẠI
-                        </span>
-                        <span className="text-slate-300 text-xs">|</span>
-                        <span className="text-xs font-semibold text-slate-500">Chuẩn quy trình CRM B2B</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                            Quản lý Báo giá
-                        </h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-2xs">
-                            {quotesData.length}
-                        </span>
-                    </div>
-                </div>
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="BÁO GIÁ &amp; THƯƠNG MẠI"
+                tagline="Chuẩn quy trình CRM B2B"
+                title="Quản lý Báo giá"
+                count={quotesData.length}
+                actions={
+                    <div className="flex items-center gap-2">
+                        {/* Toggle Analytics Insights */}
+                        <button
+                            type="button"
+                            onClick={() => setShowAnalytics(prev => !prev)}
+                            className={`inline-flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                                showAnalytics
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-2xs'
+                                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                            }`}
+                            title="Bật/Tắt Biểu đồ phân tích"
+                        >
+                            <BarChart3 size={15} />
+                            <span>Biểu đồ phân tích</span>
+                            <span className={`w-2 h-2 rounded-full ${showAnalytics ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                        </button>
 
-                <div className="flex items-center gap-2 shrink-0">
-                    {/* Toggle Analytics Insights */}
-                    <button
-                        type="button"
-                        onClick={() => setShowAnalytics(prev => !prev)}
-                        className={`inline-flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                            showAnalytics
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-2xs'
-                                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-                        }`}
-                        title="Bật/Tắt Biểu đồ phân tích"
-                    >
-                        <BarChart3 size={15} />
-                        <span>Biểu đồ phân tích</span>
-                        <span className={`w-2 h-2 rounded-full ${showAnalytics ? 'bg-indigo-600' : 'bg-slate-300'}`} />
-                    </button>
-
-                    {/* Create Quote Button */}
-                    {canCreate && (
-                        <Link href="/quotes/new">
-                            <button
-                                type="button"
-                                style={{ backgroundColor: '#05A613' }}
-                                className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-                            >
-                                <Plus size={16} className="stroke-[3]" />
-                                <span>Tạo Báo Giá</span>
-                            </button>
-                        </Link>
-                    )}
-                </div>
-            </div>
+                        {/* Create Quote Button */}
+                        {canCreate && (
+                            <Link href="/quotes/new">
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <Plus size={16} className="stroke-[3]" />
+                                    <span>Tạo Báo Giá</span>
+                                </button>
+                            </Link>
+                        )}
+                    </div>
+                }
+            />
 
             {/* 2. Collapsible Visual Analytics Bar (Charts + KPIs) */}
             {showAnalytics && (
@@ -495,8 +482,8 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
 
                 {/* 4. Table View Mode */}
                 {viewMode === 'table' && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[920px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-100/80">
                                     <th 
@@ -684,10 +671,10 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                                                         <button
                                                             type="button"
                                                             onClick={() => setQuickViewQuote(q)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs shrink-0"
+                                                            className="h-[21px] px-2 text-[10px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
                                                             title="Xem nhanh Báo giá (trượt từ bên phải)"
                                                         >
-                                                            <Eye size={13} />
+                                                            <Eye size={11} />
                                                             <span>Xem nhanh</span>
                                                         </button>
 
@@ -695,10 +682,10 @@ export function QuoteDashboardClient({ initialData }: { initialData: QuoteWithRe
                                                         <Link
                                                             href={`/quotes/${q.id}`}
                                                             target="_blank"
-                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all shrink-0"
+                                                            className="h-[21px] px-2 text-[10px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded inline-flex items-center gap-1 shadow-2xs transition-all shrink-0"
                                                             title="Mở trang chi tiết & in chuẩn A4"
                                                         >
-                                                            <ExternalLink size={13} />
+                                                            <ExternalLink size={11} />
                                                             <span>Chi tiết</span>
                                                         </Link>
 

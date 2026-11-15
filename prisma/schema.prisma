@@ -3055,6 +3055,24 @@ model ZnsLog {
   @@index([sentAt])
 }
 
+model CompanyAnnouncement {
+  id         String   @id @default(cuid())
+  title      String
+  content    String   @db.Text
+  type       String   @default("GENERAL") // GENERAL, POLICY, URGENT, EVENT, MISSION
+  isUrgent   Boolean  @default(false)
+  isPinned   Boolean  @default(false)
+  authorId   String?
+  authorName String?
+  viewsCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isUrgent, createdAt])
+  @@map("company_announcements")
+}
+
+
 
 
 

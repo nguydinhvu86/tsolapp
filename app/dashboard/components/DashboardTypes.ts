@@ -3,7 +3,7 @@ export interface WidgetRegistryItem {
     title: string;
     subtitle: string;
     category: 'finance' | 'sales' | 'operations';
-    iconName: 'DollarSign' | 'Filter' | 'TrendingUp' | 'Users' | 'Trophy' | 'Receipt' | 'Target' | 'CheckCircle2' | 'Calendar';
+    iconName: 'DollarSign' | 'Filter' | 'TrendingUp' | 'Users' | 'Trophy' | 'Receipt' | 'Target' | 'CheckCircle2' | 'Calendar' | 'Megaphone';
     defaultVisible: boolean;
     adminOnly?: boolean;
 }

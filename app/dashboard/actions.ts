@@ -281,3 +281,30 @@ export async function updateDashboardTaskStatus(taskId: string, status: string) 
         return { success: false, error: e.message };
     }
 }
+
+export async function getBulletinActivities() {
+    const { getBulletinActivities: fn } = await import('@/lib/bulletin-service');
+    return await fn();
+}
+
+export async function getBulletinAnnouncements() {
+    const { getBulletinAnnouncements: fn } = await import('@/lib/bulletin-service');
+    return await fn();
+}
+
+export async function createCompanyAnnouncement(data: {
+    title: string;
+    content: string;
+    type?: string;
+    isUrgent?: boolean;
+    isPinned?: boolean;
+}) {
+    const { createCompanyAnnouncement: fn } = await import('@/lib/bulletin-service');
+    return await fn(data);
+}
+
+export async function deleteCompanyAnnouncement(id: string) {
+    const { deleteCompanyAnnouncement: fn } = await import('@/lib/bulletin-service');
+    return await fn(id);
+}
+

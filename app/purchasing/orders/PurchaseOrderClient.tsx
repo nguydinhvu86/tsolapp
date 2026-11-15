@@ -12,6 +12,7 @@ import { createPurchaseOrder, deletePurchaseOrder, updatePurchaseOrder } from '@
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
@@ -510,23 +511,25 @@ export function PurchaseOrderClient({ initialOrders, suppliers, products }: { in
     }, [orders]);
 
     return (
-        <div className="p-8">
-            <div className="page-header">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('purchaseOrders.title')}</h1>
-                    <p className="text-sm text-slate-500">{t('purchaseOrders.description')}</p>
-                </div>
-                <button
-                    onClick={handleOpenCreate}
-                    className="btn btn-primary shadow-sm flex items-center gap-2"
-                >
-                    <Plus size={18} />
-                    <span>{t('purchaseOrders.createOrder')}</span>
-                </button>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                badge="MUA HÀNG &amp; NHÀ CUNG CẤP"
+                tagline="Quản lý đặt hàng &amp; đối tác cung ứng"
+                title={t('purchaseOrders.title')}
+                count={stats.total}
+                actions={
+                    <button
+                        onClick={handleOpenCreate}
+                        className="btn btn-primary shadow-sm flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg"
+                    >
+                        <Plus size={16} className="stroke-[2.5]" />
+                        <span>{t('purchaseOrders.createOrder')}</span>
+                    </button>
+                }
+            />
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {/* Stats Cards (Co - Giãn Responsive chuẩn trên mọi thiết bị) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
                 <div className="stat-card stat-card-emerald">
                     <div className="stat-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{t('purchaseOrders.totalOrders')}</div>
                     <div className="stat-value text-2xl font-black text-slate-900">{stats.total}</div>

@@ -8,7 +8,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
-import { Plus, GripVertical, User, Mail, Phone, CalendarCheck } from 'lucide-react';
+import { Plus, GripVertical, User, Mail, Phone, CalendarCheck, Briefcase, ChevronDown } from 'lucide-react';
 import { createCandidateAndApplication, updateApplicationStage } from './actions';
 import CandidateDetailModal from './CandidateDetailModal';
 
@@ -139,17 +139,23 @@ export default function PipelineClient({ requisitions, initialApplications, acti
 
                     <div className="h-8 w-[1px] bg-slate-200 hidden md:block"></div>
 
-                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                        <span className="text-xs font-bold text-slate-500 pl-2">Vị trí:</span>
+                    <div className="relative inline-flex items-center gap-2 bg-slate-50/90 hover:bg-slate-100/80 border border-slate-200/90 rounded-xl px-3 py-1.5 transition-all shadow-2xs group">
+                        <Briefcase size={13} className="text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0" />
+                        <span className="text-xs font-medium text-slate-500 shrink-0">Vị trí:</span>
                         <select 
                             value={activeReqId || ''} 
                             onChange={handleReqChange}
-                            className="bg-transparent text-xs font-bold text-emerald-700 outline-none cursor-pointer pr-2"
+                            className="bg-transparent border-0 border-none text-xs font-bold text-emerald-700 hover:text-emerald-800 outline-none focus:outline-none focus:ring-0 cursor-pointer appearance-none pr-6 max-w-[320px] md:max-w-[480px] truncate"
+                            style={{ border: 'none', outline: 'none' }}
+                            title="Chọn Vị trí tuyển dụng để xem phễu ứng viên"
                         >
                             {requisitions.map((req: any) => (
-                                <option key={req.id} value={req.id}>[{req.code}] {req.title} ({req.department || '---'})</option>
+                                <option key={req.id} value={req.id} className="text-slate-800 bg-white font-medium py-1">
+                                    [{req.code}] {req.title} {req.department ? '(' + req.department + ')' : ''}
+                                </option>
                             ))}
                         </select>
+                        <ChevronDown size={13} className="text-emerald-600/70 absolute right-2.5 pointer-events-none shrink-0" />
                     </div>
                 </div>
 

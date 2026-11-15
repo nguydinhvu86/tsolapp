@@ -5,6 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Contract, Customer, ContractTemplate } from '@prisma/client';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { RichTextEditor } from '@/app/components/ui/RichTextEditor';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { deleteContract, updateContractStatus, updateContract } from './actions';
@@ -184,56 +185,42 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
 
     return (
         <div className="space-y-4">
-            {/* 1. ERP Header Bar (Đồng bộ chuẩn font & kích thước toàn hệ thống) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            QUẢN LÝ VĂN THƯ
-                        </span>
-                        <span className="text-slate-300 text-xs">|</span>
-                        <span className="text-xs font-semibold text-slate-500">Hợp đồng &amp; Ký kết B2B</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                            {pageHeading}
-                        </h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-2xs">
-                            {stats.total}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap shrink-0">
-                    <Link
-                        href="/templates"
-                        className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
-                    >
-                        <FileCode size={15} />
-                        <span>Mẫu hợp đồng</span>
-                    </Link>
-                    <Link
-                        href="/contract-appendices"
-                        className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
-                    >
-                        <FileSpreadsheet size={15} />
-                        <span>Phụ lục HĐ</span>
-                    </Link>
-                    {canCreate && (
-                        <Link href="/contracts/new">
-                            <button
-                                type="button"
-                                style={{ backgroundColor: '#05A613' }}
-                                className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-                            >
-                                <Plus size={16} className="stroke-[3]" />
-                                <span>{t('contractDashboard.createContract')}</span>
-                            </button>
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="QUẢN LÝ VĂN THƯ"
+                tagline="Hợp đồng &amp; Ký kết B2B"
+                title={pageHeading}
+                count={stats.total}
+                actions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                            href="/templates"
+                            className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
+                        >
+                            <FileCode size={15} />
+                            <span>Mẫu hợp đồng</span>
                         </Link>
-                    )}
-                </div>
-            </div>
+                        <Link
+                            href="/contract-appendices"
+                            className="inline-flex items-center gap-1.5 h-[36px] px-3.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 transition-all"
+                        >
+                            <FileSpreadsheet size={15} />
+                            <span>Phụ lục HĐ</span>
+                        </Link>
+                        {canCreate && (
+                            <Link href="/contracts/new">
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <Plus size={16} className="stroke-[3]" />
+                                    <span>{t('contractDashboard.createContract')}</span>
+                                </button>
+                            </Link>
+                        )}
+                    </div>
+                }
+            />
 
             {/* 2. KPI Filter Cards (Đồng bộ chuẩn thẻ hệ thống) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -409,8 +396,8 @@ export function ContractDashboardClient({ initialData }: { initialData: Contract
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full min-w-[920px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-100/80">
                                 <th

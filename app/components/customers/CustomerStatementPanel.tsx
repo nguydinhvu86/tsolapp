@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/app/components/ui/Card';
-import { Table } from '@/app/components/ui/Table';
 import { Button } from '@/app/components/ui/Button';
-import { Printer, Calendar, Search, ExternalLink } from 'lucide-react';
+import { Table } from '@/app/components/ui/Table';
+import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Printer, Calendar, ArrowRight, ExternalLink, Search } from 'lucide-react';
 import Link from 'next/link';
-import { getCustomerStatement, StatementSummary, StatementTransaction } from '../../customers/[id]/statement/actions';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { formatMoney } from '@/lib/utils/formatters';
+import { getCustomerStatement } from '@/app/customers/[id]/statement/actions';
 
 interface CustomerStatementPanelProps {
     customerId: string;
@@ -16,27 +16,23 @@ interface CustomerStatementPanelProps {
 }
 
 export function CustomerStatementPanel({ customerId, customerName }: CustomerStatementPanelProps) {
-    const [startDate, setStartDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [endDate, setEndDate] = useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
     const [isLoading, setIsLoading] = useState(false);
-
-    const [summary, setSummary] = useState<StatementSummary | null>(null);
-    const [transactions, setTransactions] = useState<StatementTransaction[]>([]);
+    const [data, setData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
 
     const loadData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const result = await getCustomerStatement(customerId, startDate, endDate);
-            if (result.success && result.summary) {
-                setSummary(result.summary);
-                setTransactions(result.transactions || []);
-            } else {
-                setError(result.error || 'Lỗi không xác định khi tải dữ liệu sao kê.');
+            const res = await getCustomerStatement(customerId, startDate, endDate);
+            if (!res.success) {
+                throw new Error(res.error || 'Có lỗi khi tải dữ liệu sao kê công nợ');
             }
-        } catch (e: any) {
-            setError(e.message);
+            setData(res);
+        } catch (err: any) {
+            setError(err.message || 'Không thể tải dữ liệu sao kê');
         } finally {
             setIsLoading(false);
         }
@@ -44,8 +40,7 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
 
     useEffect(() => {
         loadData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [customerId]);
 
     const handlePrint = () => {
         window.print();
@@ -70,120 +65,169 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(Math.round(amount || 0));
     };
 
+    const summary = data?.summary;
+    const transactions = data?.transactions || [];
+
     return (
-        <div className="statement-panel">
+        <div className="statement-panel w-full space-y-4">
             {/* Header & Controls - Hidden when printing */}
-            <div className="print-hide" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <Button onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', color: '#334155', border: '1px solid #cbd5e1' }}>
-                        <Printer size={16} /> In Sao Kê
-                    </Button>
+            <div className="print-hide space-y-3">
+                <div className="flex justify-end items-center">
+                    <button 
+                        type="button"
+                        onClick={handlePrint} 
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200/90 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-all cursor-pointer"
+                        title="In bản sao kê đối chiếu A4"
+                    >
+                        <Printer size={13} className="text-slate-500" />
+                        <span>In Sao Kê (A4)</span>
+                    </button>
                 </div>
 
-                <Card style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-end' }}>
-                        <div style={{ display: 'flex', gap: '1rem', flex: 1, minWidth: '300px' }}>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>Từ ngày</label>
+                {/* Filter Toolbar Card */}
+                <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <div className="flex flex-wrap gap-3.5 items-end justify-between">
+                        <div className="flex flex-wrap sm:flex-nowrap gap-3 flex-1 min-w-[260px]">
+                            <div className="flex-1 min-w-[120px]">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Từ ngày</label>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none' }}
+                                    className="w-full px-3 py-1.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 text-slate-800 font-mono transition-all"
                                 />
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>Đến ngày</label>
+                            <div className="flex-1 min-w-[120px]">
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Đến ngày</label>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                     min={startDate}
-                                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', outline: 'none' }}
+                                    className="w-full px-3 py-1.5 text-xs bg-slate-50/50 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 text-slate-800 font-mono transition-all"
                                 />
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            <button type="button" onClick={() => setQuickDate('THIS_MONTH')} style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '0.375rem', cursor: 'pointer', color: '#475569' }}>Tháng này</button>
-                            <button type="button" onClick={() => setQuickDate('LAST_MONTH')} style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '0.375rem', cursor: 'pointer', color: '#475569' }}>Tháng trước</button>
-                            <button type="button" onClick={() => setQuickDate('THIS_YEAR')} style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '0.375rem', cursor: 'pointer', color: '#475569' }}>Năm nay</button>
-                            <Button onClick={loadData} disabled={isLoading} style={{ background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Search size={16} /> {isLoading ? 'Đang tải...' : 'Xem báo cáo'}
-                            </Button>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <button 
+                                type="button" 
+                                onClick={() => setQuickDate('THIS_MONTH')} 
+                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/80 transition-colors cursor-pointer"
+                            >
+                                Tháng này
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={() => setQuickDate('LAST_MONTH')} 
+                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/80 transition-colors cursor-pointer"
+                            >
+                                Tháng trước
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={() => setQuickDate('THIS_YEAR')} 
+                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/80 transition-colors cursor-pointer"
+                            >
+                                Năm nay
+                            </button>
+
+                            <button 
+                                type="button"
+                                onClick={loadData} 
+                                disabled={isLoading} 
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+                            >
+                                <Search size={13} />
+                                <span>{isLoading ? 'Đang tải...' : 'Xem báo cáo'}</span>
+                            </button>
                         </div>
                     </div>
-                </Card>
+                </div>
             </div>
 
             {error && (
-                <div className="print-hide" style={{ padding: '1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '0.5rem', marginBottom: '1.5rem', border: '1px solid #fca5a5' }}>
+                <div className="print-hide p-3 bg-rose-50 text-rose-700 text-xs font-medium rounded-xl border border-rose-200">
                     {error}
                 </div>
             )}
 
             {/* A4 Target Print Area */}
-            <div className="print-a4-container">
+            <div className="print-a4-container space-y-4">
                 {/* Print Header - Visible only when printing */}
                 <div className="print-only" style={{ display: 'none', marginBottom: '2rem', textAlign: 'center' }}>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>SAO KÊ CÔNG NỢ KHÁCH HÀNG</h1>
-                    <p style={{ margin: '0 0 0.25rem 0', fontSize: '1.2rem', fontWeight: 600 }}>Tên khách hàng: {customerName}</p>
-                    <p style={{ margin: 0, fontSize: '0.95rem', fontStyle: 'italic', color: '#334155' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>SAO KÊ CÔNG NỢ KHÁCH HÀNG</h1>
+                    <p style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', fontWeight: 600 }}>Tên khách hàng: {customerName}</p>
+                    <p style={{ margin: 0, fontSize: '0.9rem', fontStyle: 'italic', color: '#334155' }}>
                         Từ {format(new Date(startDate), 'dd/MM/yyyy')} đến {format(new Date(endDate), 'dd/MM/yyyy')}
                     </p>
                 </div>
 
-                {/* Summary Cards */}
+                {/* Harmonized KPI Summary Cards */}
                 {summary && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 statement-summary-grid">
-                        <Card className="summary-card" style={{ padding: '1.25rem', borderLeft: '4px solid #94a3b8' }}>
-                            <p className="summary-label" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Số dư đầu kỳ</p>
-                            <p className="summary-value" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#334155' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 statement-summary-grid">
+                        <div className="summary-card bg-white p-3.5 rounded-xl border border-slate-200/90 border-l-4 border-l-slate-400 shadow-2xs">
+                            <div className="summary-label text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                Số Dư Đầu Kỳ
+                            </div>
+                            <div className="summary-value text-base font-bold font-mono text-slate-900 tracking-tight">
                                 {formatCurrency(summary.openingBalance)}
-                            </p>
-                        </Card>
-                        <Card className="summary-card" style={{ padding: '1.25rem', borderLeft: '4px solid #ef4444' }}>
-                            <p className="summary-label" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: '#dc2626', textTransform: 'uppercase' }}>Phát sinh nợ (Hóa đơn)</p>
-                            <p className="summary-value" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>
+                            </div>
+                        </div>
+
+                        <div className="summary-card bg-white p-3.5 rounded-xl border border-slate-200/90 border-l-4 border-l-rose-500 shadow-2xs">
+                            <div className="summary-label text-[11px] font-bold uppercase tracking-wider text-rose-600 mb-1">
+                                Phát Sinh Nợ (Hóa Đơn)
+                            </div>
+                            <div className="summary-value text-base font-bold font-mono text-rose-600 tracking-tight">
                                 +{formatCurrency(summary.invoicedAmount)}
-                            </p>
-                        </Card>
-                        <Card className="summary-card" style={{ padding: '1.25rem', borderLeft: '4px solid #22c55e' }}>
-                            <p className="summary-label" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: '#16a34a', textTransform: 'uppercase' }}>Thanh toán (Có)</p>
-                            <p className="summary-value" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#22c55e' }}>
+                            </div>
+                        </div>
+
+                        <div className="summary-card bg-white p-3.5 rounded-xl border border-slate-200/90 border-l-4 border-l-emerald-500 shadow-2xs">
+                            <div className="summary-label text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-1">
+                                Thanh Toán (Có)
+                            </div>
+                            <div className="summary-value text-base font-bold font-mono text-emerald-600 tracking-tight">
                                 -{formatCurrency(summary.paidAmount)}
-                            </p>
-                        </Card>
-                        <Card className="summary-card closing-card" style={{ padding: '1.25rem', borderLeft: '4px solid #3b82f6', background: '#f8fafc' }}>
-                            <p className="summary-label" style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: 600, color: '#2563eb', textTransform: 'uppercase' }}>Dư nợ cuối kỳ</p>
-                            <p className="summary-value" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e40af' }}>
+                            </div>
+                        </div>
+
+                        <div className="summary-card closing-card bg-blue-50/50 p-3.5 rounded-xl border border-blue-200 border-l-4 border-l-blue-600 shadow-2xs">
+                            <div className="summary-label text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1">
+                                Dư Nợ Cuối Kỳ
+                            </div>
+                            <div className="summary-value text-base font-black font-mono text-blue-700 tracking-tight">
                                 {formatCurrency(summary.closingBalance)}
-                            </p>
-                        </Card>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* Transactions Table */}
-                <Card className="statement-table-card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div className="table-responsive-wrapper" style={{ overflowX: 'auto' }}>
-                        <Table className="statement-table">
+                {/* Harmonized Transactions Table */}
+                <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden statement-table-card">
+                    <div className="overflow-x-auto custom-scrollbar table-responsive-wrapper">
+                        <table className="w-full text-left border-collapse min-w-[760px] statement-table">
                             <thead>
-                                <tr>
-                                    <th style={{ width: '12%', textAlign: 'center' }}>Ngày CT</th>
-                                    <th style={{ width: '15%', textAlign: 'center' }}>Số CT</th>
-                                    <th style={{ width: '31%', textAlign: 'center' }}>Diễn giải</th>
-                                    <th style={{ width: '14%', textAlign: 'right' }}>Phát sinh (Nợ)</th>
-                                    <th style={{ width: '14%', textAlign: 'right' }}>Thanh toán (Có)</th>
-                                    <th style={{ width: '14%', textAlign: 'right' }}>Số dư nợ</th>
+                                <tr className="bg-slate-50/80 border-b border-slate-200/90 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                    <th className="py-2.5 px-3 text-center w-[120px]">Ngày CT</th>
+                                    <th className="py-2.5 px-3 text-center w-[140px]">Số CT</th>
+                                    <th className="py-2.5 px-3 text-left">Diễn giải</th>
+                                    <th className="py-2.5 px-3 text-right w-[150px]">Phát sinh (Nợ)</th>
+                                    <th className="py-2.5 px-3 text-right w-[150px]">Thanh toán (Có)</th>
+                                    <th className="py-2.5 px-3 text-right w-[160px]">Số dư nợ</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-slate-100 text-xs">
                                 {/* Opening Balance Row */}
                                 {summary && (
-                                    <tr style={{ background: '#f8fafc' }}>
-                                        <td colSpan={3} style={{ fontWeight: 600, textAlign: 'right' }}>SỐ DƯ ĐẦU KỲ:</td>
-                                        <td style={{ textAlign: 'right' }}>-</td>
-                                        <td style={{ textAlign: 'right' }}>-</td>
-                                        <td style={{ textAlign: 'right', fontWeight: 700, color: '#334155' }}>
+                                    <tr className="bg-slate-50/60 font-semibold text-slate-700">
+                                        <td colSpan={3} className="py-2 px-3 text-right font-bold uppercase tracking-wider text-slate-500 text-[11px]">
+                                            Số Dư Đầu Kỳ:
+                                        </td>
+                                        <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
+                                        <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
+                                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
                                             {formatCurrency(summary.openingBalance)}
                                         </td>
                                     </tr>
@@ -191,49 +235,51 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
 
                                 {/* Detail Rows */}
                                 {transactions.length > 0 ? (
-                                    transactions.map((tx, idx) => (
-                                        <tr key={`${tx.id}-${idx}`}>
-                                            <td suppressHydrationWarning style={{ textAlign: 'center' }}>
+                                    transactions.map((tx: any, idx: number) => (
+                                        <tr key={`${tx.id}-${idx}`} className="hover:bg-slate-50/70 transition-colors">
+                                            <td suppressHydrationWarning className="py-2 px-3 text-center font-mono text-slate-600">
                                                 {format(new Date(tx.date), 'dd/MM/yyyy')}
                                             </td>
-                                            <td style={{ fontWeight: 500, textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                                    <span className="print-hide" style={{
-                                                        display: 'inline-block', padding: '0.125rem 0.25rem',
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span className="print-hide px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight shrink-0" style={{
                                                         background: tx.type === 'INVOICE' ? '#fee2e2' : '#dcfce7',
-                                                        color: tx.type === 'INVOICE' ? '#b91c1c' : '#15803d',
-                                                        borderRadius: '0.25rem', fontSize: '0.75rem', marginRight: '0.25rem'
+                                                        color: tx.type === 'INVOICE' ? '#b91c1c' : '#15803d'
                                                     }}>
                                                         {tx.type === 'INVOICE' ? 'HĐ' : 'TT'}
                                                     </span>
-                                                    <span className="print-only" style={{ display: 'none', fontSize: '0.8rem', marginRight: '4px' }}>
+                                                    <span className="print-only text-xs" style={{ display: 'none' }}>
                                                         {tx.type === 'INVOICE' ? '[HĐ]' : '[TT]'}
                                                     </span>
-                                                    <Link href={tx.type === 'INVOICE' ? `/sales/invoices/${tx.id}` : `/sales/payments/${tx.id}`}
-                                                        className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 w-max">
-                                                        {tx.code}
-                                                        <ExternalLink size={12} className="print-hide" />
+                                                    <Link 
+                                                        href={tx.type === 'INVOICE' ? `/sales/invoices/${tx.id}` : `/sales/payments/${tx.id}`}
+                                                        className="font-mono text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                                    >
+                                                        <span>{tx.code}</span>
+                                                        <ExternalLink size={11} className="print-hide text-slate-400" />
                                                     </Link>
                                                 </div>
                                             </td>
-                                            <td>{tx.description}</td>
-                                            <td style={{ textAlign: 'right', color: '#ef4444', fontWeight: tx.debit > 0 ? 500 : 400 }}>
+                                            <td className="py-2 px-3 text-slate-700 truncate max-w-md">
+                                                {tx.description}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono font-semibold text-rose-600">
                                                 {tx.debit > 0 ? formatCurrency(tx.debit) : '-'}
                                             </td>
-                                            <td style={{ textAlign: 'right', color: '#22c55e', fontWeight: tx.credit > 0 ? 500 : 400 }}>
+                                            <td className="py-2 px-3 text-right font-mono font-semibold text-emerald-600">
                                                 {tx.credit > 0 ? formatCurrency(tx.credit) : '-'}
                                             </td>
-                                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#334155' }}>
+                                            <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
                                                 {formatCurrency(tx.runningBalance)}
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                                                <Calendar size={32} style={{ opacity: 0.5 }} />
-                                                <p style={{ margin: 0 }}>Không có giao dịch phát sinh trong kỳ này.</p>
+                                        <td colSpan={6} className="py-10 text-center text-slate-400">
+                                            <div className="flex flex-col items-center justify-center gap-1.5">
+                                                <Calendar size={24} className="text-slate-300" />
+                                                <p className="text-xs text-slate-500 m-0">Không có giao dịch phát sinh trong kỳ này.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -241,38 +287,39 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
 
                                 {/* Closing Balance Row */}
                                 {summary && (
-                                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
-                                        <td colSpan={3} style={{ fontWeight: 700, textAlign: 'right', color: '#0f172a' }}>TỔNG CỘNG PHÁT SINH TRONG KỲ:</td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>
+                                    <tr className="bg-slate-50/80 border-t-2 border-slate-200/90 font-bold text-slate-900">
+                                        <td colSpan={3} className="py-2.5 px-3 text-right uppercase tracking-wider text-[11px] text-slate-700">
+                                            Tổng Cộng Phát Sinh Trong Kỳ:
+                                        </td>
+                                        <td className="py-2.5 px-3 text-right font-mono font-bold text-rose-600">
                                             {formatCurrency(summary.invoicedAmount)}
                                         </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#22c55e' }}>
+                                        <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">
                                             {formatCurrency(summary.paidAmount)}
                                         </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e40af', fontSize: '1.05rem' }}>
+                                        <td className="py-2.5 px-3 text-right font-mono font-black text-blue-700 text-xs sm:text-sm">
                                             {formatCurrency(summary.closingBalance)}
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
-                        </Table>
-                    </div>
-                </Card>
-
-                {/* Print Signatures - Visible only when printing */}
-                <div className="print-only print-signatures" style={{ display: 'none', justifyContent: 'space-between', padding: '0 3rem', marginTop: '4rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>XÁC NHẬN CỦA KHÁCH HÀNG</strong>
-                        <i style={{ fontSize: '0.9rem' }}>(Ký, đóng dấu và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <strong style={{ display: 'block', fontSize: '1rem' }}>NGƯỜI LẬP SAO KÊ</strong>
-                        <i style={{ fontSize: '0.9rem' }}>(Ký và ghi rõ họ tên)</i>
-                        <div style={{ height: '100px' }}></div>
+                        </table>
                     </div>
                 </div>
 
+                {/* Print Signatures - Visible only when printing */}
+                <div className="print-only print-signatures" style={{ display: 'none', justifyContent: 'space-between', padding: '0 3rem', marginTop: '3rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <strong style={{ display: 'block', fontSize: '0.95rem' }}>XÁC NHẬN CỦA KHÁCH HÀNG</strong>
+                        <i style={{ fontSize: '0.85rem' }}>(Ký, đóng dấu và ghi rõ họ tên)</i>
+                        <div style={{ height: '80px' }}></div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                        <strong style={{ display: 'block', fontSize: '0.95rem' }}>NGƯỜI LẬP SAO KÊ</strong>
+                        <i style={{ fontSize: '0.85rem' }}>(Ký và ghi rõ họ tên)</i>
+                        <div style={{ height: '80px' }}></div>
+                    </div>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{
@@ -281,7 +328,7 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
                     box-sizing: border-box;
                 }
                 @media print {
-                    @page { size: A4 landscape; margin: 15mm; }
+                    @page { size: A4 landscape; margin: 12mm; }
                     body { visibility: hidden; background-color: white !important; }
                     .statement-panel { position: absolute; left: 0; top: 0; width: 100%; min-height: 0; padding: 0 !important; background-color: white !important; }
                     .statement-panel * { 
@@ -293,19 +340,17 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
                     .print-only { display: block !important; }
                     .print-signatures { display: flex !important; }
                     
-                    /* Make the entire layout professional A4 format */
                     .print-a4-container {
                         font-family: "Times New Roman", Times, serif !important;
                         color: #0f172a !important;
                     }
 
-                    /* Unify the isolated summary cards into a professional Grid Border */
                     .statement-summary-grid {
                         display: flex !important;
                         flex-direction: row !important;
                         flex-wrap: nowrap !important;
                         gap: 0 !important;
-                        margin-bottom: 2rem !important;
+                        margin-bottom: 1.5rem !important;
                         border: 1px solid #1e293b !important;
                     }
                     .statement-summary-grid > .summary-card {
@@ -315,7 +360,7 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
                         border-right: 1px solid #1e293b !important;
                         box-shadow: none !important;
                         border-radius: 0 !important;
-                        padding: 1rem !important;
+                        padding: 0.75rem !important;
                         background: none !important;
                     }
                     .statement-summary-grid > .summary-card:last-child {
@@ -325,20 +370,19 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
                         print-color-adjust: exact;
                     }
 
-                    .summary-card p.summary-label {
-                        font-size: 0.85rem !important;
+                    .summary-card .summary-label {
+                        font-size: 0.8rem !important;
                         color: #0f172a !important;
                     }
-                    .summary-card p.summary-value {
+                    .summary-card .summary-value {
+                        font-size: 1rem !important;
+                        color: #0f172a !important;
+                    }
+                    .closing-card .summary-value {
                         font-size: 1.1rem !important;
                         color: #0f172a !important;
                     }
-                    .closing-card p.summary-value {
-                        font-size: 1.25rem !important;
-                        color: #0f172a !important;
-                    }
 
-                    /* Format the main table */
                     .statement-table-card {
                         border: none !important;
                         border-radius: 0 !important;
@@ -351,25 +395,23 @@ export function CustomerStatementPanel({ customerId, customerName }: CustomerSta
                     }
                     .statement-table {
                         border: none !important;
-                        margin-bottom: 2rem !important;
-                    }
-                    .statement-table table {
+                        margin-bottom: 1.5rem !important;
                         width: 100% !important;
                         border: 1px solid #1e293b !important;
                         border-collapse: collapse !important;
-                        font-size: 0.95rem !important;
+                        font-size: 0.9rem !important;
                         page-break-inside: auto;
                     }
                     .statement-table th {
                         border: 1px solid #1e293b !important;
-                        padding: 0.75rem 0.5rem !important;
+                        padding: 0.5rem !important;
                         background-color: #f8fafc !important;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                     }
                     .statement-table td {
                         border: 1px solid #1e293b !important;
-                        padding: 0.5rem !important;
+                        padding: 0.4rem 0.5rem !important;
                     }
                     .statement-table tr {
                         page-break-inside: avoid; 

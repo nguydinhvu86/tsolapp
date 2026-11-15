@@ -32,7 +32,7 @@ export default async function ATSPipelinePage({ searchParams }: { searchParams: 
                     select: { id: true, scheduledAt: true, status: true }
                 }
             },
-            orderBy: { appliedAt: 'desc' }
+            orderBy: { createdAt: 'desc' }
         });
     }
 

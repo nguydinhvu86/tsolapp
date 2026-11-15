@@ -123,7 +123,7 @@ export default function WarrantyReturnSlipModal({
                             color: #0f172a !important;
                             height: auto !important;
                             overflow: visible !important;
-                            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+                            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif !important;
                         }
                         #warranty-return-slip-print {
                             width: 100% !important;
@@ -258,7 +258,9 @@ export default function WarrantyReturnSlipModal({
                                Boolean(slipData.replacementInfo?.replacementSerialNumber);
 
             const returnDateStr = slipData.serviceDetails.lastReturnDate ? new Date(slipData.serviceDetails.lastReturnDate).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN');
-            const receivedDateStr = slipData.serviceDetails.lastReceivedDate ? new Date(slipData.serviceDetails.lastReceivedDate).toLocaleDateString('vi-VN') : 'N/A';
+            const receivedDateStr = slipData.serviceDetails.lastReceivedDate 
+                ? new Date(slipData.serviceDetails.lastReceivedDate).toLocaleDateString('vi-VN') 
+                : (isReplaced ? 'Đổi mới trực tiếp' : ((slipData.serviceDetails.warrantyCount || 0) > 0 ? 'Theo biên bản tiếp nhận' : 'Theo phiếu xuất kho'));
             const warrantyEndStr = slipData.serial.warrantyEndDate ? new Date(slipData.serial.warrantyEndDate).toLocaleDateString('vi-VN') : 'Theo quy định';
 
             // 1. Header Công ty
@@ -742,7 +744,7 @@ export default function WarrantyReturnSlipModal({
                             id="warranty-return-slip-print"
                             ref={printRef}
                             className="bg-white text-slate-900 w-full max-w-[794px] p-6 sm:p-8 shadow-lg border border-slate-200 rounded-xl space-y-3.5 text-xs"
-                            style={{ fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif" }}
+                            style={{ fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" }}
                         >
                             {/* Document Header */}
                             <div className="flex justify-between items-start gap-4 pb-3 border-b-2 border-slate-800">
@@ -942,7 +944,9 @@ export default function WarrantyReturnSlipModal({
                                     <div>
                                         <span className="text-slate-500 block text-[10px]">Ngày tiếp nhận tại trung tâm:</span>
                                         <strong className="font-mono text-slate-900">
-                                            {slipData.serviceDetails.lastReceivedDate ? new Date(slipData.serviceDetails.lastReceivedDate).toLocaleDateString('vi-VN') : 'N/A'}
+                                            {slipData.serviceDetails.lastReceivedDate 
+                                                ? new Date(slipData.serviceDetails.lastReceivedDate).toLocaleDateString('vi-VN') 
+                                                : (isReplaced ? 'Đổi mới trực tiếp' : ((slipData.serviceDetails.warrantyCount || 0) > 0 ? 'Theo biên bản tiếp nhận' : 'Theo phiếu xuất kho'))}
                                         </strong>
                                     </div>
                                     <div className="sm:col-span-2">

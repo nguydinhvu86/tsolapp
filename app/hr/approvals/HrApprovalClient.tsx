@@ -10,6 +10,7 @@ import {
     Ban, Calendar, UserCheck, Phone, Eye, ArrowUpDown, User, Building,
     Sparkles, AlertCircle, Printer, Download, RefreshCw
 } from 'lucide-react';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
@@ -275,27 +276,22 @@ export default function HrApprovalClient({
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50"></span>
-                        Phê Duyệt & Giám Sát Đơn Từ (HR)
-                    </h1>
-                    <p className="text-xs text-slate-500 mt-1 font-medium">
-                        Quản lý toàn diện hồ sơ xin nghỉ phép, duyệt đơn tự động, bàn giao công việc và xuất báo cáo nhân sự ({requests.length} đơn)
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
+            <PageHeader
+                category="HÀNH CHÍNH & NHÂN SỰ"
+                categoryColor="indigo"
+                title="Phê Duyệt & Giám Sát Đơn Từ"
+                description="Quản lý toàn diện hồ sơ xin nghỉ phép, duyệt đơn tự động, bàn giao công việc và xuất báo cáo nhân sự"
+                itemCount={requests.length}
+                itemLabel="đơn"
+                actions={
                     <Button 
                         onClick={exportExcel}
-                        className="px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer"
+                        className="btn btn-primary h-[36px] px-3.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-xs hover:shadow-sm"
                     >
                         <FileDown size={15} /> Xuất Báo Cáo Excel
                     </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* KPI Cards for HR */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -403,11 +399,11 @@ export default function HrApprovalClient({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-slate-100 text-xs">
+                <div className="flex items-center gap-3 flex-wrap pt-2.5 border-t border-slate-100 text-xs">
                     <div className="flex items-center gap-1.5">
                         <span className="text-slate-500 font-medium">Loại đơn:</span>
                         <select 
-                            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium outline-none"
+                            className="h-[32px] px-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold outline-none hover:border-slate-300 transition-colors shadow-2xs cursor-pointer"
                             value={filterType}
                             onChange={e => setFilterType(e.target.value)}
                         >
@@ -440,7 +436,7 @@ export default function HrApprovalClient({
                             type="date" 
                             value={filterDateFrom} 
                             onChange={e => setFilterDateFrom(e.target.value)}
-                            className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs" 
+                            className="h-[32px] px-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold outline-none hover:border-slate-300 transition-colors shadow-2xs cursor-pointer" 
                         />
                     </div>
 
@@ -450,7 +446,7 @@ export default function HrApprovalClient({
                             type="date" 
                             value={filterDateTo} 
                             onChange={e => setFilterDateTo(e.target.value)}
-                            className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs" 
+                            className="h-[32px] px-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold outline-none hover:border-slate-300 transition-colors shadow-2xs cursor-pointer" 
                         />
                     </div>
 
@@ -481,8 +477,8 @@ export default function HrApprovalClient({
                     </span>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[960px]">
                         <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
                             <tr>
                                 <th className="px-4 py-3 text-left">Nhân Viên</th>

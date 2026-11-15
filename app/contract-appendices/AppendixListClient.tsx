@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { ContractAppendix, Contract, Customer, ContractAppendixTemplate } from '@prisma/client';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
@@ -80,48 +81,51 @@ export function AppendixListClient({ initialData }: { initialData: AppendixWithR
     });
 
     return (
-        <Card>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Quản lý Phụ Lục Hợp Đồng</h2>
-                <Link href="/contract-appendices/new">
-                    <Button className="gap-2">
-                        <Plus size={18} /> Thêm Phụ Lục Mới
-                    </Button>
-                </Link>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                category="HỢP ĐỒNG & PHÁP LÝ"
+                categoryColor="indigo"
+                title="Quản Lý Phụ Lục Hợp Đồng"
+                description="Theo dõi, soạn thảo và lưu trữ các phụ lục bổ sung, điều chỉnh hợp đồng"
+                itemCount={initialData.length}
+                itemLabel="phụ lục"
+                actions={
+                    <Link
+                        href="/contract-appendices/new"
+                        className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-semibold rounded-lg shadow-xs hover:shadow-sm inline-flex items-center"
+                    >
+                        <Plus size={16} />
+                        <span>Thêm Phụ Lục Mới</span>
+                    </Link>
+                }
+            />
 
-            <div className="flex gap-4" style={{ marginBottom: '1.5rem' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <Input
-                        placeholder="Tìm theo tiêu đề, tên hợp đồng hoặc khách hàng..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
-                    />
+            <Card>
+                <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                    <div className="flex-1 relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Input
+                            placeholder="Tìm theo tiêu đề, tên hợp đồng hoặc khách hàng..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 h-[38px] text-xs"
+                            style={{ marginBottom: 0 }}
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="input h-[38px] text-xs min-w-[160px] rounded-lg"
+                    >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="DRAFT">Nháp</option>
+                        <option value="SENT">Đã gửi</option>
+                        <option value="SIGNED">Đã ký</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                    </select>
                 </div>
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border)',
-                        background: 'var(--surface)',
-                        color: 'var(--text-main)',
-                        outline: 'none',
-                        minWidth: '150px'
-                    }}
-                >
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="DRAFT">Nháp</option>
-                    <option value="SENT">Đã gửi</option>
-                    <option value="SIGNED">Đã ký</option>
-                    <option value="CANCELLED">Đã hủy</option>
-                </select>
-            </div>
 
-            <Table>
+                <Table className="custom-scrollbar min-w-[860px]">
                 <thead>
                     <tr>
                         <th onClick={() => handleSort('title')} style={{ cursor: 'pointer', userSelect: 'none' }}>
@@ -207,5 +211,6 @@ export function AppendixListClient({ initialData }: { initialData: AppendixWithR
                 </tbody>
             </Table>
         </Card>
+        </div>
     );
 }

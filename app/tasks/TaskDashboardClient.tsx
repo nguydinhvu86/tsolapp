@@ -8,6 +8,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { UserMultiSelect } from '@/app/components/ui/UserMultiSelect';
 import { Plus, Trash2, MessageSquare, Edit2, ChevronUp, ChevronDown, Download, List, Clock, Loader2, Search, CheckCircle2, AlertTriangle, Filter, X, Check, ArrowUpDown, Eye, ExternalLink, Building2, FileText, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -751,37 +752,24 @@ export function TaskDashboardClient({
 
     return (
         <div className="flex flex-col gap-5">
-            {/* Top Page Tech Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Workspace &amp; Tiến độ
-                        </span>
-                        <span className="text-[11px] font-semibold text-slate-400">|</span>
-                        <span className="text-[11px] font-medium text-slate-500">Quản lý &amp; Điều phối công việc đa dự án</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Quản lý Công Việc (Tasks)</h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                            {initialTasks.length}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 shrink-0">
-                    {canCreate && (
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="WORKSPACE &amp; TIẾN ĐỘ"
+                tagline="Quản lý &amp; Điều phối công việc đa dự án"
+                title="Quản lý Công Việc (Tasks)"
+                count={initialTasks.length}
+                actions={
+                    canCreate ? (
                         <Button
                             onClick={() => setCreateModalOpen(true)}
-                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                            className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg shadow-sm flex items-center"
                         >
                             <Plus size={15} className="stroke-[2.5]" />
                             <span>Giao Việc Mới</span>
                         </Button>
-                    )}
-                </div>
-            </div>
+                    ) : null
+                }
+            />
 
             {/* Quick KPI Stats Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
@@ -1011,7 +999,7 @@ export function TaskDashboardClient({
                 </div>
 
                 {viewMode === 'LIST' && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full min-w-[1050px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200/90 bg-slate-100/70">

@@ -9,6 +9,7 @@ import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Edit2, Trash2, Save, X, Printer, PackageCheck, Search, Calendar, LayoutList, FolderClock, CheckCircle2, XCircle, FileText, ChevronUp, ChevronDown, Eye, Link as LinkIcon, Download, Check, ArrowRightLeft, ArrowUpDown, GripVertical, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 import { submitSalesOrder, updateSalesOrderStatus, deleteSalesOrder, updateSalesOrder, convertOrderToInvoice } from './actions';
@@ -579,35 +580,22 @@ export default function SalesOrderClient({ initialOrders, customers, products, n
     return (
         <>
             <div className="flex flex-col gap-5">
-                {/* Top Page Tech Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                BÁN HÀNG &amp; ĐƠN ĐẶT HÀNG (SO)
-                            </span>
-                            <span className="text-[11px] font-semibold text-slate-400">|</span>
-                            <span className="text-[11px] font-medium text-slate-500">Quản lý theo dõi tiến trình và trạng thái các đơn đặt hàng</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Đơn Đặt Hàng Bán</h1>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                                {orders.length}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 shrink-0">
+                {/* Standard ERP Header Bar */}
+                <PageHeader
+                    badge="BÁN HÀNG &amp; ĐƠN ĐẶT HÀNG (SO)"
+                    tagline="Quản lý theo dõi tiến trình và trạng thái các đơn đặt hàng"
+                    title="Đơn Đặt Hàng Bán"
+                    count={orders.length}
+                    actions={
                         <Button
                             onClick={handleOpenCreate}
-                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                            className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg shadow-sm flex items-center"
                         >
                             <Plus size={15} className="stroke-[2.5]" />
                             <span>Tạo Đơn Đặt Hàng Mới</span>
                         </Button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {/* Filter Cards */}
                 <div className="flex flex-wrap gap-3 mb-5">

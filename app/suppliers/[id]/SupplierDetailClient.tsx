@@ -426,8 +426,8 @@ export function SupplierDetailClient({ supplier: initialSupplier, users, tasks, 
                         {/* Tab Content Header */}
                         <div className="p-4 md:p-5 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 border-b border-slate-100 bg-white">
                             <div>
-                                <h3 className="text-sm font-bold text-slate-800 m-0">Danh sách hồ sơ</h3>
-                                <p className="text-xs text-slate-500 m-0 mt-0.5">Lịch sử đơn hàng, hóa đơn và phiếu chi nhà cung cấp.</p>
+                                <h3 className="text-sm font-bold text-slate-800 m-0">{activeTab === 'statement' ? 'Sao Kê Công Nợ Nhà Cung Cấp' : 'Danh sách hồ sơ'}</h3>
+                                <p className="text-xs text-slate-500 m-0 mt-0.5">{activeTab === 'statement' ? 'Bảng đối chiếu công nợ chi tiết, hóa đơn mua hàng và phiếu chi theo kỳ.' : 'Lịch sử đơn hàng, hóa đơn và phiếu chi nhà cung cấp.'}</p>
                             </div>
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 {activeTab === 'orders' && (

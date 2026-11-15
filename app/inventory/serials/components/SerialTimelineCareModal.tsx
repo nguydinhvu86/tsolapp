@@ -35,6 +35,7 @@ interface SerialTimelineCareModalProps {
     serial: any | null;
     onSuccess: () => void;
     onOpenSlip?: (serial: any) => void;
+    canManageWarranty?: boolean;
 }
 
 export default function SerialTimelineCareModal({
@@ -42,7 +43,8 @@ export default function SerialTimelineCareModal({
     onClose,
     serial,
     onSuccess,
-    onOpenSlip
+    onOpenSlip,
+    canManageWarranty = true
 }: SerialTimelineCareModalProps) {
     const [noteContent, setNoteContent] = useState('');
     const [careType, setCareType] = useState('SUPPORT');
@@ -172,12 +174,12 @@ export default function SerialTimelineCareModal({
                         </div>
                         <div className="text-slate-500 text-[11px]">
                             Tiếp nhận gần nhất: <strong className="text-slate-700 dark:text-slate-300">
-                                {analysis.lastReceivedDate ? new Date(analysis.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                {analysis.lastReceivedDate ? new Date(analysis.lastReceivedDate).toLocaleDateString('vi-VN') : ((analysis.warrantyCount || 0) > 0 ? 'Theo phiếu tiếp nhận' : 'Chưa phát sinh')}
                             </strong>
                         </div>
                         <div className="text-slate-500 text-[11px]">
                             Ngày trả gần nhất: <strong className="text-slate-700 dark:text-slate-300">
-                                {analysis.lastReturnDate ? new Date(analysis.lastReturnDate).toLocaleDateString('vi-VN') : (analysis.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý' : 'Chưa có')}
+                                {analysis.lastReturnDate ? new Date(analysis.lastReturnDate).toLocaleDateString('vi-VN') : (analysis.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý' : (analysis.currentServiceState === 'REPLACED' ? 'Đã đổi mới 1-1' : 'Chưa phát sinh'))}
                             </strong>
                         </div>
                     </div>
@@ -200,43 +202,45 @@ export default function SerialTimelineCareModal({
                     </div>
                 </div>
 
-                {/* Section 1: Staff Note & Inspection Input Form */}
-                <form onSubmit={handleAddNote} className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
-                            <MessageSquare className="w-4 h-4 text-blue-600" />
-                            Ghi Nhận Lưu Ý Kiểm Tra / Ghi Chú Nhân Viên (Giám sát vòng đời)
-                        </label>
-                        <select
-                            value={careType}
-                            onChange={(e) => setCareType(e.target.value)}
-                            className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300"
-                        >
-                            <option value="SUPPORT">🛠️ Kiểm tra kỹ thuật / Test máy</option>
-                            <option value="CALL">📞 Liên hệ khách / Hẹn trả máy</option>
-                            <option value="FEEDBACK">⭐ Phản hồi sau sửa chữa</option>
-                            <option value="OTHER">📝 Ghi chú lưu ý khác</option>
-                        </select>
-                    </div>
+                {/* Section 1: Staff Note & Inspection Input Form (Chỉ nhân viên có quyền bảo hành/kho mới được thêm) */}
+                {canManageWarranty && (
+                    <form onSubmit={handleAddNote} className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                                <MessageSquare className="w-4 h-4 text-blue-600" />
+                                Ghi Nhận Lưu Ý Kiểm Tra / Ghi Chú Nhân Viên (Giám sát vòng đời)
+                            </label>
+                            <select
+                                value={careType}
+                                onChange={(e) => setCareType(e.target.value)}
+                                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300"
+                            >
+                                <option value="SUPPORT">🛠️ Kiểm tra kỹ thuật / Test máy</option>
+                                <option value="CALL">📞 Liên hệ khách / Hẹn trả máy</option>
+                                <option value="FEEDBACK">⭐ Phản hồi sau sửa chữa</option>
+                                <option value="OTHER">📝 Ghi chú lưu ý khác</option>
+                            </select>
+                        </div>
 
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={noteContent}
-                            onChange={(e) => setNoteContent(e.target.value)}
-                            placeholder="Nhập lưu ý của nhân viên: kiểm tra linh kiện, hẹn ngày trả máy, tình trạng phụ kiện..."
-                            className="flex-1 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button
-                            type="submit"
-                            disabled={submittingNote}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
-                        >
-                            <Send className="w-3.5 h-3.5" />
-                            {submittingNote ? 'Đang lưu...' : 'Lưu Ghi Chú'}
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={noteContent}
+                                onChange={(e) => setNoteContent(e.target.value)}
+                                placeholder="Nhập lưu ý của nhân viên: kiểm tra linh kiện, hẹn ngày trả máy, tình trạng phụ kiện..."
+                                className="flex-1 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                type="submit"
+                                disabled={submittingNote}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+                            >
+                                <Send className="w-3.5 h-3.5" />
+                                {submittingNote ? 'Đang lưu...' : 'Lưu Ghi Chú'}
+                            </button>
+                        </div>
+                    </form>
+                )}
 
                 {/* Section 2: Full Lifecycle Timeline */}
                 <div className="space-y-3">

@@ -3,7 +3,7 @@ import React from 'react';
 interface TagDisplayProps {
     tagsString: string | null | undefined;
     className?: string;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
     showHash?: boolean;
 }
 
@@ -37,13 +37,14 @@ export function TagDisplay({ tagsString, className = '', size = 'sm', showHash =
     if (tags.length === 0) return null;
 
     const sizeStyles = {
-        sm: { fontSize: '10.5px', padding: '1px 6px', minHeight: '19px' },
-        md: { fontSize: '11.5px', padding: '2px 7.5px', minHeight: '22px' },
-        lg: { fontSize: '12.5px', padding: '3px 9px', minHeight: '25px' },
+        xs: { fontSize: '8.5px', padding: '0px 3.5px', minHeight: '15px', borderRadius: '3px' },
+        sm: { fontSize: '9.5px', padding: '0.5px 5px', minHeight: '17px', borderRadius: '3px' },
+        md: { fontSize: '10.5px', padding: '1px 6px', minHeight: '19px', borderRadius: '4px' },
+        lg: { fontSize: '11.5px', padding: '2px 7.5px', minHeight: '22px', borderRadius: '4px' },
     };
 
     return (
-        <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '3.5px', alignItems: 'center' }} className={className}>
+        <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '3px', alignItems: 'center' }} className={className}>
             {tags.map((tag, i) => {
                 const colorIndex = getHash(tag.toLowerCase()) % colorPairs.length;
                 const colors = colorPairs[colorIndex];
@@ -56,14 +57,13 @@ export function TagDisplay({ tagsString, className = '', size = 'sm', showHash =
                             alignItems: 'center',
                             fontFamily: "var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                             fontWeight: 500,
-                            borderRadius: '4px',
                             borderWidth: '1px',
                             borderStyle: 'solid',
                             backgroundColor: colors.bg,
                             color: colors.text,
                             borderColor: colors.border,
                             letterSpacing: '-0.01em',
-                            lineHeight: 1.25,
+                            lineHeight: 1.15,
                             whiteSpace: 'nowrap',
                             transition: 'all 0.15s ease',
                             ...sizeStyles[size]
@@ -75,9 +75,9 @@ export function TagDisplay({ tagsString, className = '', size = 'sm', showHash =
                                     color: colors.hash,
                                     marginRight: '2px',
                                     fontWeight: 500,
-                                    fontSize: '9.5px',
+                                    fontSize: size === 'xs' ? '7.5px' : size === 'sm' ? '8.5px' : '9.5px',
                                     userSelect: 'none',
-                                    opacity: 0.85
+                                    opacity: 0.8
                                 }}
                             >
                                 #
@@ -90,5 +90,3 @@ export function TagDisplay({ tagsString, className = '', size = 'sm', showHash =
         </div>
     );
 }
-
-

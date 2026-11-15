@@ -304,39 +304,39 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                             <button
                                 type="button"
                                 onClick={() => setMode('INDIVIDUAL')}
-                                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     mode === 'INDIVIDUAL' 
                                         ? 'bg-emerald-600 text-white shadow-xs' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                             >
                                 <Users className="w-3.5 h-3.5" />
-                                <span>🏆 Vinh Danh Cá Nhân</span>
+                                <span>Vinh Danh Cá Nhân</span>
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => setMode('TEAM')}
-                                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     mode === 'TEAM' 
                                         ? 'bg-emerald-600 text-white shadow-xs' 
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                             >
                                 <Shield className="w-3.5 h-3.5" />
-                                <span>🛡️ Tập Thể / Nhóm Thi Đua</span>
+                                <span>Tập Thể / Nhóm Thi Đua</span>
                             </button>
                         </div>
 
                         {/* Layout View Switcher (Song song / Bảng vinh danh / Bảng tin) */}
-                        <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold">
+                        <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
                             <button
                                 type="button"
                                 onClick={() => setLayoutView('SPLIT')}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     layoutView === 'SPLIT' 
                                         ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs border border-slate-200/80 dark:border-slate-600' 
-                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                                 title="Xem 2 cột cân đối: Bục vinh danh & Mạng xã hội"
                             >
@@ -347,10 +347,10 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                             <button
                                 type="button"
                                 onClick={() => setLayoutView('LEADERBOARD')}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     layoutView === 'LEADERBOARD' 
                                         ? 'bg-white dark:bg-slate-700 text-amber-700 dark:text-amber-300 shadow-xs border border-slate-200/80 dark:border-slate-600' 
-                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                                 title="Toàn màn hình Bảng xếp hạng thi đua"
                             >
@@ -361,10 +361,10 @@ export default function LeaderboardClient({ initialLeaderboard, initialFeed, ini
                             <button
                                 type="button"
                                 onClick={() => setLayoutView('FEED')}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                     layoutView === 'FEED' 
                                         ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow-xs border border-slate-200/80 dark:border-slate-600' 
-                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                                 title="Toàn màn hình Bảng tin giao lưu nội bộ"
                             >

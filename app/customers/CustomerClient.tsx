@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Customer } from '@prisma/client';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { createCustomer, updateCustomer, deleteCustomer, lookupCustomerTaxCode, checkCustomerDuplicate } from './actions';
 import { 
     Plus, Edit, Trash2, Eye, ChevronUp, ChevronDown, ArrowUpDown, 
@@ -387,55 +388,41 @@ export function CustomerClient({
 
     return (
         <div className="flex flex-col gap-4">
-            {/* TOP HEADER: Rực rỡ, sắc nét, phong cách công nghệ */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            CRM &amp; ĐỐI TÁC
-                        </span>
-                        <span className="text-slate-300 text-xs">|</span>
-                        <span className="text-xs font-semibold text-slate-500">Hệ sinh thái khách hàng B2B</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                            Quản lý Khách hàng
-                        </h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs font-mono">
-                            {customers.length}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => setShowAnalytics(prev => !prev)}
-                        className={`inline-flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                            showAnalytics
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-2xs'
-                                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-                        }`}
-                        title="Bật/Tắt Biểu đồ phân tích"
-                    >
-                        <BarChart3 size={15} />
-                        <span>Biểu đồ phân tích</span>
-                        <span className={`w-2 h-2 rounded-full ${showAnalytics ? 'bg-indigo-600' : 'bg-slate-300'}`} />
-                    </button>
-
-                    {canCreate && (
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="CRM &amp; ĐỐI TÁC"
+                tagline="Hệ sinh thái khách hàng B2B"
+                title="Quản lý Khách hàng"
+                count={customers.length}
+                actions={
+                    <div className="flex items-center gap-2.5">
                         <button
-                            onClick={() => openModal()}
-                            style={{ backgroundColor: '#05A613' }}
-                            className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                            type="button"
+                            onClick={() => setShowAnalytics(prev => !prev)}
+                            className={`inline-flex items-center gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                                showAnalytics
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-300 shadow-2xs'
+                                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                            }`}
+                            title="Bật/Tắt Biểu đồ phân tích"
                         >
-                            <Plus size={16} className="stroke-[3]" />
-                            <span>{t('customers.addCustomer')}</span>
+                            <BarChart3 size={15} />
+                            <span>Biểu đồ phân tích</span>
+                            <span className={`w-2 h-2 rounded-full ${showAnalytics ? 'bg-indigo-600' : 'bg-slate-300'}`} />
                         </button>
-                    )}
-                </div>
-            </div>
+
+                        {canCreate && (
+                            <button
+                                onClick={() => openModal()}
+                                className="inline-flex items-center gap-2 h-[36px] px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
+                            >
+                                <Plus size={16} className="stroke-[3]" />
+                                <span>{t('customers.addCustomer')}</span>
+                            </button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* BIỂU ĐỒ & PHÂN TÍCH CRM */}
             {showAnalytics && <CustomerAnalyticsBar customers={customers} />}
@@ -609,8 +596,8 @@ export function CustomerClient({
 
                 {/* CHẾ ĐỘ 1: BẢNG DỮ LIỆU ĐẦY ĐỦ MÀU SẮC */}
                 {viewMode === 'table' && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[940px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-100/80">
                                     <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[105px] hover:bg-slate-200/60 transition-colors">

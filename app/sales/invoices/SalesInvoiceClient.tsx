@@ -10,6 +10,7 @@ import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
 import { Modal } from '@/app/components/ui/Modal';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Plus, Barcode, Edit2, Trash2, Save, X, Printer, Search, Calendar, PackageCheck, Eye, Download, LinkIcon, CheckCircle2, FileSearch, LayoutList, FileText, ChevronUp, ChevronDown, Undo2, XCircle, AlertTriangle, Info, ShieldAlert, Copy, Clock, ArrowUpDown, Repeat, CalendarClock, GripVertical, ExternalLink, BarChart3 } from 'lucide-react';
 import { submitSalesInvoice, approveSalesInvoice, deleteSalesInvoice, updateSalesInvoice, cancelSalesInvoice, updateSalesInvoiceStatus, restoreSalesInvoice, updateSalesInvoiceTags } from './actions';
@@ -1063,13 +1064,14 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
+            gap: 3px;
+            padding: 0 7px;
+            height: 20px;
             border-radius: 9999px;
-            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            line-height: 1.25;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 550;
+            line-height: 18px;
             letter-spacing: -0.01em;
             white-space: nowrap;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -1087,28 +1089,29 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
             cursor: pointer;
             outline: none;
             text-align: left;
-            padding: 2px 20px 2px 8px !important;
+            height: 20px;
+            padding: 0 16px 0 7px !important;
             border-radius: 9999px;
-            font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            line-height: 1.25;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 550;
+            line-height: 18px;
             letter-spacing: -0.01em;
             white-space: nowrap;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 5px center;
+            background-position: right 4px center;
             background-repeat: no-repeat;
-            background-size: 11px 11px;
+            background-size: 9px 9px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
         .status-select:hover { 
             filter: brightness(0.97);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }
         .status-select:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+            box-shadow: 0 0 0 1.5px rgba(5, 150, 105, 0.25);
         }
 
         @keyframes overduePulse {
@@ -1129,72 +1132,61 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
 
     return (
         <div className="flex flex-col gap-5">
-            {/* Top Page Tech Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            BÁN HÀNG &amp; HÓA ĐƠN
-                        </span>
-                        <span className="text-[11px] font-semibold text-slate-400">|</span>
-                        <span className="text-[11px] font-medium text-slate-500">Quản lý xuất hóa đơn bán hàng, theo dõi công nợ và hạn thanh toán</span>
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="BÁN HÀNG &amp; HÓA ĐƠN"
+                tagline="Quản lý xuất hóa đơn bán hàng, theo dõi công nợ và hạn thanh toán"
+                title={t('invoices.title')}
+                count={invoices.length}
+                actions={
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                        {isAdminOrManager && users && users.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">{t('invoices.filterEmployee')}:</span>
+                                <select
+                                    className="h-[36px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
+                                    defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                    onChange={(e) => {
+                                        const newEmployeeId = e.target.value;
+                                        const params = new URLSearchParams(window.location.search);
+                                        if (newEmployeeId) {
+                                            params.set('employeeId', newEmployeeId);
+                                        } else {
+                                            params.delete('employeeId');
+                                        }
+                                        window.location.href = `/sales/invoices?${params.toString()}`;
+                                    }}
+                                >
+                                    <option value="">{t('invoices.allEmployees')}</option>
+                                    {users.map((u: any) => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowAnalytics(!showAnalytics)}
+                            className={`inline-flex items-center gap-1.5 h-[36px] px-3.5 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                                showAnalytics
+                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                            title="Bật/tắt biểu đồ phân tích doanh thu &amp; công nợ"
+                        >
+                            <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
+                            <span>Biểu đồ phân tích</span>
+                        </button>
+                        <Button
+                            onClick={handleOpenCreate}
+                            className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" />
+                            <span>{t('invoices.createInvoice')}</span>
+                        </Button>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('invoices.title')}</h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                            {invoices.length}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-                    {isAdminOrManager && users && users.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">{t('invoices.filterEmployee')}:</span>
-                            <select
-                                className="h-[34px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
-                                defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
-                                onChange={(e) => {
-                                    const newEmployeeId = e.target.value;
-                                    const params = new URLSearchParams(window.location.search);
-                                    if (newEmployeeId) {
-                                        params.set('employeeId', newEmployeeId);
-                                    } else {
-                                        params.delete('employeeId');
-                                    }
-                                    window.location.href = `/sales/invoices?${params.toString()}`;
-                                }}
-                            >
-                                <option value="">{t('invoices.allEmployees')}</option>
-                                {users.map((u: any) => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setShowAnalytics(!showAnalytics)}
-                        className={`inline-flex items-center gap-1.5 h-[34px] px-3 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
-                            showAnalytics
-                                ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                        }`}
-                        title="Bật/tắt biểu đồ phân tích doanh thu & công nợ"
-                    >
-                        <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
-                        <span>Biểu đồ phân tích</span>
-                    </button>
-                    <Button
-                        onClick={handleOpenCreate}
-                        className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
-                    >
-                        <Plus size={15} className="stroke-[2.5]" />
-                        <span>{t('invoices.createInvoice')}</span>
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Visual Analytics Bar */}
             {showAnalytics && (
@@ -2034,55 +2026,81 @@ export default function SalesInvoiceClient({ initialInvoices, customers, product
                                     <td className="py-3 px-3 text-right whitespace-nowrap">
                                         <div className="flex justify-end gap-1 items-center">
                                             {inv.status === 'DRAFT' && (
-                                                <button onClick={() => handleApprove(inv.id)} className="text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-2 py-1 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-all rounded-md mr-1" title={t('invoices.actionApproveDesc') || "Duyệt để Ghi nhận Nợ & Xuất Kho"}>
-                                                    <CheckCircle2 size={12} /> {t('invoices.actionApprove')}
+                                                <button 
+                                                    onClick={() => handleApprove(inv.id)} 
+                                                    className="h-[21px] px-2 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 inline-flex items-center gap-1 shadow-2xs transition-all rounded cursor-pointer shrink-0" 
+                                                    title={t('invoices.actionApproveDesc') || "Duyệt để Ghi nhận Nợ & Xuất Kho"}
+                                                >
+                                                    <CheckCircle2 size={11} className="shrink-0" /> 
+                                                    <span>{t('invoices.actionApprove')}</span>
                                                 </button>
                                             )}
                                             {inv.status !== 'CANCELLED' && (
                                                 <button
                                                     onClick={() => handleEdit(inv)}
                                                     title={inv.status === 'DRAFT' ? t('invoices.edit') : 'Điều chỉnh hóa đơn'}
-                                                    className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                                                    className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer shrink-0"
                                                 >
-                                                    <Edit2 size={14} />
+                                                    <Edit2 size={12} />
                                                 </button>
                                             )}
-                                            <button onClick={() => handleCopy(inv)} title={t('invoices.copy')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors">
-                                                <Copy size={14} />
+                                            <button 
+                                                onClick={() => handleCopy(inv)} 
+                                                title={t('invoices.copy')} 
+                                                className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer shrink-0"
+                                            >
+                                                <Copy size={12} />
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setQuickViewInvoice(inv)}
                                                 title="Xem nhanh hóa đơn (Slide-over không rời trang)"
-                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors cursor-pointer shadow-2xs"
+                                                className="h-[21px] px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-2xs transition-colors cursor-pointer shrink-0"
                                             >
-                                                <Eye size={12} />
+                                                <Eye size={11} className="shrink-0" />
                                                 <span>Xem nhanh</span>
                                             </button>
                                             <Link
                                                 href={`/sales/invoices/${inv.id}`}
                                                 title="Xem chi tiết đầy đủ"
-                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+                                                className="h-[21px] px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 shadow-2xs transition-colors shrink-0"
                                             >
-                                                <ExternalLink size={12} />
+                                                <ExternalLink size={11} className="shrink-0" />
                                                 <span>Chi tiết</span>
                                             </Link>
-                                            <Link href={`/print/sales/invoice/${inv.id}`} target="_blank" title={t('invoices.printPdf')} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors block">
-                                                <Printer size={14} />
+                                            <Link 
+                                                href={`/print/sales/invoice/${inv.id}`} 
+                                                target="_blank" 
+                                                title={t('invoices.printPdf')} 
+                                                className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors block shrink-0"
+                                            >
+                                                <Printer size={12} />
                                             </Link>
                                             {inv.status !== 'CANCELLED' && (
-                                                <button onClick={() => handleCancel(inv.id)} title={t('invoices.cancelInvoice')} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors block">
-                                                    <XCircle size={14} />
+                                                <button 
+                                                    onClick={() => handleCancel(inv.id)} 
+                                                    title={t('invoices.cancelInvoice')} 
+                                                    className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors block shrink-0 cursor-pointer"
+                                                >
+                                                    <XCircle size={12} />
                                                 </button>
                                             )}
                                             {inv.status === 'CANCELLED' && (
-                                                <button onClick={() => handleRestore(inv.id)} title={t('invoices.restoreInvoice')} className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors block">
-                                                    <Undo2 size={14} />
+                                                <button 
+                                                    onClick={() => handleRestore(inv.id)} 
+                                                    title={t('invoices.restoreInvoice')} 
+                                                    className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors block shrink-0 cursor-pointer"
+                                                >
+                                                    <Undo2 size={12} />
                                                 </button>
                                             )}
                                             {inv.status === 'DRAFT' && (
-                                                <button onClick={() => handleDelete(inv.id, inv.status)} title={t('invoices.delete')} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors block">
-                                                    <Trash2 size={14} />
+                                                <button 
+                                                    onClick={() => handleDelete(inv.id, inv.status)} 
+                                                    title={t('invoices.delete')} 
+                                                    className="h-[21px] w-[21px] inline-flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors block shrink-0 cursor-pointer"
+                                                >
+                                                    <Trash2 size={12} />
                                                 </button>
                                             )}
                                         </div>

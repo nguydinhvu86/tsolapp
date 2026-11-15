@@ -188,9 +188,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         return true;
     });
 
-    const { getDashboardStats, getDashboardConfig } = await import('@/app/dashboard/actions');
-    const stats = await getDashboardStats(session.user.id, effectiveEmployeeId);
-    const rawConfig = await getDashboardConfig(session.user.id);
+    const { getDashboardStats, getDashboardConfig, getBulletinActivities, getBulletinAnnouncements } = await import('@/app/dashboard/actions');
+    const [stats, rawConfig, bulletinActivities, bulletinAnnouncements] = await Promise.all([
+        getDashboardStats(session.user.id, effectiveEmployeeId),
+        getDashboardConfig(session.user.id),
+        getBulletinActivities(),
+        getBulletinAnnouncements()
+    ]);
 
     return (
         <div className="p-4 md:p-8 pt-6 min-h-screen">
@@ -215,6 +219,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                 isAdminOrManager={isAdminOrManager}
                 currentEmployeeId={employeeIdFromUrl || ''}
                 currentUserId={session.user.id}
+                userName={session.user.name || 'Bạn'}
+                userRole={session.user.role || ''}
+                userPermissions={permissions}
+                activities={bulletinActivities}
+                announcements={bulletinAnnouncements}
             />
         </div>
     );

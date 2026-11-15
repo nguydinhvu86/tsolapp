@@ -7,6 +7,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Table } from '@/app/components/ui/Table';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { 
     Plus, Search, Edit, Edit2, Trash2, Package, Layers, X, Eye, 
@@ -373,31 +374,32 @@ export default function ProductClient({
 
     return (
         <div className="space-y-5">
-            {/* Header section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                        <Package size={20} />
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="KHO VẬN &amp; HÀNG HÓA"
+                tagline="Danh mục sản phẩm, bảng giá, định mức bảo hành &amp; tồn kho"
+                title="Sản Phẩm &amp; Dịch Vụ"
+                count={initialProducts.length}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setIsGroupModalOpen(true)} 
+                            className="flex items-center gap-1.5 text-xs font-semibold h-[36px] px-3.5"
+                        >
+                            <Layers size={14} /> 
+                            <span>{t('products.manageGroupsBtn')}</span>
+                        </Button>
+                        <Button 
+                            onClick={openCreateModal} 
+                            className="flex items-center gap-1.5 text-xs font-semibold h-[36px] px-3.5 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                        >
+                            <Plus size={15} className="stroke-[2.5]" /> 
+                            <span>{t('products.addProductBtn')}</span>
+                        </Button>
                     </div>
-                    <div>
-                        <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-                            Sản Phẩm & Dịch Vụ
-                        </h1>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">
-                            Quản lý danh mục hàng hóa, đơn giá, định mức bảo hành và tồn kho ({initialProducts.length} sản phẩm)
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button variant="secondary" onClick={() => setIsGroupModalOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2">
-                        <Layers size={14} /> {t('products.manageGroupsBtn')}
-                    </Button>
-                    <Button onClick={openCreateModal} className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white">
-                        <Plus size={15} /> {t('products.addProductBtn')}
-                    </Button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Inventory Analytics Dashboard */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
@@ -678,8 +680,8 @@ export default function ProductClient({
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs whitespace-nowrap">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full min-w-[880px] text-left text-xs whitespace-nowrap">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                 <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px]">{t('products.colType')}</th>

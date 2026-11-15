@@ -134,7 +134,7 @@ export function KPICardsWidget({
 
                 <div className="flex flex-col gap-1.5 relative z-10">
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl sm:text-[23px] font-extrabold text-slate-800 tracking-tight font-sans">
+                        <span className="text-xl sm:text-[23px] font-extrabold text-slate-800 tracking-tight font-sans tabular-nums">
                             {invoicesThisMonth}
                         </span>
                         <span className="text-xs text-slate-400 font-bold">hóa đơn</span>

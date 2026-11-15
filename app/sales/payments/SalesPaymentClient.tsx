@@ -7,6 +7,7 @@ import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Search, Filter, Wallet, Calendar, ArrowUpDown, Receipt, MoreVertical, Trash2, CheckCircle2, Upload, FileText, Eye, X, XCircle, RefreshCw, BarChart3, ChevronDown, ChevronUp, CreditCard, Banknote, DollarSign, TrendingUp } from 'lucide-react';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { createSalesPayment, deleteSalesPayment, cancelSalesPayment, restoreSalesPayment } from './actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
@@ -387,17 +388,24 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
     }, [customers, unpaidInvoices]);
 
     return (
-        <div className="p-8">
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl mb-1">Thanh Toán Bán Hàng</h1>
-                    <p className="text-sm text-gray-500">Ghi nhận các khoản thu tiền công nợ từ khách hàng</p>
-                </div>
-                <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary w-full md:w-auto flex justify-center">
-                    <Plus size={20} style={{ marginRight: '8px' }} />
-                    <span>Tạo Phiếu Thu</span>
-                </button>
-            </div>
+        <div className="space-y-5">
+            <PageHeader
+                category="BÁN HÀNG & CÔNG NỢ"
+                categoryColor="emerald"
+                title="Thanh Toán Bán Hàng"
+                description="Ghi nhận các khoản thu tiền công nợ từ khách hàng"
+                itemCount={payments.length}
+                itemLabel="phiếu thu"
+                actions={
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="btn btn-primary h-[36px] px-3.5 text-xs font-semibold shadow-xs hover:shadow-sm inline-flex items-center gap-1.5"
+                    >
+                        <Plus size={16} />
+                        <span>Tạo Phiếu Thu</span>
+                    </button>
+                }
+            />
 
             {/* Sales Payments Analytics Dashboard */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden mb-6">
@@ -606,8 +614,8 @@ export function SalesPaymentClient({ initialPayments, customers, unpaidInvoices,
                 </div>
             </div>
 
-            <div className="table-wrapper overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
+            <div className="table-wrapper overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[860px]">
                     <thead className="whitespace-nowrap">
                         <tr>
                             <th onClick={() => requestSort('code')} className="cursor-pointer hover:bg-gray-100">

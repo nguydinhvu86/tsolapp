@@ -36,6 +36,46 @@ export interface FormattedSerialHistoryItem {
 }
 
 /**
+ * Trích xuất ngày giờ thực tế từ chuỗi văn bản ghi chú nhật ký
+ */
+function extractDateFromText(text: string, fallbackDate?: Date | string | null): string {
+    if (!text) return fallbackDate ? new Date(fallbackDate).toISOString() : new Date().toISOString();
+    
+    // Tìm định dạng DD/MM/YYYY hoặc D/M/YYYY kèm giờ HH:mm hoặc HH:mm:ss nếu có
+    // Ví dụ: 14/11/2026, 14/11/2026 08:30, 14-11-2026
+    const dmyMatch = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (dmyMatch) {
+        const day = parseInt(dmyMatch[1], 10);
+        const month = parseInt(dmyMatch[2], 10) - 1;
+        const year = parseInt(dmyMatch[3], 10);
+        const hour = dmyMatch[4] ? parseInt(dmyMatch[4], 10) : 8;
+        const minute = dmyMatch[5] ? parseInt(dmyMatch[5], 10) : 0;
+        const second = dmyMatch[6] ? parseInt(dmyMatch[6], 10) : 0;
+        const parsed = new Date(year, month, day, hour, minute, second);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString();
+        }
+    }
+
+    // Tìm định dạng YYYY-MM-DD
+    const ymdMatch = text.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (ymdMatch) {
+        const year = parseInt(ymdMatch[1], 10);
+        const month = parseInt(ymdMatch[2], 10) - 1;
+        const day = parseInt(ymdMatch[3], 10);
+        const hour = ymdMatch[4] ? parseInt(ymdMatch[4], 10) : 8;
+        const minute = ymdMatch[5] ? parseInt(ymdMatch[5], 10) : 0;
+        const second = ymdMatch[6] ? parseInt(ymdMatch[6], 10) : 0;
+        const parsed = new Date(year, month, day, hour, minute, second);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString();
+        }
+    }
+
+    return fallbackDate ? new Date(fallbackDate).toISOString() : new Date().toISOString();
+}
+
+/**
  * Phân tích và trích xuất lịch sử tổng hợp (từ cả bảng ProductSerialHistory và chuỗi notes kế thừa)
  */
 export function parseFullSerialHistory(
@@ -83,14 +123,19 @@ export function parseFullSerialHistory(
                     title = h.actionType;
             }
 
+            const itemDate = h.createdAt ? new Date(h.createdAt).toISOString() : new Date().toISOString();
+            const isReceiveAction = h.actionType === 'RECEIVE_WARRANTY' || h.actionType === 'DEFECTIVE_RETURN';
+            const isSwapAction = h.actionType === 'SWAP_REPLACE';
+            const isCompleteAction = h.actionType === 'REPAIR_COMPLETE';
+
             historyItems.push({
                 id: h.id,
                 actionType: h.actionType,
                 title,
                 status: h.status,
-                date: h.createdAt ? new Date(h.createdAt).toISOString() : new Date().toISOString(),
-                receivedDate: h.receivedDate ? new Date(h.receivedDate).toISOString() : null,
-                returnDate: h.returnDate ? new Date(h.returnDate).toISOString() : null,
+                date: itemDate,
+                receivedDate: h.receivedDate ? new Date(h.receivedDate).toISOString() : (isReceiveAction || (isSwapAction && h.swapType === 'SWAP_OUT_OLD') ? itemDate : null),
+                returnDate: h.returnDate ? new Date(h.returnDate).toISOString() : (isCompleteAction ? itemDate : null),
                 defectReason: h.defectReason,
                 appearanceCondition: h.appearanceCondition,
                 accessoriesIncluded: h.accessoriesIncluded,
@@ -139,6 +184,9 @@ export function parseFullSerialHistory(
                     badgeColor = 'bg-indigo-50 text-indigo-800 border-indigo-300';
                 }
 
+                // Trích xuất ngày thực tế từ nội dung log thay vì tạo ngày hôm nay giả mạo
+                const realEventDate = extractDateFromText(line, serial.createdAt);
+
                 // Trích xuất các trường từ chuỗi cũ nếu có dạng "Lỗi: ... | Ngoại quan: ... | Phụ kiện: ..."
                 let defectReason = null;
                 let appearanceCondition = null;
@@ -171,9 +219,9 @@ export function parseFullSerialHistory(
                     actionType,
                     title,
                     status: null,
-                    date: new Date().toISOString(),
-                    receivedDate: hasReceive ? new Date().toISOString() : null,
-                    returnDate: hasComplete ? new Date().toISOString() : null,
+                    date: realEventDate,
+                    receivedDate: (hasReceive || (hasSwap && swapType === 'SWAP_OUT_OLD')) ? realEventDate : null,
+                    returnDate: hasComplete ? realEventDate : null,
                     defectReason,
                     appearanceCondition,
                     accessoriesIncluded,
@@ -188,14 +236,18 @@ export function parseFullSerialHistory(
         });
     }
 
-    // Đếm số lần bảo hành: tính tất cả sự kiện RECEIVE_WARRANTY hoặc DEFECTIVE_RETURN
+    // Đếm số lần bảo hành: tính tất cả sự kiện RECEIVE_WARRANTY, DEFECTIVE_RETURN, hoặc đổi máy do lỗi
     const warrantyCount = historyItems.filter(h => 
-        h.actionType === 'RECEIVE_WARRANTY' || h.actionType === 'DEFECTIVE_RETURN'
+        h.actionType === 'RECEIVE_WARRANTY' || 
+        h.actionType === 'DEFECTIVE_RETURN' ||
+        (h.actionType === 'SWAP_REPLACE' && (h.swapType === 'SWAP_OUT_OLD' || !h.swapType))
     ).length;
 
     // Đợt bảo hành / tiếp nhận gần nhất
     const latestReceive = historyItems.find(h => 
-        h.actionType === 'RECEIVE_WARRANTY' || h.actionType === 'DEFECTIVE_RETURN'
+        h.actionType === 'RECEIVE_WARRANTY' || 
+        h.actionType === 'DEFECTIVE_RETURN' ||
+        (h.actionType === 'SWAP_REPLACE' && (h.swapType === 'SWAP_OUT_OLD' || !h.swapType))
     );
 
     // Đợt hoàn tất trả máy gần nhất
@@ -257,12 +309,20 @@ export function parseFullSerialHistory(
         }
     }
 
+    // Tính toán ngày tiếp nhận thực tế:
+    // Nếu thiết bị chưa từng phát sinh bảo hành hoặc thu hồi lỗi thì lastReceivedDate PHẢI LÀ null để tránh gây hiểu lầm
+    const calculatedReceivedDate = latestReceive?.receivedDate || latestReceive?.date || (
+        (serial.status === 'UNDER_WARRANTY' || serial.status === 'DEFECTIVE' || serial.status === 'REPLACED')
+            ? (serial.createdAt ? new Date(serial.createdAt).toISOString() : null)
+            : null
+    );
+
     return {
         warrantyCount,
         currentServiceState,
         serviceStateLabel,
         serviceBadgeClass,
-        lastReceivedDate: latestReceive?.receivedDate || latestReceive?.date || null,
+        lastReceivedDate: calculatedReceivedDate,
         lastReturnDate: latestReturn?.returnDate || latestReturn?.date || null,
         latestAccessories: latestReceive?.accessoriesIncluded || null,
         latestAppearance: latestReceive?.appearanceCondition || null,
@@ -277,10 +337,11 @@ export function parseFullSerialHistory(
             notes: latestSwap.staffNotes
         } : (serial.notes && serial.notes.includes('ĐỔI MỚI')) ? (() => {
             const matchRep = serial.notes.match(/(?:Serial mới|Serial cũ|sang Serial|cho Serial cũ):\s*\[?([a-zA-Z0-9_\-\.\/]+)\]?/i);
+            const realDate = extractDateFromText(serial.notes, serial.createdAt);
             return {
                 replacementSerialNumber: matchRep ? matchRep[1].trim() : null,
                 swapType: (serial.notes.includes('THU HỒI') || serial.notes.includes('sang Serial mới')) ? 'SWAP_OUT_OLD' : 'SWAP_IN_NEW',
-                date: new Date().toISOString(),
+                date: realDate,
                 defectReason: null,
                 notes: 'Đã đổi mới thiết bị'
             };

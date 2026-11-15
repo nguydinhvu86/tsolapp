@@ -9,6 +9,7 @@ import { Card } from '@/app/components/ui/Card';
 import { Table } from '@/app/components/ui/Table';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { Button } from '@/app/components/ui/Button';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { Modal } from '@/app/components/ui/Modal';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
@@ -692,12 +693,14 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            padding: 2px 8px;
+            gap: 3px;
+            padding: 0 7px;
+            height: 20px;
+            line-height: 18px;
             border-radius: 9999px;
             font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            line-height: 1.25;
+            font-size: 10px;
+            font-weight: 550;
             letter-spacing: -0.01em;
             white-space: nowrap;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -720,18 +723,19 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
             cursor: pointer;
             outline: none;
             text-align: left;
-            padding: 2px 20px 2px 8px !important;
+            padding: 0 16px 0 7px !important;
+            height: 20px;
+            line-height: 18px;
             border-radius: 9999px;
             font-family: var(--font-sans), 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            line-height: 1.25;
+            font-size: 10px;
+            font-weight: 550;
             white-space: nowrap;
             letter-spacing: -0.01em;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 5px center;
+            background-position: right 4px center;
             background-repeat: no-repeat;
-            background-size: 11px 11px;
+            background-size: 9px 9px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.15s ease;
         }
@@ -748,72 +752,61 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
     return (
         <>
             <div className="flex flex-col gap-5">
-                {/* Top Page Tech Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                BÁN HÀNG &amp; BÁO GIÁ
-                            </span>
-                            <span className="text-[11px] font-semibold text-slate-400">|</span>
-                            <span className="text-[11px] font-medium text-slate-500">Quản lý báo giá, theo dõi phản hồi và chuyển đổi sang đơn hàng</span>
+                {/* Standard ERP Header Bar */}
+                <PageHeader
+                    badge="BÁN HÀNG &amp; BÁO GIÁ"
+                    tagline="Quản lý báo giá, theo dõi phản hồi và chuyển đổi sang đơn hàng"
+                    title="Báo Giá Bán Hàng"
+                    count={estimates.length}
+                    actions={
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                            {isAdminOrManager && users && users.length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Nhân viên:</span>
+                                    <select
+                                        className="h-[36px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
+                                        defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
+                                        onChange={(e) => {
+                                            const newEmployeeId = e.target.value;
+                                            const params = new URLSearchParams(window.location.search);
+                                            if (newEmployeeId) {
+                                                params.set('employeeId', newEmployeeId);
+                                            } else {
+                                                params.delete('employeeId');
+                                            }
+                                            window.location.href = `/sales/estimates?${params.toString()}`;
+                                        }}
+                                    >
+                                        <option value="">Tất cả nhân viên</option>
+                                        {users.map((u: any) => (
+                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setShowAnalytics(!showAnalytics)}
+                                className={`inline-flex items-center gap-1.5 h-[36px] px-3.5 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                                    showAnalytics
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                                }`}
+                                title="Bật/tắt biểu đồ phân tích báo giá"
+                            >
+                                <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
+                                <span>Biểu đồ phân tích</span>
+                            </button>
+                            <Button
+                                onClick={handleOpenCreate}
+                                className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-bold rounded-lg shadow-sm flex items-center"
+                            >
+                                <Plus size={15} className="stroke-[2.5]" />
+                                <span>Tạo Báo Giá Mới</span>
+                            </Button>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Báo Giá Bán Hàng</h1>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                                {estimates.length}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-                        {isAdminOrManager && users && users.length > 0 && (
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Nhân viên:</span>
-                                <select
-                                    className="h-[34px] px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 shadow-2xs cursor-pointer"
-                                    defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('employeeId') || '' : ''}
-                                    onChange={(e) => {
-                                        const newEmployeeId = e.target.value;
-                                        const params = new URLSearchParams(window.location.search);
-                                        if (newEmployeeId) {
-                                            params.set('employeeId', newEmployeeId);
-                                        } else {
-                                            params.delete('employeeId');
-                                        }
-                                        window.location.href = `/sales/estimates?${params.toString()}`;
-                                    }}
-                                >
-                                    <option value="">Tất cả nhân viên</option>
-                                    {users.map((u: any) => (
-                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setShowAnalytics(!showAnalytics)}
-                            className={`inline-flex items-center gap-1.5 h-[34px] px-3 rounded-lg text-xs font-bold transition-all border shadow-xs cursor-pointer ${
-                                showAnalytics
-                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                            }`}
-                            title="Bật/tắt biểu đồ phân tích báo giá"
-                        >
-                            <BarChart3 size={15} className={showAnalytics ? 'text-indigo-600' : 'text-slate-500'} />
-                            <span>Biểu đồ phân tích</span>
-                        </button>
-                        <Button
-                            onClick={handleOpenCreate}
-                            className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm"
-                        >
-                            <Plus size={15} className="stroke-[2.5]" />
-                            <span>Tạo Báo Giá Mới</span>
-                        </Button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {/* Visual Analytics Bar */}
                 {showAnalytics && (
@@ -1020,7 +1013,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                         type="button"
                                                         onClick={() => handleOpenQuickView(est)}
                                                         title="Xem nhanh Báo giá (trượt từ bên phải)"
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all cursor-pointer shadow-2xs shrink-0"
+                                                        className="h-[21px] px-2 text-[10px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
                                                     >
                                                         <Eye size={13} />
                                                         <span>Xem nhanh</span>
@@ -1028,7 +1021,7 @@ export default function SalesEstimateClient({ initialEstimates, customers, produ
                                                     <Link
                                                         href={`/sales/estimates/${est.id}`}
                                                         title="Xem chi tiết đầy đủ"
-                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all shrink-0"
+                                                        className="h-[21px] px-2 text-[10px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded inline-flex items-center gap-1 shadow-2xs transition-all shrink-0"
                                                     >
                                                         <ExternalLink size={13} />
                                                         <span>Chi tiết</span>

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Search, Eye, Trash2, Calendar, DollarSign, Wallet, ArrowUpDown, Upload, CheckCircle2, CreditCard, Banknote, X, FileText, CheckCircle, RotateCcw, Ban, AlertTriangle, BarChart3, ChevronDown, ChevronUp, TrendingUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { createPurchasePayment, deletePurchasePayment, cancelPurchasePayment, restorePurchasePayment } from '@/app/purchasing/actions';
 import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
 import { Pagination, usePagination } from '@/app/components/ui/Pagination';
@@ -398,38 +399,26 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
 
     return (
         <div className="flex flex-col gap-4">
-            {/* Top Page Tech Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            CHUỖI CUNG ỨNG &amp; MUA HÀNG
-                        </span>
-                        <span className="text-[11px] font-semibold text-slate-400">|</span>
-                        <span className="text-[11px] font-medium text-slate-500">{t('purchasePayments.description')}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('purchasePayments.title')}</h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                            {payments.length}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 shrink-0">
+            <PageHeader
+                category="CHUỖI CUNG ỨNG & MUA HÀNG"
+                categoryColor="emerald"
+                title={t('purchasePayments.title')}
+                description={t('purchasePayments.description')}
+                itemCount={payments.length}
+                itemLabel="phiếu chi"
+                actions={
                     <button
                         onClick={handleOpenCreate}
-                        className="btn btn-primary gap-2 h-[34px] px-3.5 text-xs font-bold rounded-lg shadow-sm inline-flex items-center"
+                        className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-semibold rounded-lg shadow-xs hover:shadow-sm inline-flex items-center"
                     >
-                        <Plus size={15} className="stroke-[2.5]" />
+                        <Plus size={16} />
                         <span>{t('purchasePayments.createPayment')}</span>
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Quick KPI Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 {/* 1. Tổng lượt thanh toán */}
                 <div
                     onClick={() => setMethodFilter('ALL')}
@@ -671,8 +660,8 @@ export function PurchasePaymentClient({ initialPayments, suppliers, unpaidBills 
                 </div>
 
                 {/* High Density Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[860px]">
                         <thead>
                             <tr className="border-b border-slate-200/90 bg-slate-100/70">
                                 <th onClick={() => requestSort('code')} className="cursor-pointer select-none py-2.5 px-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">

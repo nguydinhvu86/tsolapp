@@ -9,6 +9,7 @@ import {
     User, DollarSign, Clock, Sparkles, AlertCircle, Filter, ArrowRight,
     Building2, Mail, Users, RefreshCw
 } from 'lucide-react';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { formatMoney, formatDate } from '@/lib/utils/formatters';
 import { updateLeadStatus, recalculateAllLeadScoresAction } from './actions';
 import { LeadAnalyticsBar } from './LeadAnalyticsBar';
@@ -16,6 +17,8 @@ import { Pagination, usePagination } from '@/app/components/ui/Pagination';
 import { useTranslation } from '@/app/i18n/LanguageContext';
 import { ClickToCallButton } from '@/app/components/ClickToCallButton';
 import { useToast } from '@/app/components/providers/ToastProvider';
+import { CreateLeadModal } from './CreateLeadModal';
+import { forceUnlockScroll } from '@/lib/utils/scrollLock';
 
 function getInitials(name: string) {
     if (!name) return 'U';
@@ -29,16 +32,70 @@ export function LeadsClient({
     leads, 
     customers, 
     users, 
-    isAdminOrManager 
+    isAdminOrManager,
+    sources = [],
+    currentUserId,
+    initialAction,
+    initialCustomerId
 }: { 
     leads: any[], 
     customers: any[], 
     users: any[], 
-    isAdminOrManager?: boolean 
+    isAdminOrManager?: boolean,
+    sources?: string[],
+    currentUserId?: string,
+    initialAction?: string,
+    initialCustomerId?: string
 }) {
     const { t } = useTranslation();
     const router = useRouter();
     const toast = useToast();
+
+    // Create Modal State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(initialAction === 'new');
+    const [createModalCustomerId, setCreateModalCustomerId] = useState<string | undefined>(initialCustomerId);
+    const [createModalInitialStatus, setCreateModalInitialStatus] = useState<string>('NEW');
+
+    const cleanUrlActionParams = () => {
+        if (typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('action') || url.searchParams.has('customerId')) {
+                url.searchParams.delete('action');
+                url.searchParams.delete('customerId');
+                const newSearch = url.searchParams.toString();
+                window.history.replaceState({}, '', url.pathname + (newSearch ? '?' + newSearch : ''));
+            }
+        } catch (e) {
+            console.error('Failed to clean URL params:', e);
+        }
+    };
+
+    // Strip ?action=new immediately on mount so browser reload (F5) doesn't re-trigger modal
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'new') {
+                setIsCreateModalOpen(true);
+                if (params.get('customerId')) {
+                    setCreateModalCustomerId(params.get('customerId') || undefined);
+                }
+                cleanUrlActionParams();
+            }
+        }
+    }, []);
+
+    const handleOpenCreateModal = (status = 'NEW', customerId?: string) => {
+        setCreateModalInitialStatus(status);
+        if (customerId) setCreateModalCustomerId(customerId);
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCloseCreateModal = () => {
+        setIsCreateModalOpen(false);
+        cleanUrlActionParams();
+        forceUnlockScroll();
+    };
 
     const STATUSES = useMemo(() => [
         { 
@@ -362,68 +419,54 @@ export function LeadsClient({
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'ACTIVE' || dateFrom !== '' || dateTo !== '' || sortBy !== 'date_desc';
 
     return (
-        <div className="w-full max-w-full space-y-4 p-4 md:p-6 lg:p-8">
-            {/* Header / Top Ribbon */}
-            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white p-4 md:p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                    <div 
-                        className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #059669, #0d9488)' }}
-                    >
-                        <Target size={20} className="stroke-[2.5]" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2.5">
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{t('leads.title')}</h1>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
-                                {localLeads.length}
-                            </span>
+        <div className="w-full max-w-full space-y-5">
+            <PageHeader
+                category="CRM & KHÁCH HÀNG TIỀM NĂNG"
+                categoryColor="emerald"
+                title={t('leads.title')}
+                description={t('leads.description')}
+                itemCount={localLeads.length}
+                itemLabel="cơ hội"
+                actions={
+                    <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    viewMode === 'table'
+                                        ? 'bg-white text-slate-900 shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                                title={t('leads.viewTable')}
+                            >
+                                <List size={14} className="stroke-[2.2]" />
+                                <span>{t('leads.viewTable')}</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode('kanban')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    viewMode === 'kanban'
+                                        ? 'bg-white text-slate-900 shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                                title={t('leads.viewKanban')}
+                            >
+                                <LayoutGrid size={14} className="stroke-[2.2]" />
+                                <span>{t('leads.viewKanban')}</span>
+                            </button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                            {t('leads.description')}
-                        </p>
-                    </div>
-                </div>
 
-                {/* View Switcher & Action Buttons */}
-                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                    {/* View Switcher Segmented Control */}
-                    <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
                         <button
-                            onClick={() => setViewMode('table')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                viewMode === 'table'
-                                    ? 'bg-white text-slate-900 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                            title={t('leads.viewTable')}
+                            type="button"
+                            onClick={() => handleOpenCreateModal('NEW')}
+                            className="btn btn-primary gap-1.5 h-[36px] px-4 text-xs font-semibold rounded-xl shadow-xs hover:shadow-sm inline-flex items-center cursor-pointer"
                         >
-                            <List size={14} className="stroke-[2.2]" />
-                            <span>{t('leads.viewTable')}</span>
-                        </button>
-                        <button
-                            onClick={() => setViewMode('kanban')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                viewMode === 'kanban'
-                                    ? 'bg-white text-slate-900 shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                            title={t('leads.viewKanban')}
-                        >
-                            <LayoutGrid size={14} className="stroke-[2.2]" />
-                            <span>{t('leads.viewKanban')}</span>
+                            <Plus size={16} />
+                            <span>{t('leads.createNew')}</span>
                         </button>
                     </div>
-
-                    <Link
-                        href="/sales/leads/new"
-                        className="inline-flex items-center justify-center gap-1.5 h-[34px] px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
-                    >
-                        <Plus size={15} className="stroke-[2.5]" />
-                        <span>{t('leads.createNew')}</span>
-                    </Link>
-                </div>
-            </div>
+                }
+            />
 
             {/* Quick KPI Metric Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
@@ -608,8 +651,8 @@ export function LeadsClient({
 
                 {/* TABLE VIEW */}
                 {viewMode === 'table' && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse min-w-[960px]">
                             <thead>
                                 <tr className="border-b border-slate-200/90 bg-slate-100/70">
                                     <th onClick={() => handleSort('code')} className="cursor-pointer select-none py-2.5 px-3.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider w-[120px] hover:bg-slate-200/50 transition-colors">
@@ -815,12 +858,13 @@ export function LeadsClient({
                                                     <Target size={24} />
                                                 </div>
                                                 <span className="font-semibold text-slate-700">{t('leads.emptyTable')}</span>
-                                                <Link
-                                                    href="/sales/leads/new"
-                                                    className="mt-1 text-xs text-emerald-600 hover:underline font-bold"
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenCreateModal('NEW')}
+                                                    className="mt-1 text-xs text-emerald-600 hover:underline font-bold bg-transparent border-none p-0 cursor-pointer"
                                                 >
                                                     + Tạo cơ hội bán hàng mới ngay
-                                                </Link>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -858,9 +902,19 @@ export function LeadsClient({
                                                     {status.label}
                                                 </h3>
                                             </div>
-                                            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/90 text-slate-700 shadow-2xs border border-slate-200/60">
-                                                {columnLeads.length}
-                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/90 text-slate-700 shadow-2xs border border-slate-200/60">
+                                                    {columnLeads.length}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenCreateModal(status.id)}
+                                                    className="w-6 h-6 flex items-center justify-center rounded-md bg-white/80 hover:bg-white text-slate-600 hover:text-emerald-700 shadow-2xs border border-slate-200/60 transition-all cursor-pointer"
+                                                    title={`Thêm cơ hội mới vào ${status.label}`}
+                                                >
+                                                    <Plus size={13} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Total column amount metric */}
@@ -941,6 +995,18 @@ export function LeadsClient({
                     </div>
                 )}
             </div>
+
+            {/* Create Lead Modal Popup */}
+            <CreateLeadModal
+                isOpen={isCreateModalOpen}
+                onClose={handleCloseCreateModal}
+                customers={customers}
+                users={users}
+                sources={sources}
+                currentUserId={currentUserId}
+                initialCustomerId={createModalCustomerId}
+                initialStatus={createModalInitialStatus}
+            />
         </div>
     );
 }

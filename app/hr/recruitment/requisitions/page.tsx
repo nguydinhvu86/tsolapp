@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import RequisitionClient from "./RequisitionClient";
 
+export const metadata = {
+    title: "Quản Lý Yêu Cầu Tuyển Dụng | ERP"
+};
+
 export default async function JobRequisitionsPage() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -26,7 +30,7 @@ export default async function JobRequisitionsPage() {
         }
     });
 
-    // Lấy danh sách Users để chọn người phê duyệt (Approver) hoặc người yêu cầu (nếu admin tạo dùm)
+    // Lấy danh sách Users để chọn người phê duyệt (Ban Giám Đốc / Approver)
     const users = await prisma.user.findMany({
         where: { isActive: true },
         select: { id: true, name: true, email: true, role: true },
@@ -34,12 +38,13 @@ export default async function JobRequisitionsPage() {
     });
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="w-full max-w-full space-y-5">
             <RequisitionClient 
                 initialData={requisitions} 
                 users={users} 
                 currentUserId={session.user.id} 
                 userRole={session.user.role} 
+                userPermissions={session.user.permissions || []}
             />
         </div>
     );

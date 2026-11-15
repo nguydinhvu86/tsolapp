@@ -235,8 +235,55 @@ export async function fetchSerials(params?: {
     }
 }
 
+/**
+ * Kiểm tra phân quyền thực hiện các thao tác trên số Serial & Bảo hành
+ */
+async function checkSerialPermission(action: 'CREATE' | 'EDIT' | 'DELETE' | 'WARRANTY') {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return { authorized: false, error: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' };
+    }
+    const role = session.user.role;
+    const permissions = (session.user as any)?.permissions as string[] || [];
+
+    if (role === 'ADMIN') return { authorized: true, user: session.user };
+
+    if (action === 'DELETE') {
+        if (permissions.includes('WAREHOUSES_DELETE') || permissions.includes('INVENTORY_TX_DELETE')) {
+            return { authorized: true, user: session.user };
+        }
+        return { authorized: false, error: 'Bạn không có quyền xóa mã Serial/IMEI này (Yêu cầu quyền WAREHOUSES_DELETE hoặc Quản trị viên).' };
+    }
+
+    if (action === 'CREATE') {
+        if (role === 'MANAGER' || permissions.includes('WAREHOUSES_CREATE') || permissions.includes('INVENTORY_TX_CREATE') || permissions.includes('PRODUCTS_CREATE')) {
+            return { authorized: true, user: session.user };
+        }
+        return { authorized: false, error: 'Bạn không có quyền thêm mới hoặc nhập kho số Serial/IMEI.' };
+    }
+
+    if (action === 'EDIT') {
+        if (role === 'MANAGER' || permissions.includes('WAREHOUSES_EDIT') || permissions.includes('INVENTORY_TX_EDIT') || permissions.includes('PRODUCTS_EDIT')) {
+            return { authorized: true, user: session.user };
+        }
+        return { authorized: false, error: 'Bạn không có quyền chỉnh sửa thông tin số Serial/IMEI này.' };
+    }
+
+    if (action === 'WARRANTY') {
+        if (role === 'MANAGER' || permissions.includes('WAREHOUSES_EDIT') || permissions.includes('INVENTORY_TX_CREATE') || permissions.includes('INVENTORY_TX_EDIT')) {
+            return { authorized: true, user: session.user };
+        }
+        return { authorized: false, error: 'Bạn không có quyền thao tác nghiệp vụ bảo hành / đổi trả thiết bị.' };
+    }
+
+    return { authorized: false, error: 'Không đủ quyền hạn.' };
+}
+
 export async function createSerialRecord(data: { productId: string; serialNumber: string; warehouseId?: string; notes?: string }) {
     try {
+        const auth = await checkSerialPermission('CREATE');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const trimmedSerial = data.serialNumber.trim();
         if (!trimmedSerial) {
             return { success: false, error: 'Số Serial/IMEI không được để trống' };
@@ -271,6 +318,9 @@ export async function bulkCreateSerials(data: {
     notes?: string;
 }) {
     try {
+        const auth = await checkSerialPermission('CREATE');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const cleanSerials = Array.from(new Set(data.serialNumbers.map((s: string) => s.trim()).filter(Boolean)));
         if (cleanSerials.length === 0) {
             return { success: false, error: 'Danh sách số Serial/IMEI trống.' };
@@ -313,6 +363,9 @@ export async function dispatchSerialsAction(data: {
     notes?: string;
 }) {
     try {
+        const auth = await checkSerialPermission('EDIT');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const cleanSerials = data.serialNumbers.map((s: string) => s.trim()).filter(Boolean);
         if (cleanSerials.length === 0) {
             return { success: false, error: 'Chưa chọn số Serial nào để xuất bán.' };
@@ -352,6 +405,9 @@ export async function updateSerialRecord(data: {
     notes?: string | null;
 }) {
     try {
+        const auth = await checkSerialPermission('EDIT');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const trimmedSerial = data.serialNumber.trim();
         if (!trimmedSerial) {
             return { success: false, error: 'Số Serial/IMEI không được để trống' };
@@ -395,6 +451,9 @@ export async function updateSerialRecord(data: {
 
 export async function updateSerialStatus(id: string, status: string, notes?: string) {
     try {
+        const auth = await checkSerialPermission('EDIT');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         await prisma.productSerial.update({
             where: { id },
             data: {
@@ -410,6 +469,9 @@ export async function updateSerialStatus(id: string, status: string, notes?: str
 
 export async function deleteSerialRecord(id: string) {
     try {
+        const auth = await checkSerialPermission('DELETE');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         await prisma.productSerial.delete({ where: { id } });
         return { success: true };
     } catch (err: any) {
@@ -736,6 +798,9 @@ export async function receiveDefectiveSerialAction(data: {
     receivedDate?: string | Date;
 }) {
     try {
+        const auth = await checkSerialPermission('WARRANTY');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const session = await getServerSession(authOptions);
         const currentUserId = (session?.user as any)?.id;
         const currentUserName = (session?.user as any)?.name || 'Kỹ thuật viên';
@@ -844,6 +909,9 @@ export async function swapAndReplaceSerialAction(data: {
     warehouseIdForOld?: string;
 }) {
     try {
+        const auth = await checkSerialPermission('WARRANTY');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const session = await getServerSession(authOptions);
         const currentUserId = (session?.user as any)?.id;
         const currentUserName = (session?.user as any)?.name || 'Quản trị viên';
@@ -927,6 +995,7 @@ export async function swapAndReplaceSerialAction(data: {
                     actionType: 'SWAP_REPLACE',
                     status: oldSerialStatus,
                     swapType: 'SWAP_OUT_OLD',
+                    receivedDate: now,
                     replacementSerialId: newSerial.id,
                     replacementSerialNumber: newSerial.serialNumber,
                     defectReason: data.reason.trim(),
@@ -1011,6 +1080,9 @@ export async function completeWarrantyRepairAction(data: {
     accessoriesReturned?: string;
 }) {
     try {
+        const auth = await checkSerialPermission('WARRANTY');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const session = await getServerSession(authOptions);
         const currentUserId = (session?.user as any)?.id;
         const currentUserName = (session?.user as any)?.name || 'Kỹ thuật viên';
@@ -1081,6 +1153,9 @@ export async function addCustomerCareNoteAction(data: {
     careType?: string;
 }) {
     try {
+        const auth = await checkSerialPermission('WARRANTY');
+        if (!auth.authorized) return { success: false, error: auth.error };
+
         const session = await getServerSession(authOptions);
         const currentUserId = (session?.user as any)?.id;
         const currentUserName = (session?.user as any)?.name || 'Nhân viên CSKH';

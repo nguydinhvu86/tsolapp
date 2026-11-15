@@ -168,12 +168,15 @@ button {
     border: none;
     cursor: pointer;
     font-family: inherit;
+    font-size: inherit;
 }
 
 input,
 select,
-textarea {
+textarea,
+option {
     font-family: inherit;
+    font-size: inherit;
 }
 
 table {
@@ -800,10 +803,43 @@ table {
 
 .table-wrapper {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--surface);
     box-shadow: var(--shadow-xs);
+    position: relative;
+    max-width: 100%;
+}
+
+.table-wrapper table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.table-wrapper::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .table-wrapper table th {
@@ -1222,3 +1258,18 @@ div.animate-overdue-row {
 .rich-text-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
 .rich-text-content th, .rich-text-content td { border: 1px solid #e2e8f0; padding: 0.75rem; }
 .rich-text-content th { background-color: #f8fafc; font-weight: 600; text-align: left; }
+
+/* Bulletin Urgent Flashing Glow Animation */
+@keyframes bulletin-urgent-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+        border-color: rgba(239, 68, 68, 1);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.25);
+        border-color: rgba(248, 113, 113, 0.9);
+    }
+}
+.bulletin-urgent-active {
+    animation: bulletin-urgent-glow 1.5s infinite ease-in-out;
+}

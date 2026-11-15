@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils/formatters';
 
 import React, { useState } from 'react';
 import { PaymentRequest, Customer, PaymentRequestTemplate } from '@prisma/client';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Table } from '@/app/components/ui/Table';
@@ -151,19 +152,43 @@ export function PaymentRequestDashboardClient({ initialData }: { initialData: Pa
     };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center" style={{ marginBottom: '1.5rem' }}>
-                <div className="flex gap-4 items-center">
-                    <div className="flex gap-2 items-center" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0.25rem 0.75rem', background: '#fff' }}>
-                        <Search size={18} color="var(--text-muted)" />
+        <div className="space-y-5">
+            <PageHeader
+                category="TÀI CHÍNH & CÔNG NỢ"
+                categoryColor="emerald"
+                title="Đề Nghị Thanh Toán"
+                description="Tạo và quản lý các công văn đề nghị thanh toán gửi đối tác và khách hàng"
+                itemCount={initialData.length}
+                itemLabel="đề nghị"
+                actions={
+                    canCreate ? (
+                        <Link
+                            href="/payment-requests/new"
+                            className="btn btn-primary gap-2 h-[36px] px-3.5 text-xs font-semibold rounded-lg shadow-xs hover:shadow-sm inline-flex items-center"
+                        >
+                            <Plus size={16} />
+                            <span>Tạo Đề Nghị Thanh Toán</span>
+                        </Link>
+                    ) : undefined
+                }
+            />
+
+            <Card>
+                <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                    <div className="flex-1 relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
-                            style={{ border: 'none', outline: 'none', padding: '0.25rem', background: 'transparent' }}
-                            placeholder="Tìm theo tên/khách hàng..."
+                            className="input pl-9 h-[38px] text-xs w-full rounded-lg"
+                            placeholder="Tìm theo tên đề nghị, khách hàng..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <select className="input" style={{ width: '150px' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                    <select
+                        className="input h-[38px] text-xs min-w-[160px] rounded-lg"
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                    >
                         <option value="">Tất cả trạng thái</option>
                         <option value="DRAFT">Nháp</option>
                         <option value="SENT">Đã Gửi</option>
@@ -171,16 +196,8 @@ export function PaymentRequestDashboardClient({ initialData }: { initialData: Pa
                         <option value="REJECTED">Hủy</option>
                     </select>
                 </div>
-                {canCreate && (
-                    <Link href="/payment-requests/new">
-                        <Button className="gap-2">
-                            <Plus size={18} /> Tạo Đề Nghị Thanh Toán
-                        </Button>
-                    </Link>
-                )}
-            </div>
 
-            <Table>
+                <Table className="custom-scrollbar min-w-[860px]">
                 <thead>
                     <tr>
                         <th onClick={() => handleSort('title')} style={{ cursor: 'pointer', userSelect: 'none' }}>
@@ -299,5 +316,6 @@ export function PaymentRequestDashboardClient({ initialData }: { initialData: Pa
                 </div>
             </Modal>
         </Card>
+        </div>
     );
 }

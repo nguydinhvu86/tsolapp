@@ -2,6 +2,8 @@
 
 import { toast } from '@/app/components/providers/ToastProvider';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 import { 
     Globe,
     Code,
@@ -83,7 +85,41 @@ import SerialTimelineCareModal from './components/SerialTimelineCareModal';
 import WarrantyAlertsModal from './components/WarrantyAlertsModal';
 import WarrantyReturnSlipModal from './components/WarrantyReturnSlipModal';
 
-export default function SerialManagementClient() {
+interface SerialManagementClientProps {
+    userRole?: string;
+    userPermissions?: string[];
+}
+
+export default function SerialManagementClient({
+    userRole = 'USER',
+    userPermissions = []
+}: SerialManagementClientProps) {
+    const { data: session } = useSession();
+    const effectiveRole = userRole || session?.user?.role || 'USER';
+    const effectivePermissions = (userPermissions && userPermissions.length > 0) 
+        ? userPermissions 
+        : (((session?.user as any)?.permissions as string[]) || []);
+
+    const isAdmin = effectiveRole === 'ADMIN';
+    const isManager = effectiveRole === 'MANAGER';
+    const isAdminOrManager = isAdmin || isManager;
+
+    const canCreate = isAdminOrManager || 
+        effectivePermissions.includes('WAREHOUSES_CREATE') || 
+        effectivePermissions.includes('INVENTORY_TX_CREATE') ||
+        effectivePermissions.includes('PRODUCTS_CREATE');
+
+    const canEdit = isAdminOrManager || 
+        effectivePermissions.includes('WAREHOUSES_EDIT') || 
+        effectivePermissions.includes('INVENTORY_TX_EDIT') ||
+        effectivePermissions.includes('PRODUCTS_EDIT');
+
+    const canDelete = isAdmin || effectivePermissions.includes('WAREHOUSES_DELETE');
+
+    const canManageWarranty = isAdminOrManager || 
+        effectivePermissions.includes('WAREHOUSES_EDIT') || 
+        effectivePermissions.includes('INVENTORY_TX_CREATE');
+
     const [serials, setSerials] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
@@ -747,49 +783,54 @@ export default function SerialManagementClient() {
     };
 
     return (
-        <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div>
-                    <div className="flex items-center gap-2 text-blue-600 font-semibold text-sm">
-                        <QrCode className="w-5 h-5" /> Quản Trị Kho Nâng Cao (Advanced WMS)
-                    </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">Quản Lý Mã Định Danh Serial / IMEI & Bảo Hành</h1>
-                    <p className="text-slate-500 text-sm mt-1">
-                        Theo dõi vòng đời từng thiết bị: Nhập hàng loạt từ NCC, lưu kho, xuất bán, tiếp nhận hàng lỗi bảo hành & đổi mới thiết bị
-                    </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <button
-                        onClick={() => setShowWarrantyAlertsModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all cursor-pointer relative"
-                        title="Quản lý cảnh báo hết hạn bảo hành & gửi email tự động / bằng tay"
-                    >
-                        <BellRing className="w-4 h-4 animate-pulse" />
-                        <span>Cảnh Báo Hết Hạn BH</span>
-                        {stats.expiringSoon > 0 && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-white text-orange-600 font-extrabold text-[10px] shadow-xs">
-                                {stats.expiringSoon}
-                            </span>
+        <div className="space-y-5">
+            {/* Standard ERP Header Bar */}
+            <PageHeader
+                badge="KHO VẬN &amp; BẢO HÀNH (WMS)"
+                tagline="Theo dõi vòng đời thiết bị, xuất bán &amp; tiếp nhận đổi mới 1-1"
+                title="Quản Lý Mã Định Danh Serial / IMEI &amp; Bảo Hành"
+                count={stats.total}
+                actions={
+                    <div className="flex flex-wrap items-center gap-2">
+                        {isAdminOrManager && (
+                            <button
+                                onClick={() => setShowWarrantyAlertsModal(true)}
+                                className="inline-flex items-center gap-1.5 h-[36px] px-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer relative"
+                                title="Quản lý cảnh báo hết hạn bảo hành &amp; gửi email tự động / bằng tay"
+                            >
+                                <BellRing className="w-4 h-4 animate-pulse" />
+                                <span>Cảnh Báo Hết Hạn BH</span>
+                                {stats.expiringSoon > 0 && (
+                                    <span className="px-1.5 py-0.5 rounded-full bg-white text-orange-600 font-extrabold text-[10px] shadow-xs">
+                                        {stats.expiringSoon}
+                                    </span>
+                                )}
+                            </button>
                         )}
-                    </button>
-                    <button
-                        onClick={() => setShowBulkModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
-                    >
-                        <Upload className="w-4 h-4" /> Nhập Hàng Loạt (100 - 200 mã)
-                    </button>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
-                    >
-                        <Plus className="w-4 h-4" /> Thêm Serial Lẻ
-                    </button>
-                </div>
-            </div>
+                        {canCreate && (
+                            <button
+                                onClick={() => setShowBulkModal(true)}
+                                className="inline-flex items-center gap-1.5 h-[36px] px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
+                            >
+                                <Upload className="w-4 h-4" />
+                                <span>Nhập Hàng Loạt</span>
+                            </button>
+                        )}
+                        {canCreate && (
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="inline-flex items-center gap-1.5 h-[36px] px-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Thêm Serial Lẻ</span>
+                            </button>
+                        )}
+                    </div>
+                }
+            />
 
-            {/* Quick Stats Banner */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            {/* Quick Stats Banner (Co - Giãn Responsive chuẩn trên mọi thiết bị) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span className="text-xs font-medium text-slate-400">Tổng mã định danh</span>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
@@ -818,7 +859,7 @@ export default function SerialManagementClient() {
                 </div>
                 <div 
                     onClick={() => setShowWarrantyAlertsModal(true)}
-                    className="bg-orange-50/50 dark:bg-orange-950/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800/40 shadow-sm cursor-pointer hover:border-orange-400 transition-all col-span-2 sm:col-span-1"
+                    className="bg-orange-50/50 dark:bg-orange-950/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800/40 shadow-sm cursor-pointer hover:border-orange-400 transition-all col-span-1 sm:col-span-2 lg:col-span-1"
                 >
                     <span className="text-xs font-medium text-orange-600 dark:text-orange-400 flex items-center justify-between">
                         <span>Sắp hết hạn (&le; 30 ngày)</span>
@@ -1034,13 +1075,13 @@ export default function SerialManagementClient() {
                             <div className="space-y-0.5">
                                 <span className="text-[11px] text-slate-400 block font-medium">Tiếp nhận gần nhất:</span>
                                 <div className="font-bold text-slate-800 dark:text-slate-200 font-mono" suppressHydrationWarning>
-                                    {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                    {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : ((lookupResult.warrantyCount || 0) > 0 ? 'Theo phiếu tiếp nhận' : 'Chưa phát sinh')}
                                 </div>
                             </div>
                             <div className="space-y-0.5">
                                 <span className="text-[11px] text-slate-400 block font-medium">Ngày trả bảo hành:</span>
                                 <div className={`font-bold font-mono ${lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'text-amber-600 animate-pulse' : 'text-emerald-700 dark:text-emerald-400'}`} suppressHydrationWarning>
-                                    {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng KT' : 'Chưa có')}
+                                    {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý tại phòng KT' : (lookupResult.currentServiceState === 'REPLACED' ? 'Đã đổi mới 1-1' : 'Chưa phát sinh'))}
                                 </div>
                             </div>
                             <div className="space-y-0.5">
@@ -1115,13 +1156,13 @@ export default function SerialManagementClient() {
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-400">Ngày tiếp nhận:</span>
                                         <span className="font-bold font-mono text-slate-800 dark:text-slate-200" suppressHydrationWarning>
-                                            {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : 'Chưa có'}
+                                            {lookupResult.lastReceivedDate ? new Date(lookupResult.lastReceivedDate).toLocaleDateString('vi-VN') : ((lookupResult.warrantyCount || 0) > 0 ? 'Theo phiếu tiếp nhận' : 'Chưa phát sinh')}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-slate-400">Ngày hoàn trả:</span>
                                         <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400" suppressHydrationWarning>
-                                            {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý' : 'Chưa có')}
+                                            {lookupResult.lastReturnDate ? new Date(lookupResult.lastReturnDate).toLocaleDateString('vi-VN') : (lookupResult.currentServiceState === 'UNDER_WARRANTY' ? 'Đang xử lý' : (lookupResult.currentServiceState === 'REPLACED' ? 'Đã đổi mới 1-1' : 'Chưa phát sinh'))}
                                         </span>
                                     </div>
                                     <div className="pt-1 border-t border-slate-200/60 dark:border-slate-700">
@@ -1470,8 +1511,8 @@ export default function SerialManagementClient() {
                         <p className="text-sm mt-1">Bấm "Nhập Hàng Loạt" để copy/paste 100-200 serial từ nhà cung cấp vào kho cùng lúc.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-sm">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full min-w-[960px] text-left border-collapse text-sm">
                             <thead>
                                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs uppercase font-semibold">
                                     <th className="py-3 px-4 w-10 text-center">
@@ -1707,7 +1748,7 @@ export default function SerialManagementClient() {
                                             <td className="py-3 px-4 text-right">
                                                 <div className="flex items-center justify-end gap-1 flex-wrap">
                                                     {/* Xuất bán nếu còn trong kho */}
-                                                    {s.status === 'IN_STOCK' && (
+                                                    {canEdit && s.status === 'IN_STOCK' && (
                                                         <button
                                                             onClick={() => openDispatchModalForSingle(s.serialNumber)}
                                                             className="px-2 py-1 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
@@ -1718,7 +1759,7 @@ export default function SerialManagementClient() {
                                                     )}
 
                                                     {/* Tiếp nhận BH / Hàng lỗi trả về (khi đã xuất bán hoặc đang dùng) */}
-                                                    {s.status !== 'IN_STOCK' && (
+                                                    {canManageWarranty && s.status !== 'IN_STOCK' && (
                                                         <button
                                                             onClick={() => {
                                                                 setRmaTargetSerial(s);
@@ -1732,7 +1773,7 @@ export default function SerialManagementClient() {
                                                     )}
 
                                                     {/* Đổi mới thiết bị 1-1 */}
-                                                    {s.status !== 'IN_STOCK' && (
+                                                    {canManageWarranty && s.status !== 'IN_STOCK' && (
                                                         <button
                                                             onClick={() => {
                                                                 setSwapOldSerial(s);
@@ -1746,7 +1787,7 @@ export default function SerialManagementClient() {
                                                     )}
 
                                                     {/* Hoàn tất bảo hành trả khách */}
-                                                    {(s.status === 'UNDER_WARRANTY' || s.status === 'WARRANTY_RETURN') && (
+                                                    {canManageWarranty && (s.status === 'UNDER_WARRANTY' || s.status === 'WARRANTY_RETURN') && (
                                                         <button
                                                             onClick={() => {
                                                                 setRepairTargetSerial(s);
@@ -1784,22 +1825,26 @@ export default function SerialManagementClient() {
                                                     </button>
 
                                                     {/* Chỉnh sửa */}
-                                                    <button
-                                                        onClick={() => handleOpenEditModal(s)}
-                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 rounded-lg transition-colors cursor-pointer"
-                                                        title="Sửa sản phẩm / số Serial này"
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={() => handleOpenEditModal(s)}
+                                                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 rounded-lg transition-colors cursor-pointer"
+                                                            title="Sửa sản phẩm / số Serial này"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+                                                    )}
 
                                                     {/* Xóa */}
-                                                    <button
-                                                        onClick={() => handleDeleteSerial(s.id, s.serialNumber)}
-                                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors cursor-pointer"
-                                                        title="Xóa Serial này"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={() => handleDeleteSerial(s.id, s.serialNumber)}
+                                                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors cursor-pointer"
+                                                            title="Xóa Serial này"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -2753,6 +2798,7 @@ export default function SerialManagementClient() {
                     setSelectedSlipSerial(s);
                     setShowSlipModal(true);
                 }}
+                canManageWarranty={canManageWarranty}
             />
 
             {/* Modal: Phiếu Trả Bảo Hành & Biên Bản Bàn Giao Thiết Bị */}

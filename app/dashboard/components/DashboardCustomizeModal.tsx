@@ -13,6 +13,7 @@ import {
     Target,
     CheckCircle2,
     Calendar,
+    Megaphone,
     ChevronUp,
     ChevronDown,
     RotateCcw,
@@ -42,6 +43,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
     Target,
     CheckCircle2,
     Calendar,
+    Megaphone,
 };
 
 export function DashboardCustomizeModal({

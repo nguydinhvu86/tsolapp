@@ -88,8 +88,8 @@ export default function WarehouseClient({ initialWarehouses }: { initialWarehous
 
             {/* Table Container */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs whitespace-nowrap">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left text-xs whitespace-nowrap min-w-[700px]">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
                                 <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-[11px]">{t('warehouses.colName')}</th>
